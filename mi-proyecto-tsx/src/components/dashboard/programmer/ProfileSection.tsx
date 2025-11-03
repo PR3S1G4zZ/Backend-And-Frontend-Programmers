@@ -1,0 +1,791 @@
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
+import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
+import { Textarea } from '../../ui/textarea';
+import { Label } from '../../ui/label';
+import { Badge } from '../../ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
+import { Switch } from '../../ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
+import { Separator } from '../../ui/separator';
+import { Progress } from '../../ui/progress';
+import { 
+  User, 
+  Globe, 
+  Github, 
+  Linkedin, 
+  Twitter,
+  Save,
+  Camera,
+  Plus,
+  X,
+  Award,
+  DollarSign,
+  Clock,
+  Settings,
+  Shield,
+  Bell,
+  Download,
+  Edit,
+  AlertCircle,
+  Briefcase
+} from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
+import { useSweetAlert } from '../../ui/sweet-alert';
+import { useAuth } from '../../../contexts/AuthContext';
+
+export function ProfileSection() {
+  const [activeTab, setActiveTab] = useState('profile-tab');
+  const [isEditing, setIsEditing] = useState(false);
+  const { user } = useAuth();
+  
+  const [profileData, setProfileData] = useState({
+    name: user ? `${user.name} ${user.lastname}` : 'Carlos Mendoza',
+    email: user?.email || 'carlos.mendoza@email.com',
+    phone: '+34 612 345 678',
+    location: 'Madrid, España',
+    title: 'Full Stack Developer',
+    bio: 'Desarrollador Full Stack con más de 6 años de experiencia especializado en React, Node.js y tecnologías cloud. Apasionado por crear soluciones escalables y eficientes que impacten positivamente en el negocio.',
+    hourlyRate: 75,
+    availability: 'available', // available, busy, unavailable
+    website: 'https://carlosmendoza.dev',
+    github: 'carlosmendoza',
+    linkedin: 'carlos-mendoza-dev',
+    twitter: 'carlosmendoza_dev'
+  });
+
+  const [skills, setSkills] = useState([
+    { id: 1, name: 'React', level: 90, years: 4 },
+    { id: 2, name: 'Node.js', level: 85, years: 5 },
+    { id: 3, name: 'TypeScript', level: 80, years: 3 },
+    { id: 4, name: 'PostgreSQL', level: 75, years: 4 },
+    { id: 5, name: 'AWS', level: 70, years: 2 },
+    { id: 6, name: 'Docker', level: 65, years: 2 }
+  ]);
+
+  const [languages] = useState([
+    { id: 1, name: 'Español', level: 'Nativo' },
+    { id: 2, name: 'Inglés', level: 'Avanzado' },
+    { id: 3, name: 'Francés', level: 'Intermedio' }
+  ]);
+
+  const [experience] = useState([
+    {
+      id: 1,
+      company: 'Tech Solutions Inc.',
+      position: 'Senior Full Stack Developer',
+      period: '2022 - Presente',
+      description: 'Desarrollo de aplicaciones web escalables usando React y Node.js'
+    },
+    {
+      id: 2,
+      company: 'StartupXYZ',
+      position: 'Frontend Developer',
+      period: '2020 - 2022',
+      description: 'Implementación de interfaces modernas y responsive con React'
+    },
+    {
+      id: 3,
+      company: 'Digital Agency',
+      position: 'Web Developer',
+      period: '2018 - 2020',
+      description: 'Desarrollo de sitios web y aplicaciones usando tecnologías modernas'
+    }
+  ]);
+
+  const [settings, setSettings] = useState({
+    profileVisibility: true,
+    emailNotifications: true,
+    projectAlerts: true,
+    marketingEmails: false,
+    twoFactorAuth: false,
+    profileCompletion: 85
+  });
+
+  const [newSkill, setNewSkill] = useState('');
+  const { showAlert, Alert } = useSweetAlert();
+
+  const handleSave = () => {
+    showAlert({
+      title: '¡Perfil Actualizado!',
+      text: 'Tu información ha sido guardada exitosamente',
+      type: 'success',
+      timer: 2000,
+      theme: 'code'
+    });
+    setIsEditing(false);
+  };
+
+  const addSkill = () => {
+    if (newSkill.trim()) {
+      const newId = Math.max(...skills.map(s => s.id)) + 1;
+      setSkills([...skills, { 
+        id: newId,
+        name: newSkill, 
+        level: 50, 
+        years: 1 
+      }]);
+      setNewSkill('');
+    }
+  };
+
+  const removeSkill = (id: number) => {
+    setSkills(skills.filter(skill => skill.id !== id));
+  };
+
+  const getAvailabilityColor = (status: string) => {
+    switch (status) {
+      case 'available': return 'text-green-400';
+      case 'busy': return 'text-yellow-400';
+      case 'unavailable': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getAvailabilityText = (status: string) => {
+    switch (status) {
+      case 'available': return 'Disponible';
+      case 'busy': return 'Ocupado';
+      case 'unavailable': return 'No disponible';
+      default: return 'Desconocido';
+    }
+  };
+
+  return (
+    <div className="p-8 space-y-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-between"
+      >
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Mi Perfil</h1>
+          <p className="text-gray-300">
+            Gestiona tu información personal y configuración de cuenta
+          </p>
+        </div>
+        
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+        >
+          <Button
+            onClick={() => {
+              if (isEditing) {
+                handleSave();
+              } else {
+                setIsEditing(true);
+              }
+            }}
+            className={`${
+              isEditing 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-[#00FF85] hover:bg-[#00C46A]'
+            } text-[#0D0D0D]`}
+          >
+            {isEditing ? (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Guardar
+              </>
+            ) : (
+              <>
+                <Edit className="h-4 w-4 mr-2" />
+                Editar Perfil
+              </>
+            )}
+          </Button>
+        </motion.div>
+      </motion.div>
+
+      {/* Profile Completion */}
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Completitud del Perfil</h3>
+                <p className="text-sm text-gray-400">Completa tu perfil para atraer más oportunidades</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[#00FF85]">{settings.profileCompletion}%</div>
+                <div className="text-xs text-gray-400">Completado</div>
+              </div>
+            </div>
+            <Progress value={settings.profileCompletion} className="h-3" />
+            
+            {settings.profileCompletion < 100 && (
+              <div className="mt-4 text-sm text-gray-300">
+                <p>Para completar tu perfil:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Añade más habilidades técnicas</li>
+                  <li>Completa tu experiencia laboral</li>
+                  <li>Sube una foto de perfil profesional</li>
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="bg-[#1A1A1A] border border-[#333333] p-1">
+          <TabsTrigger value="profile-tab" className="data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]">
+            <User className="h-4 w-4 mr-2" />
+            Información Personal
+          </TabsTrigger>
+          <TabsTrigger value="skills-tab" className="data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]">
+            <Award className="h-4 w-4 mr-2" />
+            Habilidades
+          </TabsTrigger>
+          <TabsTrigger value="settings-tab" className="data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]">
+            <Settings className="h-4 w-4 mr-2" />
+            Configuración
+          </TabsTrigger>
+        </TabsList>
+
+        <AnimatePresence mode="wait">
+          <TabsContent key="profile-content" value="profile-tab" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Basic Info */}
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Información Básica
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Avatar Section */}
+                  <div className="flex items-center space-x-6">
+                    <div className="relative">
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src="" />
+                        <AvatarFallback className="bg-[#00FF85] text-[#0D0D0D] text-xl">
+                          CM
+                        </AvatarFallback>
+                      </Avatar>
+                      {isEditing && (
+                        <Button
+                          size="sm"
+                          className="absolute -bottom-2 -right-2 bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] rounded-full w-8 h-8 p-0"
+                        >
+                          <Camera className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-xl font-semibold text-white">{profileData.name}</h3>
+                        <Badge className="bg-green-600 text-white">
+                          <Award className="h-3 w-3 mr-1" />
+                          Verificado
+                        </Badge>
+                      </div>
+                      <p className="text-gray-400 mb-1">{profileData.title}</p>
+                      <div className="flex items-center space-x-4 text-sm">
+                        <span className={`flex items-center ${getAvailabilityColor(profileData.availability)}`}>
+                          <Clock className="h-3 w-3 mr-1" />
+                          {getAvailabilityText(profileData.availability)}
+                        </span>
+                        <span className="flex items-center text-[#00FF85]">
+                          <DollarSign className="h-3 w-3 mr-1" />
+                          €{profileData.hourlyRate}/hora
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Form Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label htmlFor="name" className="text-white">Nombre Completo</Label>
+                      <Input
+                        id="name"
+                        value={profileData.name}
+                        onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="title" className="text-white">Título Profesional</Label>
+                      <Input
+                        id="title"
+                        value={profileData.title}
+                        onChange={(e) => setProfileData({...profileData, title: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="email" className="text-white">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={profileData.email}
+                        onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phone" className="text-white">Teléfono</Label>
+                      <Input
+                        id="phone"
+                        value={profileData.phone}
+                        onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="location" className="text-white">Ubicación</Label>
+                      <Input
+                        id="location"
+                        value={profileData.location}
+                        onChange={(e) => setProfileData({...profileData, location: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="hourlyRate" className="text-white">Tarifa por Hora (€)</Label>
+                      <Input
+                        id="hourlyRate"
+                        type="number"
+                        value={profileData.hourlyRate}
+                        onChange={(e) => setProfileData({...profileData, hourlyRate: parseInt(e.target.value)})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="availability" className="text-white">Estado de Disponibilidad</Label>
+                    <Select 
+                      value={profileData.availability} 
+                      onValueChange={(value) => setProfileData({...profileData, availability: value})}
+                      disabled={!isEditing}
+                    >
+                      <SelectTrigger className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333333]">
+                        <SelectItem value="available" className="text-white">Disponible</SelectItem>
+                        <SelectItem value="busy" className="text-white">Ocupado</SelectItem>
+                        <SelectItem value="unavailable" className="text-white">No disponible</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="bio" className="text-white">Biografía Profesional</Label>
+                    <Textarea
+                      id="bio"
+                      value={profileData.bio}
+                      onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                      disabled={!isEditing}
+                      className="mt-2 bg-[#0D0D0D] border-[#333333] text-white min-h-[100px] disabled:opacity-70"
+                      placeholder="Cuéntanos sobre tu experiencia, especialidades y objetivos profesionales..."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Social Links */}
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Enlaces Sociales y Web
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-white flex items-center">
+                        <Globe className="h-4 w-4 mr-2" />
+                        Sitio Web
+                      </Label>
+                      <Input
+                        value={profileData.website}
+                        onChange={(e) => setProfileData({...profileData, website: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                        placeholder="https://tu-sitio.com"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-white flex items-center">
+                        <Github className="h-4 w-4 mr-2" />
+                        GitHub
+                      </Label>
+                      <Input
+                        value={profileData.github}
+                        onChange={(e) => setProfileData({...profileData, github: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                        placeholder="usuario-github"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-white flex items-center">
+                        <Linkedin className="h-4 w-4 mr-2" />
+                        LinkedIn
+                      </Label>
+                      <Input
+                        value={profileData.linkedin}
+                        onChange={(e) => setProfileData({...profileData, linkedin: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                        placeholder="usuario-linkedin"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-white flex items-center">
+                        <Twitter className="h-4 w-4 mr-2" />
+                        Twitter
+                      </Label>
+                      <Input
+                        value={profileData.twitter}
+                        onChange={(e) => setProfileData({...profileData, twitter: e.target.value})}
+                        disabled={!isEditing}
+                        className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
+                        placeholder="@usuario-twitter"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Experience */}
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Briefcase className="h-5 w-5 mr-2" />
+                      Experiencia Profesional
+                    </div>
+                    {isEditing && (
+                      <Button size="sm" className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar
+                      </Button>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {experience.map((exp) => (
+                    <motion.div
+                      key={`exp-${exp.id}`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 * exp.id }}
+                      className="border-l-2 border-[#00FF85] pl-4 pb-4 last:pb-0"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white">{exp.position}</h4>
+                          <p className="text-[#00FF85] text-sm">{exp.company}</p>
+                          <p className="text-gray-400 text-sm mb-2">{exp.period}</p>
+                          <p className="text-gray-300 text-sm">{exp.description}</p>
+                        </div>
+                        {isEditing && (
+                          <Button size="sm" variant="ghost" className="text-gray-400 hover:text-red-400">
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Languages */}
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Idiomas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {languages.map((lang) => (
+                      <motion.div
+                        key={`lang-${lang.id}`}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.1 * lang.id }}
+                        className="text-center p-4 bg-[#0D0D0D] rounded-lg border border-[#333333]"
+                      >
+                        <h4 className="font-semibold text-white">{lang.name}</h4>
+                        <p className="text-sm text-gray-400">{lang.level}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent key="skills-content" value="skills-tab" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Award className="h-5 w-5 mr-2" />
+                      Habilidades Técnicas
+                    </div>
+                    {isEditing && (
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          value={newSkill}
+                          onChange={(e) => setNewSkill(e.target.value)}
+                          placeholder="Nueva habilidad"
+                          className="w-40 bg-[#0D0D0D] border-[#333333] text-white"
+                        />
+                        <Button 
+                          onClick={addSkill}
+                          size="sm" 
+                          className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {skills.map((skill) => (
+                    <motion.div
+                      key={`skill-${skill.id}`}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 * skill.id }}
+                      className="space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <span className="font-medium text-white">{skill.name}</span>
+                          <Badge variant="secondary" className="bg-[#0D0D0D] text-gray-400">
+                            {skill.years} años
+                          </Badge>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-sm text-gray-400">{skill.level}%</span>
+                          {isEditing && (
+                            <Button
+                              onClick={() => removeSkill(skill.id)}
+                              size="sm"
+                              variant="ghost"
+                              className="text-gray-400 hover:text-red-400 p-1"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <Progress value={skill.level} className="h-3" />
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${skill.level}%` }}
+                          transition={{ delay: 0.2 + (0.05 * skill.id), duration: 1, ease: "easeOut" }}
+                          className="absolute top-0 left-0 h-3 bg-gradient-to-r from-[#00FF85] to-[#00C46A] rounded-full"
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent key="settings-content" value="settings-tab" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* Privacy Settings */}
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Shield className="h-5 w-5 mr-2" />
+                    Privacidad y Visibilidad
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium">Perfil Público</p>
+                      <p className="text-sm text-gray-400">Permite que las empresas vean tu perfil</p>
+                    </div>
+                    <Switch
+                      checked={settings.profileVisibility}
+                      onCheckedChange={(checked) => setSettings({...settings, profileVisibility: checked})}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notification Settings */}
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Bell className="h-5 w-5 mr-2" />
+                    Notificaciones
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium">Notificaciones por Email</p>
+                      <p className="text-sm text-gray-400">Recibe emails sobre mensajes y actualizaciones</p>
+                    </div>
+                    <Switch
+                      checked={settings.emailNotifications}
+                      onCheckedChange={(checked) => setSettings({...settings, emailNotifications: checked})}
+                    />
+                  </div>
+
+                  <Separator className="bg-[#333333]" />
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium">Alertas de Proyectos</p>
+                      <p className="text-sm text-gray-400">Notificaciones sobre nuevos proyectos que coincidan con tu perfil</p>
+                    </div>
+                    <Switch
+                      checked={settings.projectAlerts}
+                      onCheckedChange={(checked) => setSettings({...settings, projectAlerts: checked})}
+                    />
+                  </div>
+
+                  <Separator className="bg-[#333333]" />
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium">Emails de Marketing</p>
+                      <p className="text-sm text-gray-400">Recibe newsletters y promociones</p>
+                    </div>
+                    <Switch
+                      checked={settings.marketingEmails}
+                      onCheckedChange={(checked) => setSettings({...settings, marketingEmails: checked})}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Security Settings */}
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <Shield className="h-5 w-5 mr-2" />
+                    Seguridad
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium">Autenticación de Dos Factores</p>
+                      <p className="text-sm text-gray-400">Añade una capa extra de seguridad a tu cuenta</p>
+                    </div>
+                    <Switch
+                      checked={settings.twoFactorAuth}
+                      onCheckedChange={(checked) => setSettings({...settings, twoFactorAuth: checked})}
+                    />
+                  </div>
+
+                  <Separator className="bg-[#333333]" />
+
+                  <div className="space-y-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-[#333333] text-white hover:bg-[#333333]"
+                    >
+                      Cambiar Contraseña
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-[#333333] text-white hover:bg-[#333333]"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Descargar Mis Datos
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Account Management */}
+              <Card className="bg-[#1A1A1A] border-[#333333] hover:border-[#00FF85]/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Gestión de Cuenta
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="border-yellow-600 text-yellow-400 hover:bg-yellow-600 hover:text-white"
+                    >
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Pausar Cuenta
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Eliminar Cuenta
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+        </AnimatePresence>
+      </Tabs>
+
+      <Alert />
+    </div>
+  );
+}
