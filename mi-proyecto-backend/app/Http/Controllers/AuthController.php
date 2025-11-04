@@ -16,20 +16,45 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         try {
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'lastname' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:8|confirmed',
+            // Validación reforzada con sanitización de datos
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
+                'lastname' => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
+                'email' => [
+                    'required',
+                    'string',
+                    'email',
+                    'max:255',
+                    'unique:users',
+                    'regex:/^[^@\s]+@[^@\.\s]+\.[^@\.\s]+$/i', // Debe tener "@" y un solo punto después del "@"
+                    'regex:/^\S+$/' // Sin espacios en todo el correo
+                ],
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'max:15',
+                    'confirmed',
+                    'regex:/^\S+$/', // Sin espacios
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,15}$/' // Mínimo 8, máximo 15, 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial
+                ],
                 'user_type' => 'required|in:programmer,company'
+            ], [
+                'name.regex' => 'El nombre solo puede contener letras y espacios, sin espacios al inicio/fin.',
+                'lastname.regex' => 'El apellido solo puede contener letras y espacios, sin espacios al inicio/fin.',
+                'email.regex' => 'El correo debe contener "@", un solo punto en el dominio y no debe tener espacios.',
+                'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                'password.max' => 'La contraseña no puede tener más de 15 caracteres.',
+                'password.regex' => 'La contraseña debe tener entre 8 y 15 caracteres, sin espacios, con al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&#).',
             ]);
 
+            // Sanitización adicional de datos antes de crear el usuario
             $user = User::create([
-                'name' => $request->name,
-                'lastname' => $request->lastname,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'user_type' => $request->user_type,
+                'name' => strip_tags(trim($validated['name'])),
+                'lastname' => strip_tags(trim($validated['lastname'])),
+                'email' => strtolower(trim($validated['email'])), // Normalizar email a minúsculas
+                'password' => Hash::make($validated['password']), // Laravel ya usa bcrypt que es seguro
+                'user_type' => $validated['user_type'],
             ]);
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -68,12 +93,31 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required'
+            // Validación reforzada con sanitización de datos
+            $validated = $request->validate([
+                'email' => [
+                    'required',
+                    'email',
+                    'regex:/^[^@\s]+@[^@\.\s]+\.[^@\.\s]+$/i', // Debe tener "@" y un solo punto después del "@"
+                    'regex:/^\S+$/' // Sin espacios en todo el correo
+                ],
+                'password' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    'regex:/^\S+$/', // Sin espacios
+                ]
+            ], [
+                'email.regex' => 'El correo debe contener "@", un solo punto en el dominio y no debe tener espacios.',
+                'password.regex' => 'La contraseña no debe contener espacios.',
             ]);
 
-            if (!Auth::attempt($request->only('email', 'password'))) {
+            // Sanitización del email antes de la autenticación
+            $email = strtolower(trim($validated['email']));
+            $password = $validated['password'];
+
+            // Laravel usa consultas preparadas automáticamente, pero verificamos credenciales de forma segura
+            if (!Auth::attempt(['email' => $email, 'password' => $password])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Credenciales incorrectas'
@@ -81,7 +125,7 @@ class AuthController extends Controller
             }
 
             $user = Auth::user();
-            $token = $user->createToken('auth_token')->plainTextToken;
+            $token = $user->createToken('auth_token')->plainTextToken; // crear token de autenticación
 
             return response()->json([
                 'success' => true,

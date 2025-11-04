@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { EMAIL_SINGLE_DOT_REGEX } from "./auth/constants";
 import { useSweetAlert } from "./ui/sweet-alert";
 
 interface LoginPageProps {
@@ -25,6 +26,9 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string>("");
+  const [passwordError, setPasswordError] = useState<string>("");
+  const PASSWORD_NO_SPACE_REGEX = /^\S+$/;
   
   const { login } = useAuth();
   const { showAlert, Alert } = useSweetAlert();
@@ -38,6 +42,14 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         text: 'Por favor, completa todos los campos',
         type: 'warning'
       });
+      return;
+    }
+
+    if (!EMAIL_SINGLE_DOT_REGEX.test(email)) {
+      return;
+    }
+
+    if (!PASSWORD_NO_SPACE_REGEX.test(password)) {
       return;
     }
 
@@ -147,11 +159,33 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                     type="email"
                     placeholder="tu@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (/\s/.test(raw)) {
+                        const noSpaces = raw.replace(/\s+/g, '');
+                        setEmail(noSpaces);
+                        setEmailError('El correo no debe contener espacios.');
+                        return;
+                      }
+                      const value = raw;
+                      setEmail(value);
+                      if (!value) {
+                        setEmailError("");
+                      } else if (!EMAIL_SINGLE_DOT_REGEX.test(value)) {
+                        setEmailError('Formato: usuario@dominio.tld (un solo punto tras "@")');
+                      } else {
+                        setEmailError("");
+                      }
+                    }}
+                    onKeyDown={(e) => { if (e.key === ' ') { e.preventDefault(); } }}
                     required
-                    className="pl-10 bg-[#0D0D0D] border-[#333333] text-white placeholder-gray-400 focus:border-[#00FF85]"
+                    aria-invalid={!!emailError}
+                    className={`pl-10 bg-[#0D0D0D] ${emailError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
                   />
                 </div>
+                {emailError && (
+                  <p className="mt-2 text-xs text-red-400">{emailError}</p>
+                )}
               </div>
 
               <div>
@@ -162,10 +196,24 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                     type={showPassword ? "text" : "password"}
                     placeholder="Tu contraseña"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPassword(value);
+                      if (!value) {
+                        setPasswordError("");
+                      } else if (!PASSWORD_NO_SPACE_REGEX.test(value)) {
+                        setPasswordError('La contraseña no debe contener espacios.');
+                      } else {
+                        setPasswordError("");
+                      }
+                    }}
                     required
-                    className="pl-10 pr-10 bg-[#0D0D0D] border-[#333333] text-white placeholder-gray-400 focus:border-[#00FF85]"
+                    aria-invalid={!!passwordError}
+                    className={`pl-10 pr-10 bg-[#0D0D0D] ${passwordError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
                   />
+                  {passwordError && (
+                    <p className="mt-2 text-xs text-red-400">{passwordError}</p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -194,7 +242,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
 
               <Button 
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !!emailError || !!passwordError || !EMAIL_SINGLE_DOT_REGEX.test(email) || !PASSWORD_NO_SPACE_REGEX.test(password)}
                 className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] hover-neon disabled:opacity-50"
               >
                 {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
