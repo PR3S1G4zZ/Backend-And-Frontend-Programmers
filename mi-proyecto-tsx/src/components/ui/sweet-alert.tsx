@@ -6,6 +6,7 @@ import { CheckCircle, AlertCircle, XCircle, Info } from 'lucide-react';
 export interface SweetAlertOptions {
   title: string;
   text?: string;
+  html?: React.ReactNode;
   type?: 'success' | 'error' | 'warning' | 'info' | 'question';
   showCancelButton?: boolean;
   confirmButtonText?: string;
@@ -76,6 +77,7 @@ export function useSweetAlert() {
 function SweetAlertModal({
   title,
   text,
+  html,
   type = 'info',
   showCancelButton = false,
   confirmButtonText = 'Confirmar',
@@ -208,40 +210,86 @@ function SweetAlertModal({
           stiffness: 300,
           duration: 0.4 
         }}
-        className={`relative max-w-md w-full border-2 rounded-lg p-8 shadow-2xl overflow-hidden ${getThemeStyles()}`}
+        className={`relative ${html ? 'max-w-2xl' : 'max-w-md'} w-full border-2 rounded-lg p-8 shadow-2xl overflow-hidden ${getThemeStyles()}`}
       >
         {renderThemeElements()}
         
-        <div className="relative z-10 text-center space-y-6">
-          {/* Icono con animación sutil */}
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ 
-              delay: 0.2, 
-              type: "spring", 
-              damping: 15, 
-              stiffness: 200 
-            }}
-            className="flex justify-center"
-          >
+        <div className={`relative z-10 ${html ? '' : 'text-center'} space-y-6`}>
+          {/* Icono con animación sutil - solo si no hay HTML personalizado */}
+          {!html && (
             <motion.div
-              animate={type === 'success' ? {
-                scale: [1, 1.1, 1],
-              } : type === 'error' ? {
-                x: [-2, 2, -2, 2, 0],
-              } : {
-                opacity: [1, 0.8, 1]
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ 
+                delay: 0.2, 
+                type: "spring", 
+                damping: 15, 
+                stiffness: 200 
               }}
-              transition={{
-                duration: type === 'success' ? 1.5 : type === 'error' ? 0.4 : 1.5,
-                repeat: type === 'error' ? 0 : Infinity,
-                repeatType: type === 'success' ? 'reverse' : 'mirror'
-              }}
+              className="flex justify-center"
             >
-              {getIcon()}
+              <motion.div
+                animate={type === 'success' ? {
+                  scale: [1, 1.1, 1],
+                } : type === 'error' ? {
+                  x: [-2, 2, -2, 2, 0],
+                } : {
+                  opacity: [1, 0.8, 1]
+                }}
+                transition={{
+                  duration: type === 'success' ? 1.5 : type === 'error' ? 0.4 : 1.5,
+                  repeat: type === 'error' ? 0 : Infinity,
+                  repeatType: type === 'success' ? 'reverse' : 'mirror'
+                }}
+              >
+                {customIcon || getIcon()}
+              </motion.div>
             </motion.div>
-          </motion.div>
+          )}
+          
+          {/* Icono por defecto si hay HTML pero no customIcon */}
+          {html && !customIcon && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ 
+                delay: 0.2, 
+                type: "spring", 
+                damping: 15, 
+                stiffness: 200 
+              }}
+              className="flex justify-center mb-4"
+            >
+              <motion.div
+                animate={type === 'error' ? {
+                  x: [-2, 2, -2, 2, 0],
+                } : {}}
+                transition={{
+                  duration: type === 'error' ? 0.4 : 0,
+                  repeat: 0
+                }}
+              >
+                {getIcon()}
+              </motion.div>
+            </motion.div>
+          )}
+          
+          {/* Icono personalizado si hay HTML */}
+          {html && customIcon && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ 
+                delay: 0.2, 
+                type: "spring", 
+                damping: 15, 
+                stiffness: 200 
+              }}
+              className="flex justify-center mb-4"
+            >
+              {customIcon}
+            </motion.div>
+          )}
 
           {/* Título */}
           <motion.h2
@@ -253,8 +301,17 @@ function SweetAlertModal({
             {title}
           </motion.h2>
 
-          {/* Texto */}
-          {text && (
+          {/* Texto o HTML personalizado */}
+          {html ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="text-left"
+            >
+              {html}
+            </motion.div>
+          ) : text && (
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

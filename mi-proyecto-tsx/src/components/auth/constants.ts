@@ -31,3 +31,6 @@ export const DEMO_ACCOUNTS = [
   { label: "Empresa", email: "demo@company.com" },
   { label: "Contraseña", password: "demo123" },
 ];
+
+// Email: exactamente un punto después del "@" (ej: usuario@dominio.tld)
+export const EMAIL_SINGLE_DOT_REGEX = /^[^@\s]+@[^@\.\s]+\.[^@\.\s]+$/i;

@@ -17,9 +17,18 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                'unique:users',
+                'regex:/^[^@\s]+@[^@\.\s]+\.[^@\.\s]+$/i'
+            ],
             'password' => 'required|string|min:8',
             'user_type' => 'required|in:programmer,company',
+        ], [
+            'email.regex' => 'El correo debe contener "@" y exactamente un punto en el dominio (ej: usuario@dominio.tld).',
         ]);
 
         if ($validator->fails()) {
@@ -70,8 +79,14 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
+            'email' => [
+                'required',
+                'email',
+                'regex:/^[^@\s]+@[^@\.\s]+\.[^@\.\s]+$/i'
+            ],
             'password' => 'required|string',
+        ], [
+            'email.regex' => 'El correo debe contener "@" y exactamente un punto en el dominio (ej: usuario@dominio.tld).',
         ]);
 
         if ($validator->fails()) {
