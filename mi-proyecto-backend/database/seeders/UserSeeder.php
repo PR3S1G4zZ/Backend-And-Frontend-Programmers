@@ -15,6 +15,7 @@ class UserSeeder extends Seeder
     {
         $this->command->info('🧹 Limpiando usuarios de prueba...');
 
+        
         $testEmails = [
             'demo@dev.com',          // programmer
             'demo@company.com',      // company

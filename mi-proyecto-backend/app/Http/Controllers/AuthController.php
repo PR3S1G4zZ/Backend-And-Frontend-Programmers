@@ -53,7 +53,7 @@ class AuthController extends Controller
                 'name' => strip_tags(trim($validated['name'])),
                 'lastname' => strip_tags(trim($validated['lastname'])),
                 'email' => strtolower(trim($validated['email'])), // Normalizar email a minúsculas
-                'password' => Hash::make($validated['password']), // Laravel ya usa bcrypt que es seguro
+                'password' => Hash::make($validated['password']), // hashear la contraseña
                 'user_type' => $validated['user_type'],
             ]);
 

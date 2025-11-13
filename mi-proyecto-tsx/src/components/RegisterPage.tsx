@@ -35,6 +35,8 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
   const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
   const [companyNameError, setCompanyNameError] = useState<string>("");
   const [positionError, setPositionError] = useState<string>("");
+  const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
+  const [termsTouched, setTermsTouched] = useState<boolean>(false);
 
   const NAME_REGEX = /^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/;
   const PASSWORD_NO_SPACE_REGEX = /^\S+$/;
@@ -265,18 +267,13 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
       if (response.success) {
         showAlert({
           title: '¡Registro exitoso!',
-          text: `Bienvenido ${response.user?.name}, tu cuenta ha sido creada exitosamente`,
+          text: `Tu cuenta ha sido creada. Ahora puedes iniciar sesión con tus credenciales.`,
           type: 'success',
           timer: 2000
         });
-        
-        // Redirigir según el tipo de usuario
+
         if (onNavigate) {
-          if (response.user?.user_type === 'programmer') {
-            onNavigate('programmer-dashboard');
-          } else {
-            onNavigate('company-dashboard');
-          }
+          setTimeout(() => onNavigate('login'), 2000);
         }
       } else {
         // Si hay errores de validación, mostrarlos en el modal detallado
@@ -623,12 +620,20 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                   <input
                     type="checkbox"
                     required
-                    className="mt-1 rounded border-[#333333] bg-[#0D0D0D] text-[#00FF85] focus:ring-[#00FF85]"
+                    checked={acceptedTerms}
+                    onChange={(e) => { setAcceptedTerms(e.target.checked); setTermsTouched(true); }}
+                    onBlur={() => setTermsTouched(true)}
+                    aria-invalid={!acceptedTerms && termsTouched}
+                    className={`mt-1 rounded bg-[#0D0D0D] text-[#00FF85] focus:ring-[#00FF85] ${(!acceptedTerms && termsTouched) ? 'border-red-500 focus:border-red-500 ring-red-500/30' : 'border-[#333333] focus:border-[#00FF85]'}`}
                   />
-                  <label className="text-sm text-gray-300">
+                  <label className={`text-sm ${(!acceptedTerms && termsTouched) ? 'text-red-300' : 'text-gray-300'}`}
+                  >
                     Acepto los <a href="#" className="text-[#00FF85] hover:text-[#00C46A]">términos y condiciones</a> y la <a href="#" className="text-[#00FF85] hover:text-[#00C46A]">política de privacidad</a>
                   </label>
                 </div>
+                {(!acceptedTerms && termsTouched) && (
+                  <p className="mt-1 text-xs text-red-400">Debes aceptar los términos y la política para continuar.</p>
+                )}
 
                 <Button 
                   type="submit"
@@ -645,7 +650,8 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                     !NAME_REGEX.test(formData.firstName) ||
                     (userType === USER_TYPES.PROGRAMMER && !NAME_REGEX.test(formData.lastName)) ||
                     (userType === USER_TYPES.COMPANY && (!NAME_REGEX.test(formData.companyName) || !NAME_REGEX.test(formData.position))) ||
-                    (userType === USER_TYPES.COMPANY && (!!companyNameError || !!positionError))
+                    (userType === USER_TYPES.COMPANY && (!!companyNameError || !!positionError)) ||
+                    !acceptedTerms
                   }
                   className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] hover-neon disabled:opacity-50"
                 >
