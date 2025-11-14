@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -203,5 +207,76 @@ class AuthController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function sendResetLink(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email'
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No existe un usuario con este correo'
+        ], 404);
+    }
+
+    // Generar token de reseteo
+    $token = Password::createToken($user);
+
+    // URL del frontend
+    $resetUrl = "http://localhost:5174/reset-password?token={$token}&email={$user->email}";
+
+    // Enviar correo
+    Mail::to($user->email)->send(new ResetPasswordMail($resetUrl));
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Correo enviado correctamente'
+    ], 200);
+}
+
+
+/**
+ * Resetear contraseña desde el frontend
+ */
+public function resetPassword(Request $request)
+{
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => [
+            'required',
+            'string',
+            'min:8',
+            'max:15',
+            'confirmed',
+            'regex:/^\S+$/'
+        ]
+    ]);
+
+    $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($user) use ($request) {
+            $user->forceFill([
+                'password' => Hash::make($request->password)
+            ])->save();
+        }
+    );
+
+    if ($status === Password::PASSWORD_RESET) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Contraseña actualizada correctamente'
+        ], 200);
+    }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'Error al restablecer la contraseña'
+    ], 400);
     }
 }

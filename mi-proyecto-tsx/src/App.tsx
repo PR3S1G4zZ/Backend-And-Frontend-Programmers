@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -13,17 +13,20 @@ import { CompanyDashboard } from './components/CompanyDashboard';
 import { PageTransition, usePageTransition, LoadingIndicator } from './components/PageTransition';
 import { CodeAnimations } from './components/CodeAnimations';
 import { AuthProvider } from './contexts/AuthContext';
+import { ForgotPasswordPage } from './components/ForgotPasswordPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 
-
-type PageType = 
-  | 'home' 
-  | 'for-programmers' 
-  | 'for-companies' 
-  | 'contact' 
-  | 'login' 
+type PageType =
+  | 'home'
+  | 'for-programmers'
+  | 'for-companies'
+  | 'contact'
+  | 'login'
   | 'register'
   | 'programmer-dashboard'
-  | 'company-dashboard';
+  | 'company-dashboard'
+  | 'forgot-password'
+  | 'reset-password';
 
 type UserType = 'guest' | 'programmer' | 'company';
 
@@ -32,16 +35,27 @@ export default function App() {
   const [userType, setUserType] = useState<UserType>('guest');
   const { isLoading, navigateWithLoading } = usePageTransition();
 
+  // 🔥 Detectar entrada directa desde rutas con path real (sin router)
+  useEffect(() => {
+    const path = window.location.pathname;
+
+    if (path === "/reset-password") {
+      setCurrentPage("reset-password");
+    }
+
+    if (path === "/forgot-password") {
+      setCurrentPage("forgot-password");
+    }
+  }, []);
+
   const handleNavigate = (page: string) => {
     try {
-      // Para dashboards, navegación inmediata sin animación de código
       if (page === 'programmer-dashboard' || page === 'company-dashboard') {
         setUserType(page.includes('programmer') ? 'programmer' : 'company');
         setCurrentPage(page as PageType);
         return;
       }
 
-      // Para otras páginas, usar transición suave
       navigateWithLoading(page, () => {
         if (page === 'home' && userType !== 'guest') {
           setUserType('guest');
@@ -86,6 +100,10 @@ export default function App() {
           return <ProgrammerDashboard onLogout={handleLogout} />;
         case 'company-dashboard':
           return <CompanyDashboard onLogout={handleLogout} />;
+        case 'forgot-password':
+          return <ForgotPasswordPage onNavigate={handleNavigate} />;
+        case 'reset-password':
+          return <ResetPasswordPage onNavigate={handleNavigate} />;
         default:
           return <LandingPage onNavigate={handleNavigate} />;
       }
@@ -95,13 +113,13 @@ export default function App() {
         <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
           <div className="text-center">
             <motion.div
-              animate={{ 
+              animate={{
                 rotate: [0, 360],
                 scale: [1, 1.1, 1]
               }}
-              transition={{ 
+              transition={{
                 duration: 2,
-                repeat: Infinity 
+                repeat: Infinity
               }}
               className="text-6xl mb-4"
             >
@@ -109,7 +127,7 @@ export default function App() {
             </motion.div>
             <h1 className="text-2xl font-bold text-white mb-4">Error de Aplicación</h1>
             <p className="text-gray-300 mb-4">Ha ocurrido un error inesperado.</p>
-            <motion.button 
+            <motion.button
               onClick={() => window.location.reload()}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -123,93 +141,86 @@ export default function App() {
     }
   };
 
-  const shouldShowNavbarAndFooter = !['programmer-dashboard', 'company-dashboard'].includes(currentPage);
-  const isDashboard = ['programmer-dashboard', 'company-dashboard'].includes(currentPage);
+  const shouldShowNavbarAndFooter =
+    !['programmer-dashboard', 'company-dashboard'].includes(currentPage);
+
+  const isDashboard =
+    ['programmer-dashboard', 'company-dashboard'].includes(currentPage);
 
   return (
     <AuthProvider>
       <div className="dark min-h-screen bg-[#0D0D0D] flex flex-col relative">
-      
-      {/* Animación de escritura de código - Solo para páginas no-dashboard */}
-      {!isDashboard && <CodeAnimations />}
-      
-      {/* Loading indicator */}
-      <AnimatePresence>
-        {isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
-          >
-            <LoadingIndicator />
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Navbar */}
-      <AnimatePresence>
-        {shouldShowNavbarAndFooter && (
-          <motion.div
-            initial={{ y: -30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -30, opacity: 0 }}
-            transition={{ 
-              duration: 0.3, 
-              ease: "easeOut"
-            }}
-          >
-            <Navbar 
-              userType={userType} 
-              currentPage={currentPage} 
-              onNavigate={handleNavigate} 
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Contenido principal */}
-      <main className="flex-1 relative z-10">
-        <AnimatePresence mode="wait">
-          {isDashboard ? (
-            // Dashboards con entrada simple
+        {!isDashboard && <CodeAnimations />}
+
+        <AnimatePresence>
+          {isLoading && (
             <motion.div
-              key={currentPage}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ 
-                duration: 0.3, 
-                ease: "easeOut"
-              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
             >
-              {renderPage()}
+              <LoadingIndicator />
             </motion.div>
-          ) : (
-            // Páginas regulares
-            <PageTransition pageKey={currentPage} isLoading={isLoading}>
-              {renderPage()}
-            </PageTransition>
           )}
         </AnimatePresence>
-      </main>
 
-      {/* Footer */}
-      <AnimatePresence>
-        {shouldShowNavbarAndFooter && !['login', 'register'].includes(currentPage) && (
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 30, opacity: 0 }}
-            transition={{ 
-              duration: 0.3, 
-              ease: "easeOut"
-            }}
-          >
-            <Footer />
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Navbar */}
+        <AnimatePresence>
+          {shouldShowNavbarAndFooter && (
+            <motion.div
+              initial={{ y: -30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -30, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <Navbar
+                userType={userType}
+                currentPage={currentPage}
+                onNavigate={handleNavigate}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Contenido */}
+        <main className="flex-1 relative z-10">
+          <AnimatePresence mode="wait">
+            {isDashboard ? (
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                {renderPage()}
+              </motion.div>
+            ) : (
+              <PageTransition pageKey={currentPage} isLoading={isLoading}>
+                {renderPage()}
+              </PageTransition>
+            )}
+          </AnimatePresence>
+        </main>
+
+        {/* Footer */}
+        <AnimatePresence>
+          {shouldShowNavbarAndFooter &&
+            !['login', 'register', 'forgot-password', 'reset-password']
+              .includes(currentPage) && (
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 30, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <Footer />
+              </motion.div>
+            )}
+        </AnimatePresence>
+
       </div>
     </AuthProvider>
   );
