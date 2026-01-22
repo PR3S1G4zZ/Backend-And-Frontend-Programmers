@@ -27,7 +27,7 @@ class ProjectController extends Controller
 
     public function store(Request $r)
     {
-        abort_unless($r->user()->role==='company', 403);
+        abort_unless($r->user()->user_type==='company', 403);
         $data = $r->validate([
           'title'=>'required|string|max:150',
           'description'=>'required|string',
@@ -41,14 +41,14 @@ class ProjectController extends Controller
 
     public function update(Request $r, Project $project)
     {
-        abort_unless($r->user()->role==='company' && $project->company_id==$r->user()->id, 403);
+        abort_unless($r->user()->user_type==='company' && $project->company_id==$r->user()->id, 403);
         $project->update($r->only('title','description','budget_min','budget_max','status'));
         return $project;
     }
 
     public function destroy(Request $r, Project $project)
     {
-        abort_unless($r->user()->role==='company' && $project->company_id==$r->user()->id, 403);
+        abort_unless($r->user()->user_type==='company' && $project->company_id==$r->user()->id, 403);
         $project->delete();
         return response()->noContent();
     }

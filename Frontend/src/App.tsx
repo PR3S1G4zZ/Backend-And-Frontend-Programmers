@@ -10,6 +10,7 @@ import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { ProgrammerDashboard } from './components/ProgrammerDashboard';
 import { CompanyDashboard } from './components/CompanyDashboard';
+import { AdminDashboard } from './components/AdminDashboard';
 import { PageTransition, usePageTransition, LoadingIndicator } from './components/PageTransition';
 import { CodeAnimations } from './components/CodeAnimations';
 import { AuthProvider } from './contexts/AuthContext';
@@ -25,10 +26,11 @@ type PageType =
   | 'register'
   | 'programmer-dashboard'
   | 'company-dashboard'
+  | 'admin-dashboard'
   | 'forgot-password'
   | 'reset-password';
 
-type UserType = 'guest' | 'programmer' | 'company';
+type UserType = 'guest' | 'programmer' | 'company' | 'admin';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('home');
@@ -50,8 +52,13 @@ export default function App() {
 
   const handleNavigate = (page: string) => {
     try {
-      if (page === 'programmer-dashboard' || page === 'company-dashboard') {
-        setUserType(page.includes('programmer') ? 'programmer' : 'company');
+      if (page === 'programmer-dashboard' || page === 'company-dashboard' || page === 'admin-dashboard') {
+        const userTypeMap: Record<string, UserType> = {
+          'programmer-dashboard': 'programmer',
+          'company-dashboard': 'company',
+          'admin-dashboard': 'admin'
+        };
+        setUserType(userTypeMap[page] || 'guest');
         setCurrentPage(page as PageType);
         return;
       }
@@ -100,6 +107,8 @@ export default function App() {
           return <ProgrammerDashboard onLogout={handleLogout} />;
         case 'company-dashboard':
           return <CompanyDashboard onLogout={handleLogout} />;
+        case 'admin-dashboard':
+          return <AdminDashboard onLogout={handleLogout} />;
         case 'forgot-password':
           return <ForgotPasswordPage onNavigate={handleNavigate} />;
         case 'reset-password':
@@ -142,10 +151,10 @@ export default function App() {
   };
 
   const shouldShowNavbarAndFooter =
-    !['programmer-dashboard', 'company-dashboard'].includes(currentPage);
+    !['programmer-dashboard', 'company-dashboard', 'admin-dashboard'].includes(currentPage);
 
   const isDashboard =
-    ['programmer-dashboard', 'company-dashboard'].includes(currentPage);
+    ['programmer-dashboard', 'company-dashboard', 'admin-dashboard'].includes(currentPage);
 
   return (
     <AuthProvider>

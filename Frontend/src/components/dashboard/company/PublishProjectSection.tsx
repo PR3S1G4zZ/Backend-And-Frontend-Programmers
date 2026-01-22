@@ -7,17 +7,10 @@ import { Label } from '../../ui/label';
 import { Badge } from '../../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Checkbox } from '../../ui/checkbox';
-import { Separator } from '../../ui/separator';
 import { 
   Plus, 
   X, 
   DollarSign, 
-  Calendar, 
-  Users, 
-  Clock,
-  Star,
-  FileText,
-  Upload,
   Eye,
   Save,
   Send
@@ -50,7 +43,7 @@ export function PublishProjectSection() {
   const [deliverables, setDeliverables] = useState(['']);
   const [requirements, setRequirements] = useState(['']);
   const [currentStep, setCurrentStep] = useState(1);
-  const [isDraft, setIsDraft] = useState(false);
+  const [, setIsDraft] = useState(false);
 
   const popularSkills = [
     'React', 'Node.js', 'TypeScript', 'Python', 'Vue.js', 'Angular',

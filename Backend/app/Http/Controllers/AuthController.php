@@ -42,7 +42,7 @@ class AuthController extends Controller
                     'regex:/^\S+$/', // Sin espacios
                     'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,15}$/' // Mínimo 8, máximo 15, 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial
                 ],
-                'user_type' => 'required|in:programmer,company'
+                'user_type' => 'required|in:programmer,company,admin'
             ], [
                 'name.regex' => 'El nombre solo puede contener letras y espacios, sin espacios al inicio/fin.',
                 'lastname.regex' => 'El apellido solo puede contener letras y espacios, sin espacios al inicio/fin.',
@@ -59,6 +59,7 @@ class AuthController extends Controller
                 'email' => strtolower(trim($validated['email'])), // Normalizar email a minúsculas
                 'password' => Hash::make($validated['password']), // hashear la contraseña
                 'user_type' => $validated['user_type'],
+                'role' => $validated['user_type'], // Para compatibilidad con la tabla
             ]);
 
             $token = $user->createToken('auth_token')->plainTextToken;

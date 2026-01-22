@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
         $testEmails = [
             'demo@dev.com',          // programmer
             'demo@company.com',      // company
+            'admin@admin.com',       // admin
             'luis@gmail.co',         // válido con un solo punto tras "@"
         ];
 
@@ -34,6 +35,7 @@ class UserSeeder extends Seeder
                 'email' => 'demo@dev.com',
                 'password' => 'Demo1234!', // 8+ caracteres, incluye mayúscula y especial
                 'user_type' => 'programmer',
+                'role' => 'programmer',
             ]);
             $this->command->info('✓ Creado: demo@dev.com / demo123 (programmer)');
         } catch (\Exception $e) {
@@ -48,10 +50,26 @@ class UserSeeder extends Seeder
                 'email' => 'demo@company.com',
                 'password' => 'Demo1234!', // 8+ caracteres, incluye mayúscula y especial
                 'user_type' => 'company',
+                'role' => 'company',
             ]);
             $this->command->info('✓ Creado: demo@company.com / demo123 (company)');
         } catch (\Exception $e) {
             $this->command->error('✗ Error creando demo company: ' . $e->getMessage());
+        }
+
+        // Admin demo
+        try {
+            User::create([
+                'name' => 'Admin',
+                'lastname' => 'User',
+                'email' => 'admin@admin.com',
+                'password' => 'Admin123!', // 8+ caracteres, incluye mayúscula y especial
+                'user_type' => 'admin',
+                'role' => 'admin',
+            ]);
+            $this->command->info('✓ Creado: admin@admin.com / Admin123! (admin)');
+        } catch (\Exception $e) {
+            $this->command->error('✗ Error creando admin: ' . $e->getMessage());
         }
 
         // Usuario válido con el nuevo criterio (un solo punto tras "@")
@@ -62,6 +80,7 @@ class UserSeeder extends Seeder
                 'email' => 'luis@gmail.co',
                 'password' => 'MiPass123!@#',
                 'user_type' => 'programmer',
+                'role' => 'programmer',
             ]);
             $this->command->info('✓ Creado: luis@gmail.co (válido por regla de un solo punto)');
         } catch (\Exception $e) {

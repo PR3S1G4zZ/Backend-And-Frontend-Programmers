@@ -29,7 +29,7 @@ export const INITIAL_FORM_DATA: RegisterFormData = {
 export const DEMO_ACCOUNTS = [
   { label: "Programador", email: "demo@dev.com" },
   { label: "Empresa", email: "demo@company.com" },
-  { label: "Contraseña", password: "demo123" },
+  { label: "Contraseña", password: "Demo1234!" },
 ];
 
 // Email: exactamente un punto después del "@" (ej: usuario@dominio.tld)

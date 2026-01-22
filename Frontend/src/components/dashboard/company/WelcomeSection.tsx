@@ -6,14 +6,12 @@ import {
   Users, 
   FolderOpen, 
   MessageSquare,
-  Clock,
   DollarSign,
   CheckCircle,
-  Eye,
   Plus,
   ArrowRight,
   Search
-} from "lucide-react";
+} from 'lucide-react';
 import { useAuth } from "../../../contexts/AuthContext";
 
 interface WelcomeSectionProps {

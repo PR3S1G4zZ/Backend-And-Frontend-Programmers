@@ -7,7 +7,15 @@ use App\Models\User;
 use App\Models\Application;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-
+/**
+ * @property int $id
+ * @property int $company_id
+ * @property string $title
+ * @property string $description
+ * @property float $budget_min
+ * @property float $budget_max
+ * @property string $status
+ */
 class Project extends Model
 {
     use HasFactory;

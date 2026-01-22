@@ -4,7 +4,8 @@ use App\Http\Controllers\{
     AuthController,
     ProjectController,
     ApplicationController,
-    DashboardController
+    DashboardController,
+    AdminController
 };
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Password;
@@ -96,6 +97,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dashboards
     Route::get('/dashboard/company', [DashboardController::class, 'company']);
     Route::get('/dashboard/programmer', [DashboardController::class, 'programmer']);
+
+    // Admin routes (solo administradores)
+    Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::get('/users', [AdminController::class, 'getUsers']);
+        Route::get('/users/stats', [AdminController::class, 'getUserStats']);
+        Route::get('/users/{id}', [AdminController::class, 'getUser']);
+        Route::put('/users/{id}', [AdminController::class, 'updateUser']);
+        Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+    });
 
     
 });

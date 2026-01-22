@@ -4,7 +4,7 @@ export interface User {
   name: string;
   lastname: string;
   email: string;
-  user_type: 'programmer' | 'company';
+  user_type: 'programmer' | 'company' | 'admin';
 }
 
 export interface AuthResponse {
@@ -26,7 +26,7 @@ export interface RegisterData {
   email: string;
   password: string;
   password_confirmation: string;
-  user_type: 'programmer' | 'company';
+  user_type: 'programmer' | 'company' | 'admin';
 }
 
 // Configuración de la API

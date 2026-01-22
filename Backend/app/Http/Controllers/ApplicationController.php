@@ -9,7 +9,7 @@ class ApplicationController extends Controller
 {
     public function apply(Request $r, Project $project)
     {
-        abort_unless($r->user()->role==='programmer', 403);
+        abort_unless($r->user()->user_type==='programmer', 403);
         $data = $r->validate(['cover_letter'=>'nullable|string']);
         $app = Application::create([
           'project_id'=>$project->id,
@@ -21,7 +21,7 @@ class ApplicationController extends Controller
 
     public function myApplications(Request $r)
     {
-        abort_unless($r->user()->role==='programmer', 403);
+        abort_unless($r->user()->user_type==='programmer', 403);
         return Application::where('developer_id',$r->user()->id)
             ->with('project:id,title,status')
             ->latest()->get();

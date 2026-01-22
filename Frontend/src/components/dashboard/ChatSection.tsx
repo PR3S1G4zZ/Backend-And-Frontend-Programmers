@@ -14,7 +14,6 @@ import {
   MoreVertical,
   Phone,
   Video,
-  Archive,
   Star,
   Circle,
   ArrowLeft,
