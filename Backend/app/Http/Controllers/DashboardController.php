@@ -10,7 +10,7 @@ class DashboardController extends Controller
 {
     public function company(Request $r)
     {
-        abort_unless($r->user()->role==='company', 403);
+        abort_unless($r->user()->user_type==='company', 403);
         $uid = $r->user()->id;
         $active = Project::where('company_id',$uid)->whereIn('status',['open','in_progress'])->count();
         $hired = Application::whereHas('project', fn($q)=>$q->where('company_id',$uid))
@@ -22,7 +22,7 @@ class DashboardController extends Controller
 
     public function programmer(Request $r)
     {
-        abort_unless($r->user()->role==='programmer', 403);
+        abort_unless($r->user()->user_type==='programmer', 403);
         $uid = $r->user()->id;
         $activeProjects = Application::where('developer_id',$uid)->where('status','accepted')->count();
         $commits = 142;   // si integras GitHub luego

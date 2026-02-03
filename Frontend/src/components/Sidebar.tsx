@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 interface SidebarProps {
-  userType: 'programmer' | 'company';
+  userType: 'programmer' | 'company' | 'admin';
   currentSection: string;
   onSectionChange: (section: string) => void;
   onLogout?: () => void;
@@ -36,7 +36,15 @@ export function Sidebar({ userType, currentSection, onSectionChange, onLogout }:
     { id: 'chat', label: 'Chat', icon: MessageSquare }
   ];
 
-  const sections = userType === 'programmer' ? programmerSections : companySections;
+  const adminSections = [
+    { id: 'dashboard', label: 'Dashboard Admin', icon: Home },
+    { id: 'users', label: 'Gestión de Usuarios', icon: User },
+    { id: 'projects', label: 'Todos los Proyectos', icon: FolderOpen },
+    { id: 'analytics', label: 'Analíticas', icon: Search },
+    { id: 'settings', label: 'Configuración', icon: Settings }
+  ];
+
+  const sections = userType === 'programmer' ? programmerSections : userType === 'admin' ? adminSections : companySections;
 
   return (
     <div className="w-64 bg-[#1A1A1A] border-r border-[#333333] h-screen flex flex-col">

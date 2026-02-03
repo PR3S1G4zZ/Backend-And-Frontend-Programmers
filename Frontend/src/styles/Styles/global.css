@@ -332,6 +332,11 @@ html {
   animation: glow-text-clean 3s ease-in-out infinite;
 }
 
+.glow-text {
+  text-shadow: 0 0 10px rgba(0, 255, 133, 0.6), 0 0 20px rgba(0, 255, 133, 0.4);
+  animation: glow-text-clean 3s ease-in-out infinite;
+}
+
 .pulse-neon-clean {
   animation: pulse-neon-clean 2s ease-in-out infinite;
 }

@@ -1,0 +1,510 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Badge } from './ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useSweetAlert } from './ui/sweet-alert';
+import {
+  Search,
+  UserPlus,
+  Edit,
+  Trash2,
+  Eye,
+  Mail,
+  Calendar,
+  Shield,
+  Users,
+  Filter,
+  RefreshCw
+} from 'lucide-react';
+
+interface User {
+  id: number;
+  name: string;
+  lastname: string;
+  email: string;
+  user_type: 'programmer' | 'company' | 'admin';
+  created_at: string;
+  email_verified_at?: string;
+}
+
+export function UserManagement() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showUserDialog, setShowUserDialog] = useState(false);
+  const { showAlert, Alert } = useSweetAlert();
+
+  // Obtener usuarios de la API
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('auth_token');
+
+      if (!token) {
+        showAlert({
+          title: 'Error de autenticación',
+          text: 'No se encontró el token de autenticación',
+          type: 'error'
+        });
+        return;
+      }
+
+      const response = await fetch('http://127.0.0.1:8000/api/admin/users', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || data);
+      } else if (response.status === 401) {
+        showAlert({
+          title: 'Sesión expirada',
+          text: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+          type: 'error'
+        });
+      } else {
+        throw new Error('Error al obtener usuarios');
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      showAlert({
+        title: 'Error',
+        text: 'No se pudieron cargar los usuarios',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Filtrar usuarios
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.lastname.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFilter = filterType === 'all' || user.user_type === filterType;
+
+    return matchesSearch && matchesFilter;
+  });
+
+  // Obtener color del badge según el tipo de usuario
+  const getUserTypeColor = (userType: string) => {
+    switch (userType) {
+      case 'admin':
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'company':
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'programmer':
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
+      default:
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  // Obtener icono según el tipo de usuario
+  const getUserTypeIcon = (userType: string) => {
+    switch (userType) {
+      case 'admin':
+        return <Shield className="w-3 h-3" />;
+      case 'company':
+        return <Users className="w-3 h-3" />;
+      case 'programmer':
+        return <UserPlus className="w-3 h-3" />;
+      default:
+        return <Users className="w-3 h-3" />;
+    }
+  };
+
+  // Formatear fecha
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Manejar acciones de usuario
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setShowUserDialog(true);
+  };
+
+  const handleEditUser = () => {
+    // TODO: Implementar edición de usuario
+    showAlert({
+      title: 'Funcionalidad próximamente',
+      text: 'La edición de usuarios estará disponible próximamente',
+      type: 'info'
+    });
+  };
+
+  const handleDeleteUser = (user: User) => {
+    showAlert({
+      title: '¿Eliminar usuario?',
+      text: `¿Estás seguro de que quieres eliminar al usuario ${user.name} ${user.lastname}?`,
+      type: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem('auth_token');
+          const response = await fetch(`http://127.0.0.1:8000/api/admin/users/${user.id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            setUsers(users.filter(u => u.id !== user.id));
+            showAlert({
+              title: 'Usuario eliminado',
+              text: 'El usuario ha sido eliminado exitosamente',
+              type: 'success'
+            });
+          } else {
+            throw new Error('Error al eliminar usuario');
+          }
+        } catch (error) {
+          showAlert({
+            title: 'Error',
+            text: 'No se pudo eliminar el usuario',
+            type: 'error'
+          });
+        }
+      }
+    });
+  };
+
+  // Estadísticas de usuarios
+  const userStats = {
+    total: users.length,
+    admins: users.filter(u => u.user_type === 'admin').length,
+    companies: users.filter(u => u.user_type === 'company').length,
+    programmers: users.filter(u => u.user_type === 'programmer').length
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[#00FF85] glow-text flex items-center gap-3">
+              <Users className="w-8 h-8" />
+              Gestión de Usuarios
+            </h1>
+            <p className="text-gray-300 mt-2">Administra todos los usuarios del sistema</p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={fetchUsers}
+              variant="outline"
+              className="bg-[#1A1A1A] border-[#333333] hover:bg-[#2A2A2A] text-white"
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Actualizar
+            </Button>
+
+            <Button className="bg-[#00FF85] hover:bg-[#00C46A] text-[#0D0D0D] font-semibold">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Nuevo Usuario
+            </Button>
+          </div>
+        </div>
+
+        {/* Estadísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="bg-[#1A1A1A] border-[#333333]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-[#00FF85] flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Total Usuarios
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{userStats.total}</div>
+              <p className="text-gray-400 text-sm">Registrados en el sistema</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333333]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-red-400 flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Administradores
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{userStats.admins}</div>
+              <p className="text-gray-400 text-sm">Usuarios con permisos admin</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333333]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-blue-400 flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Empresas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{userStats.companies}</div>
+              <p className="text-gray-400 text-sm">Cuentas de empresa</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333333]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-green-400 flex items-center gap-2">
+                <UserPlus className="w-5 h-5" />
+                Programadores
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{userStats.programmers}</div>
+              <p className="text-gray-400 text-sm">Desarrolladores registrados</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtros y búsqueda */}
+        <Card className="bg-[#1A1A1A] border-[#333333]">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar por nombre, apellido o email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-[#2A2A2A] border-[#333333] text-white placeholder-gray-400 focus:border-[#00FF85]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-400" />
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="w-40 bg-[#2A2A2A] border-[#333333] text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#2A2A2A] border-[#333333]">
+                    <SelectItem value="all" className="text-white hover:bg-[#333333]">Todos</SelectItem>
+                    <SelectItem value="admin" className="text-white hover:bg-[#333333]">Administradores</SelectItem>
+                    <SelectItem value="company" className="text-white hover:bg-[#333333]">Empresas</SelectItem>
+                    <SelectItem value="programmer" className="text-white hover:bg-[#333333]">Programadores</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tabla de usuarios */}
+        <Card className="bg-[#1A1A1A] border-[#333333]">
+          <CardHeader>
+            <CardTitle className="text-[#00FF85]">Lista de Usuarios</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-8 h-8 animate-spin text-[#00FF85]" />
+                <span className="ml-3 text-gray-300">Cargando usuarios...</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-[#333333] hover:bg-[#2A2A2A]">
+                      <TableHead className="text-[#00FF85]">Usuario</TableHead>
+                      <TableHead className="text-[#00FF85]">Email</TableHead>
+                      <TableHead className="text-[#00FF85]">Tipo</TableHead>
+                      <TableHead className="text-[#00FF85]">Registro</TableHead>
+                      <TableHead className="text-[#00FF85]">Estado</TableHead>
+                      <TableHead className="text-[#00FF85]">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id} className="border-[#333333] hover:bg-[#2A2A2A]">
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-[#00FF85] rounded-full flex items-center justify-center text-[#0D0D0D] font-bold">
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="text-white font-semibold">{user.name} {user.lastname}</div>
+                              <div className="text-gray-400 text-sm">ID: {user.id}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-gray-400" />
+                            <span className="text-gray-300">{user.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${getUserTypeColor(user.user_type)} border flex items-center gap-1 w-fit`}>
+                            {getUserTypeIcon(user.user_type)}
+                            {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            <span className="text-gray-300">{formatDate(user.created_at)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${
+                            user.email_verified_at
+                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                              : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                          } border`}>
+                            {user.email_verified_at ? 'Verificado' : 'Pendiente'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewUser(user)}
+                              className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleEditUser}
+                              className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteUser(user)}
+                              className="bg-[#2A2A2A] border-[#333333] hover:bg-red-500/20 text-red-400 hover:text-red-300"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {filteredUsers.length === 0 && (
+                  <div className="text-center py-12">
+                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-400">No se encontraron usuarios</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Dialog de detalles del usuario */}
+        <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
+          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-[#00FF85] flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Detalles del Usuario
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedUser && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-[#00FF85] rounded-full flex items-center justify-center text-[#0D0D0D] font-bold text-xl">
+                    {selectedUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{selectedUser.name} {selectedUser.lastname}</h3>
+                    <Badge className={`${getUserTypeColor(selectedUser.user_type)} border flex items-center gap-1 w-fit mt-1`}>
+                      {getUserTypeIcon(selectedUser.user_type)}
+                      {selectedUser.user_type.charAt(0).toUpperCase() + selectedUser.user_type.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-400">Email</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        <span className="text-white">{selectedUser.email}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-400">Tipo de Usuario</label>
+                      <div className="mt-1">
+                        <Badge className={`${getUserTypeColor(selectedUser.user_type)} border`}>
+                          {selectedUser.user_type.charAt(0).toUpperCase() + selectedUser.user_type.slice(1)}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-400">Fecha de Registro</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span className="text-white">{formatDate(selectedUser.created_at)}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-400">Estado de Verificación</label>
+                      <div className="mt-1">
+                        <Badge className={`${
+                          selectedUser.email_verified_at
+                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                        } border`}>
+                          {selectedUser.email_verified_at ? 'Email Verificado' : 'Email Pendiente'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Alert />
+    </div>
+  );
+}

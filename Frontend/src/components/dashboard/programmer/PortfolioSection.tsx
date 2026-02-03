@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader } from "../../ui/card";
+import { Card, CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { ImageWithFallback } from "../../figma/ImageWithFallback";

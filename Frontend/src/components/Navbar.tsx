@@ -2,7 +2,7 @@ import { Button } from "./ui/button";
 import { Code, Menu, User, Building2 } from "lucide-react";
 
 interface NavbarProps {
-  userType?: 'guest' | 'programmer' | 'company';
+  userType?: 'guest' | 'programmer' | 'company' | 'admin';
   currentPage?: string;
   onNavigate?: (page: string) => void;
 }

@@ -96,6 +96,8 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         if (onNavigate) {
           if (response.user?.user_type === "programmer") {
             onNavigate("programmer-dashboard");
+          } else if (response.user?.user_type === "admin") {
+            onNavigate("admin-dashboard");
           } else {
             onNavigate("company-dashboard");
           }

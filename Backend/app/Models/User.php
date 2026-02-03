@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Hash;
 
 use App\Notifications\ResetPasswordNotification;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $lastname
+ * @property string $email
+ * @property string $password
+ * @property string $user_type
+ * @property string $role
+ * @method \Laravel\Sanctum\NewAccessToken createToken(string $name, array $abilities = [])
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens;
@@ -23,6 +33,7 @@ class User extends Authenticatable
         'email',
         'password',
         'user_type',
+        'role',
     ];
 
     protected $hidden = [
@@ -98,7 +109,7 @@ class User extends Authenticatable
                 'regex:/^\S+$/',
                 $isUpdate ? 'unique:users,email,' . $user->id : 'unique:users',
             ],
-            'user_type' => 'required|in:programmer,company',
+            'user_type' => 'required|in:programmer,company,admin',
         ];
 
         // Validar contraseña SOLO si es creación o si está siendo cambiada
@@ -143,5 +154,25 @@ class User extends Authenticatable
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new ResetPasswordNotification($token));
+    }
+
+    public function developerProfile()
+    {
+        return $this->hasOne(DeveloperProfile::class);
+    }
+
+    public function companyProfile()
+    {
+        return $this->hasOne(CompanyProfile::class);
+    }
+
+    public function reviewsReceived()
+    {
+        return $this->hasMany(Review::class, 'developer_id');
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'developer_skill', 'developer_id', 'skill_id');
     }
 }

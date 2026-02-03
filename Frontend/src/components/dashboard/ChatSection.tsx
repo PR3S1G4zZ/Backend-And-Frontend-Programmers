@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -14,7 +14,6 @@ import {
   MoreVertical,
   Phone,
   Video,
-  Archive,
   Star,
   Circle,
   ArrowLeft,
@@ -23,6 +22,8 @@ import {
   Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
+import { fetchConversationMessages, fetchConversations, sendConversationMessage } from '../../services/chatService';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Contact {
   id: string;
@@ -52,153 +53,101 @@ interface ChatSectionProps {
 }
 
 export function ChatSection({ userType }: ChatSectionProps) {
+  const { user } = useAuth();
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const currentUserId = user ? String(user.id) : 'me';
 
-  // Datos ficticios de contactos (diferentes según tipo de usuario)
-  const contacts: Contact[] = userType === 'programmer' ? [
-    {
-      id: '1',
-      name: 'TechCorp SA',
-      role: 'Empresa • Proyecto SaaS Dashboard',
-      avatar: undefined,
-      lastMessage: '¿Podrías enviarnos el update del progreso?',
-      timestamp: '10:30 AM',
-      unreadCount: 2,
-      isOnline: true,
-      isTyping: false
-    },
-    {
-      id: '2',
-      name: 'StartupXYZ',
-      role: 'Empresa • Mobile App MVP',
-      avatar: undefined,
-      lastMessage: 'Perfecto, nos vemos mañana para la reunión',
-      timestamp: 'Ayer',
-      unreadCount: 0,
-      isOnline: false
-    },
-    {
-      id: '3',
-      name: 'DataInsights Inc',
-      role: 'Empresa • Analytics Dashboard',
-      avatar: undefined,
-      lastMessage: 'El cliente está muy contento con el progreso',
-      timestamp: '2 días',
-      unreadCount: 1,
-      isOnline: true
-    },
-    {
-      id: '4',
-      name: 'PropTech Solutions',
-      role: 'Empresa • Real Estate Platform',
-      avatar: undefined,
-      lastMessage: 'Hemos recibido tu propuesta, la revisaremos',
-      timestamp: '3 días',
-      unreadCount: 0,
-      isOnline: false
-    }
-  ] : [
-    {
-      id: '1',
-      name: 'Carlos Mendoza',
-      role: 'Full Stack Developer • React/Node.js',
-      avatar: undefined,
-      lastMessage: 'He terminado la integración de pagos',
-      timestamp: '15 min',
-      unreadCount: 1,
-      isOnline: true,
-      isTyping: true
-    },
-    {
-      id: '2',
-      name: 'Elena Rodríguez',
-      role: 'Frontend Developer • Vue.js',
-      avatar: undefined,
-      lastMessage: 'Los mockups están listos para revisión',
-      timestamp: '1 hora',
-      unreadCount: 0,
-      isOnline: true
-    },
-    {
-      id: '3',
-      name: 'Miguel Torres',
-      role: 'Backend Developer • Python',
-      avatar: undefined,
-      lastMessage: 'API documentada y desplegada en staging',
-      timestamp: 'Ayer',
-      unreadCount: 3,
-      isOnline: false
-    },
-    {
-      id: '4',
-      name: 'Sofia Chen',
-      role: 'Mobile Developer • React Native',
-      avatar: undefined,
-      lastMessage: '¿Cuándo podemos hacer la demo?',
-      timestamp: '2 días',
-      unreadCount: 0,
-      isOnline: true
-    }
-  ];
+  const formatTimestamp = (timestamp: string) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+  };
 
-  // Mensajes ficticios para la conversación seleccionada
-  const messages: Message[] = selectedContact ? [
-    {
-      id: '1',
-      senderId: userType === 'programmer' ? selectedContact : 'me',
-      content: userType === 'programmer' 
-        ? '¡Hola! Hemos revisado tu perfil y nos gustaría discutir una oportunidad de proyecto contigo.'
-        : 'Hola, he visto tu proyecto y me parece muy interesante. ¿Podríamos hablar sobre los detalles?',
-      timestamp: '09:00 AM',
-      type: 'text',
-      isRead: true
-    },
-    {
-      id: '2',
-      senderId: 'me',
-      content: userType === 'programmer'
-        ? 'Genial! Me encantaría conocer más detalles. ¿De qué tipo de proyecto se trata?'
-        : 'Por supuesto! ¿Qué información necesitas? Puedo compartir mi portafolio completo.',
-      timestamp: '09:15 AM',
-      type: 'text',
-      isRead: true
-    },
-    {
-      id: '3',
-      senderId: userType === 'programmer' ? selectedContact : 'me',
-      content: userType === 'programmer'
-        ? 'Necesitamos desarrollar un SaaS Dashboard con React y Node.js. El presupuesto está entre €8,000-€12,000.'
-        : 'Aquí tienes el documento con los requerimientos técnicos del proyecto.',
-      timestamp: '09:30 AM',
-      type: userType === 'programmer' ? 'text' : 'file',
-      fileName: userType === 'programmer' ? undefined : 'Project_Requirements.pdf',
-      fileSize: userType === 'programmer' ? undefined : '2.4 MB',
-      isRead: true
-    },
-    {
-      id: '4',
-      senderId: 'me',
-      content: userType === 'programmer'
-        ? 'Excelente, tengo experiencia en ambas tecnologías. ¿Cuál sería el timeline esperado?'
-        : 'Perfecto, el proyecto se ve muy viable. ¿Cuándo podríamos hacer una video llamada?',
-      timestamp: '10:00 AM',
-      type: 'text',
-      isRead: true
-    },
-    {
-      id: '5',
-      senderId: userType === 'programmer' ? selectedContact : 'me',
-      content: contacts.find(c => c.id === selectedContact)?.lastMessage || 'Último mensaje',
-      timestamp: '10:30 AM',
-      type: 'text',
-      isRead: false
-    }
-  ] : [];
+  useEffect(() => {
+    let isMounted = true;
+    const loadConversations = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetchConversations();
+        if (!isMounted) return;
+        const data = response.data || [];
+        const mapped = data.map((contact) => ({
+          id: String(contact.id),
+          name: contact.name,
+          role: contact.role,
+          avatar: undefined,
+          lastMessage: contact.lastMessage,
+          timestamp: contact.timestamp ? formatTimestamp(contact.timestamp) : '',
+          unreadCount: contact.unreadCount,
+          isOnline: contact.isOnline,
+          isTyping: false,
+        }));
+        setContacts(mapped);
+        if (mapped.length > 0) {
+          setSelectedContact((prev) => prev ?? mapped[0].id);
+        }
+      } catch (error) {
+        console.error('Error cargando conversaciones', error);
+        if (isMounted) {
+          setError('No se pudieron cargar las conversaciones.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadConversations();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadMessages = async () => {
+      if (!selectedContact) {
+        setMessages([]);
+        return;
+      }
+      try {
+        const response = await fetchConversationMessages(Number(selectedContact));
+        if (!isMounted) return;
+        const data = response.data || [];
+        setMessages(
+          data.map((message) => ({
+            id: String(message.id),
+            senderId: message.senderId,
+            content: message.content,
+            timestamp: formatTimestamp(message.timestamp),
+            type: message.type,
+            fileName: message.fileName,
+            fileSize: message.fileSize,
+            isRead: message.isRead,
+          }))
+        );
+      } catch (error) {
+        console.error('Error cargando mensajes', error);
+      }
+    };
+
+    loadMessages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedContact]);
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -215,14 +164,30 @@ export function ChatSection({ userType }: ChatSectionProps) {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && selectedContact) {
-      // Simular envío de mensaje
-      setNewMessage('');
-      
-      // Simular indicador de escritura
-      setIsTyping(true);
-      setTimeout(() => setIsTyping(false), 2000);
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedContact) {
+      return;
+    }
+
+    const content = newMessage.trim();
+    setNewMessage('');
+
+    try {
+      const response = await sendConversationMessage(Number(selectedContact), content);
+      const sentMessage = response.data;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: String(sentMessage.id),
+          senderId: sentMessage.senderId,
+          content: sentMessage.content,
+          timestamp: formatTimestamp(sentMessage.timestamp),
+          type: sentMessage.type,
+          isRead: sentMessage.isRead,
+        },
+      ]);
+    } catch (error) {
+      console.error('Error enviando mensaje', error);
     }
   };
 
@@ -234,7 +199,7 @@ export function ChatSection({ userType }: ChatSectionProps) {
   };
 
   return (
-    <div className="p-8 h-screen flex flex-col">
+    <div className="p-4 sm:p-6 lg:p-8 h-screen flex flex-col">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-white mb-2">Chat</h1>
         <p className="text-gray-300">
@@ -245,7 +210,18 @@ export function ChatSection({ userType }: ChatSectionProps) {
         </p>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
+      {error ? (
+        <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200 mb-4">
+          {error}
+        </div>
+      ) : null}
+      {isLoading ? (
+        <div className="rounded-lg border border-[#333333] bg-[#1A1A1A] p-4 text-sm text-gray-300 mb-4">
+          Cargando conversaciones...
+        </div>
+      ) : null}
+
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 min-h-0">
         {/* Lista de Contactos */}
         <div className={`lg:col-span-1 ${selectedContact && isMobileView ? 'hidden lg:block' : ''}`}>
           <Card className="bg-[#1A1A1A] border-[#333333] h-full flex flex-col">
@@ -272,7 +248,9 @@ export function ChatSection({ userType }: ChatSectionProps) {
             <CardContent className="flex-1 p-0 overflow-hidden">
               <ScrollArea className="h-full">
                 <div className="space-y-1 px-4 pb-4">
-                  {filteredContacts.map((contact) => (
+                  {filteredContacts.length === 0 ? (
+                    <p className="text-sm text-gray-400 p-4">No hay conversaciones disponibles.</p>
+                  ) : filteredContacts.map((contact) => (
                     <motion.div
                       key={contact.id}
                       whileHover={{ scale: 1.02 }}
@@ -402,11 +380,11 @@ export function ChatSection({ userType }: ChatSectionProps) {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -20 }}
-                          className={`flex ${message.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
+                          className={`flex ${message.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div className={`max-w-[70%] ${message.senderId === 'me' ? 'order-2' : 'order-1'}`}>
+                          <div className={`max-w-[70%] ${message.senderId === currentUserId ? 'order-2' : 'order-1'}`}>
                             <div className={`p-3 rounded-lg ${
-                              message.senderId === 'me'
+                              message.senderId === currentUserId
                                 ? 'bg-[#00FF85] text-[#0D0D0D]'
                                 : 'bg-[#333333] text-white'
                             }`}>
@@ -435,10 +413,10 @@ export function ChatSection({ userType }: ChatSectionProps) {
                               )}
                             </div>
                             <div className={`flex items-center mt-1 space-x-2 ${
-                              message.senderId === 'me' ? 'justify-end' : 'justify-start'
+                              message.senderId === currentUserId ? 'justify-end' : 'justify-start'
                             }`}>
                               <span className="text-xs text-gray-400">{message.timestamp}</span>
-                              {message.senderId === 'me' && (
+                              {message.senderId === currentUserId && (
                                 <span className="text-xs text-gray-400">
                                   {message.isRead ? '✓✓' : '✓'}
                                 </span>
@@ -449,34 +427,6 @@ export function ChatSection({ userType }: ChatSectionProps) {
                       ))}
                     </AnimatePresence>
 
-                    {/* Indicador de escritura */}
-                    {isTyping && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex justify-start"
-                      >
-                        <div className="bg-[#333333] p-3 rounded-lg">
-                          <div className="flex space-x-1">
-                            <motion.div
-                              animate={{ opacity: [0.5, 1, 0.5] }}
-                              transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-                              className="w-2 h-2 bg-gray-400 rounded-full"
-                            />
-                            <motion.div
-                              animate={{ opacity: [0.5, 1, 0.5] }}
-                              transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                              className="w-2 h-2 bg-gray-400 rounded-full"
-                            />
-                            <motion.div
-                              animate={{ opacity: [0.5, 1, 0.5] }}
-                              transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                              className="w-2 h-2 bg-gray-400 rounded-full"
-                            />
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
                     
                     <div ref={messagesEndRef} />
                   </div>

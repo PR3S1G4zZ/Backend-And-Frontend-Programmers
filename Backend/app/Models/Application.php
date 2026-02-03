@@ -4,6 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $project_id
+ * @property int $developer_id
+ * @property string $cover_letter
+ * @property string $status
+ */
 class Application extends Model
 {
     protected $fillable = ['project_id','developer_id','cover_letter','status'];
