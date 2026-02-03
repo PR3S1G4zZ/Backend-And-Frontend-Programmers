@@ -580,7 +580,7 @@ export function PublishProjectSection() {
   };
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Publicar Nuevo Proyecto</h1>
@@ -646,7 +646,7 @@ export function PublishProjectSection() {
       ) : null}
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="outline"
           onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
@@ -656,7 +656,7 @@ export function PublishProjectSection() {
           Anterior
         </Button>
 
-        <div className="flex space-x-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button
             variant="outline"
             onClick={() => handleSubmit(true)}

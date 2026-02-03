@@ -151,7 +151,7 @@ export function SearchProgrammersSection() {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Buscar Desarrolladores</h1>
@@ -176,7 +176,7 @@ export function SearchProgrammersSection() {
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Search Bar */}
-            <div className="flex space-x-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
@@ -189,7 +189,7 @@ export function SearchProgrammersSection() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="border-[#333333] text-white hover:bg-[#333333] h-12 px-6"
+                className="border-[#333333] text-white hover:bg-[#333333] h-12 px-6 md:self-stretch"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros

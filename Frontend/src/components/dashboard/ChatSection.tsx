@@ -199,7 +199,7 @@ export function ChatSection({ userType }: ChatSectionProps) {
   };
 
   return (
-    <div className="p-8 h-screen flex flex-col">
+    <div className="p-4 sm:p-6 lg:p-8 h-screen flex flex-col">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-white mb-2">Chat</h1>
         <p className="text-gray-300">
@@ -221,7 +221,7 @@ export function ChatSection({ userType }: ChatSectionProps) {
         </div>
       ) : null}
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 min-h-0">
         {/* Lista de Contactos */}
         <div className={`lg:col-span-1 ${selectedContact && isMobileView ? 'hidden lg:block' : ''}`}>
           <Card className="bg-[#1A1A1A] border-[#333333] h-full flex flex-col">
