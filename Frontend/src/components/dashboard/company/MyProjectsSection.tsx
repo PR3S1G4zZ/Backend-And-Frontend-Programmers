@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
@@ -23,6 +23,7 @@ import {
   Star
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { fetchCompanyProjects, type ProjectResponse } from '../../../services/projectService';
 
 interface Project {
   id: string;
@@ -51,111 +52,84 @@ interface MyProjectsSectionProps {
   onSectionChange: (section: string) => void;
 }
 
+const mapProject = (project: ProjectResponse): Project => {
+  const statusMap: Record<string, Project['status']> = {
+    open: 'published',
+    in_progress: 'in-progress',
+    completed: 'completed',
+    cancelled: 'cancelled',
+    draft: 'draft',
+  };
+
+  const status = statusMap[project.status] ?? 'published';
+  const budget = project.budget_max ?? project.budget_min ?? 0;
+  const budgetType = project.budget_type ?? 'fixed';
+  const category = project.categories?.[0]?.name ?? 'Sin categoría';
+  const skills = project.skills?.map((skill) => skill.name) ?? [];
+  const acceptedApplication = project.applications?.find((application) => application.developer);
+
+  const progress = status === 'completed' ? 100 : status === 'in-progress' ? 60 : 0;
+
+  return {
+    id: String(project.id),
+    title: project.title,
+    description: project.description,
+    status,
+    budget,
+    budgetType,
+    progress,
+    startDate: project.created_at ?? '',
+    deadline: project.deadline ?? '',
+    developer: acceptedApplication?.developer
+      ? {
+          name: acceptedApplication.developer.name,
+          rating: 0,
+        }
+      : undefined,
+    applicants: project.applications_count ?? 0,
+    category,
+    skills,
+    priority: project.priority ?? 'medium',
+    lastUpdate: project.updated_at ?? '',
+    messages: 0,
+  };
+};
+
 export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
   const [activeTab, setActiveTab] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [filterStatus] = useState('all');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Datos ficticios de proyectos
-  const projects: Project[] = [
-    {
-      id: '1',
-      title: 'E-commerce Platform',
-      description: 'Desarrollo completo de plataforma de comercio electrónico con React, Node.js y PostgreSQL',
-      status: 'in-progress',
-      budget: 15000,
-      budgetType: 'fixed',
-      progress: 75,
-      startDate: '2024-01-15',
-      deadline: '2024-03-15',
-      developer: {
-        name: 'Elena Rodríguez',
-        rating: 4.9
-      },
-      applicants: 12,
-      category: 'Desarrollo Web',
-      skills: ['React', 'Node.js', 'PostgreSQL', 'AWS'],
-      priority: 'high',
-      lastUpdate: '2 horas',
-      messages: 3
-    },
-    {
-      id: '2',
-      title: 'Mobile Banking App',
-      description: 'Aplicación móvil para servicios bancarios con React Native y integración de APIs',
-      status: 'completed',
-      budget: 25000,
-      budgetType: 'fixed',
-      progress: 100,
-      startDate: '2023-10-01',
-      deadline: '2024-01-15',
-      developer: {
-        name: 'Sofia Chen',
-        rating: 5.0
-      },
-      applicants: 8,
-      category: 'Desarrollo Mobile',
-      skills: ['React Native', 'TypeScript', 'Firebase'],
-      priority: 'medium',
-      lastUpdate: '1 semana',
-      messages: 0
-    },
-    {
-      id: '3',
-      title: 'Data Analytics Dashboard',
-      description: 'Dashboard interactivo para análisis de datos empresariales con visualizaciones en tiempo real',
-      status: 'published',
-      budget: 12000,
-      budgetType: 'fixed',
-      progress: 0,
-      startDate: '',
-      deadline: '2024-04-30',
-      applicants: 15,
-      category: 'Data Science',
-      skills: ['Python', 'Django', 'D3.js', 'PostgreSQL'],
-      priority: 'medium',
-      lastUpdate: '3 días',
-      messages: 0
-    },
-    {
-      id: '4',
-      title: 'DevOps Infrastructure',
-      description: 'Configuración de infraestructura cloud con Docker, Kubernetes y CI/CD',
-      status: 'in-progress',
-      budget: 80,
-      budgetType: 'hourly',
-      progress: 40,
-      startDate: '2024-02-01',
-      deadline: '2024-03-30',
-      developer: {
-        name: 'David López',
-        rating: 4.7
-      },
-      applicants: 6,
-      category: 'DevOps',
-      skills: ['Docker', 'Kubernetes', 'AWS', 'Jenkins'],
-      priority: 'urgent',
-      lastUpdate: '1 día',
-      messages: 2
-    },
-    {
-      id: '5',
-      title: 'AI Chatbot Integration',
-      description: 'Integración de chatbot con IA para atención al cliente automatizada',
-      status: 'draft',
-      budget: 8000,
-      budgetType: 'fixed',
-      progress: 0,
-      startDate: '',
-      deadline: '',
-      applicants: 0,
-      category: 'AI/ML',
-      skills: ['Python', 'OpenAI API', 'NLP', 'FastAPI'],
-      priority: 'low',
-      lastUpdate: '5 días',
-      messages: 0
-    }
-  ];
+  useEffect(() => {
+    let isMounted = true;
+    const loadProjects = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetchCompanyProjects();
+        if (!isMounted) return;
+        setProjects(response.map(mapProject));
+      } catch (error) {
+        console.error('Error cargando proyectos de la empresa', error);
+        if (isMounted) {
+          setError('No se pudieron cargar tus proyectos.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadProjects();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const getStatusColor = (status: Project['status']) => {
     switch (status) {
@@ -210,9 +184,9 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
   };
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Mis Proyectos</h1>
           <p className="text-gray-300">
@@ -228,8 +202,19 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
         </Button>
       </div>
 
+      {error ? (
+        <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+          {error}
+        </div>
+      ) : null}
+      {isLoading ? (
+        <div className="rounded-lg border border-[#333333] bg-[#1A1A1A] p-4 text-sm text-gray-300">
+          Cargando proyectos...
+        </div>
+      ) : null}
+
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
         <Card className="bg-[#1A1A1A] border-[#333333]">
           <CardContent className="p-6 text-center">
             <div className="text-2xl font-bold text-white">{stats.total}</div>
@@ -368,7 +353,9 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                       
                       <div className="flex items-center space-x-2">
                         <Clock className="h-4 w-4 text-gray-400" />
-                        <span className="text-white">Act. {project.lastUpdate}</span>
+                        <span className="text-white">
+                          Act. {project.lastUpdate ? new Date(project.lastUpdate).toLocaleDateString() : 'Sin actualizaciones'}
+                        </span>
                       </div>
                     </div>
 

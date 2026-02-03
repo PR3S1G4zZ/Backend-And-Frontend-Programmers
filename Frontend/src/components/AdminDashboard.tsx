@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { useSweetAlert } from './ui/sweet-alert';
 import { ActivityDashboard } from './dashboard/components/admin/ActivityDashboard';
@@ -10,6 +10,7 @@ import { UserManagement } from './dashboard/components/UserManagement';
 import { Card, CardContent, CardHeader, CardTitle } from './dashboard/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './dashboard/components/ui/tabs';
 import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield } from 'lucide-react';
+import { fetchAdminMetrics, type AdminMetrics } from '../services/adminMetricsService';
 
 interface AdminDashboardProps {
   onLogout?: () => void;
@@ -19,6 +20,32 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const { showAlert, Alert } = useSweetAlert();
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadMetrics = async () => {
+      setMetricsLoading(true);
+      setMetricsError(null);
+      const response = await fetchAdminMetrics(selectedPeriod);
+      if (!isMounted) return;
+      if (response.success && response.data) {
+        setMetrics(response.data);
+      } else {
+        setMetrics(null);
+        setMetricsError(response.message || 'No se pudieron cargar las métricas.');
+      }
+      setMetricsLoading(false);
+    };
+
+    loadMetrics();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedPeriod]);
 
   const handleLogout = () => {
     showAlert({
@@ -121,25 +148,30 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </TabsList>
 
                 <TabsContent value="activity" className="mt-6">
-                  <ActivityDashboard selectedPeriod={selectedPeriod} />
+                  <ActivityDashboard selectedPeriod={selectedPeriod} metrics={metrics?.activity} isLoading={metricsLoading} />
                 </TabsContent>
 
                 <TabsContent value="financial" className="mt-6">
-                  <FinancialDashboard selectedPeriod={selectedPeriod} />
+                  <FinancialDashboard selectedPeriod={selectedPeriod} metrics={metrics?.financial} isLoading={metricsLoading} />
                 </TabsContent>
 
                 <TabsContent value="growth" className="mt-6">
-                  <GrowthDashboard selectedPeriod={selectedPeriod} />
+                  <GrowthDashboard selectedPeriod={selectedPeriod} metrics={metrics?.growth} isLoading={metricsLoading} />
                 </TabsContent>
 
                 <TabsContent value="projects" className="mt-6">
-                  <ProjectsDashboard selectedPeriod={selectedPeriod} />
+                  <ProjectsDashboard selectedPeriod={selectedPeriod} metrics={metrics?.projects} isLoading={metricsLoading} />
                 </TabsContent>
 
                 <TabsContent value="satisfaction" className="mt-6">
-                  <SatisfactionDashboard selectedPeriod={selectedPeriod} />
+                  <SatisfactionDashboard selectedPeriod={selectedPeriod} metrics={metrics?.satisfaction} isLoading={metricsLoading} />
                 </TabsContent>
               </Tabs>
+              {metricsError ? (
+                <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+                  {metricsError}
+                </div>
+              ) : null}
             </div>
           </div>
         );

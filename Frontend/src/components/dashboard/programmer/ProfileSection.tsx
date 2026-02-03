@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -35,6 +35,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useSweetAlert } from '../../ui/sweet-alert';
 import { useAuth } from '../../../contexts/AuthContext';
+import { fetchProfile, updateProfile } from '../../../services/profileService';
 
 export function ProfileSection() {
   const [activeTab, setActiveTab] = useState('profile-tab');
@@ -42,58 +43,25 @@ export function ProfileSection() {
   const { user } = useAuth();
   
   const [profileData, setProfileData] = useState({
-    name: user ? `${user.name} ${user.lastname}` : 'Carlos Mendoza',
-    email: user?.email || 'carlos.mendoza@email.com',
-    phone: '+34 612 345 678',
-    location: 'Madrid, España',
-    title: 'Full Stack Developer',
-    bio: 'Desarrollador Full Stack con más de 6 años de experiencia especializado en React, Node.js y tecnologías cloud. Apasionado por crear soluciones escalables y eficientes que impacten positivamente en el negocio.',
-    hourlyRate: 75,
+    name: user ? `${user.name} ${user.lastname}` : '',
+    email: user?.email || '',
+    phone: '',
+    location: '',
+    title: '',
+    bio: '',
+    hourlyRate: 0,
     availability: 'available', // available, busy, unavailable
-    website: 'https://carlosmendoza.dev',
-    github: 'carlosmendoza',
-    linkedin: 'carlos-mendoza-dev',
-    twitter: 'carlosmendoza_dev'
+    website: '',
+    github: '',
+    linkedin: '',
+    twitter: ''
   });
 
-  const [skills, setSkills] = useState([
-    { id: 1, name: 'React', level: 90, years: 4 },
-    { id: 2, name: 'Node.js', level: 85, years: 5 },
-    { id: 3, name: 'TypeScript', level: 80, years: 3 },
-    { id: 4, name: 'PostgreSQL', level: 75, years: 4 },
-    { id: 5, name: 'AWS', level: 70, years: 2 },
-    { id: 6, name: 'Docker', level: 65, years: 2 }
-  ]);
+  const [skills, setSkills] = useState<{ id: number; name: string; level: number; years: number }[]>([]);
 
-  const [languages] = useState([
-    { id: 1, name: 'Español', level: 'Nativo' },
-    { id: 2, name: 'Inglés', level: 'Avanzado' },
-    { id: 3, name: 'Francés', level: 'Intermedio' }
-  ]);
+  const [languages, setLanguages] = useState<{ id: number; name: string; level: string }[]>([]);
 
-  const [experience] = useState([
-    {
-      id: 1,
-      company: 'Tech Solutions Inc.',
-      position: 'Senior Full Stack Developer',
-      period: '2022 - Presente',
-      description: 'Desarrollo de aplicaciones web escalables usando React y Node.js'
-    },
-    {
-      id: 2,
-      company: 'StartupXYZ',
-      position: 'Frontend Developer',
-      period: '2020 - 2022',
-      description: 'Implementación de interfaces modernas y responsive con React'
-    },
-    {
-      id: 3,
-      company: 'Digital Agency',
-      position: 'Web Developer',
-      period: '2018 - 2020',
-      description: 'Desarrollo de sitios web y aplicaciones usando tecnologías modernas'
-    }
-  ]);
+  const [experience] = useState<{ id: number; company: string; position: string; period: string; description: string }[]>([]);
 
   const [settings, setSettings] = useState({
     profileVisibility: true,
@@ -106,21 +74,113 @@ export function ProfileSection() {
 
   const [newSkill, setNewSkill] = useState('');
   const { showAlert, Alert } = useSweetAlert();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
-    showAlert({
-      title: '¡Perfil Actualizado!',
-      text: 'Tu información ha sido guardada exitosamente',
-      type: 'success',
-      timer: 2000,
-      theme: 'code'
-    });
-    setIsEditing(false);
+  useEffect(() => {
+    let isMounted = true;
+    const loadProfile = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetchProfile();
+        if (!isMounted) return;
+        const profile = response.data.profile;
+        const userInfo = response.data.user;
+        setProfileData((prev) => ({
+          ...prev,
+          name: `${userInfo.name} ${userInfo.lastname}`.trim(),
+          email: userInfo.email,
+          location: profile.location || '',
+          title: profile.headline || '',
+          bio: profile.bio || '',
+          hourlyRate: profile.hourly_rate || 0,
+          availability: profile.availability || 'available',
+          website: profile.links?.website || '',
+          github: profile.links?.github || '',
+          linkedin: profile.links?.linkedin || '',
+          twitter: profile.links?.twitter || '',
+        }));
+
+        const skillNames = Array.isArray(profile.skills) ? profile.skills : [];
+        setSkills(skillNames.map((name: string, index: number) => ({
+          id: index + 1,
+          name,
+          level: 0,
+          years: 0,
+        })));
+
+        const languageList = Array.isArray(profile.languages) ? profile.languages : [];
+        setLanguages(languageList.map((name: string, index: number) => ({
+          id: index + 1,
+          name,
+          level: 'Sin nivel',
+        })));
+      } catch (error) {
+        console.error('Error cargando perfil', error);
+        if (isMounted) {
+          setError('No se pudo cargar el perfil.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSave = async () => {
+    const [firstName, ...lastParts] = profileData.name.trim().split(' ');
+    const lastName = lastParts.join(' ');
+
+    try {
+      await updateProfile({
+        name: firstName || user?.name,
+        lastname: lastName || user?.lastname,
+        headline: profileData.title,
+        bio: profileData.bio,
+        location: profileData.location,
+        hourly_rate: profileData.hourlyRate,
+        availability: profileData.availability,
+        skills: skills.map((skill) => skill.name).filter(Boolean),
+        links: {
+          website: profileData.website,
+          github: profileData.github,
+          linkedin: profileData.linkedin,
+          twitter: profileData.twitter,
+        },
+        languages: languages.map((lang) => lang.name),
+      });
+
+      showAlert({
+        title: '¡Perfil Actualizado!',
+        text: 'Tu información ha sido guardada exitosamente',
+        type: 'success',
+        timer: 2000,
+        theme: 'code'
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error actualizando perfil', error);
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo actualizar el perfil.',
+        type: 'error',
+        timer: 2000,
+        theme: 'code'
+      });
+    }
   };
 
   const addSkill = () => {
     if (newSkill.trim()) {
-      const newId = Math.max(...skills.map(s => s.id)) + 1;
+      const newId = skills.length > 0 ? Math.max(...skills.map(s => s.id)) + 1 : 1;
       setSkills([...skills, { 
         id: newId,
         name: newSkill, 
@@ -154,13 +214,13 @@ export function ProfileSection() {
   };
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex items-center justify-between"
+        className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
       >
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Mi Perfil</h1>
@@ -202,6 +262,17 @@ export function ProfileSection() {
           </Button>
         </motion.div>
       </motion.div>
+
+      {error ? (
+        <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+          {error}
+        </div>
+      ) : null}
+      {isLoading ? (
+        <div className="rounded-lg border border-[#333333] bg-[#1A1A1A] p-4 text-sm text-gray-300">
+          Cargando perfil...
+        </div>
+      ) : null}
 
       {/* Profile Completion */}
       <motion.div
@@ -375,7 +446,7 @@ export function ProfileSection() {
                         id="hourlyRate"
                         type="number"
                         value={profileData.hourlyRate}
-                        onChange={(e) => setProfileData({...profileData, hourlyRate: parseInt(e.target.value)})}
+                        onChange={(e) => setProfileData({...profileData, hourlyRate: Number(e.target.value) || 0})}
                         disabled={!isEditing}
                         className="mt-2 bg-[#0D0D0D] border-[#333333] text-white disabled:opacity-70"
                       />
@@ -500,7 +571,9 @@ export function ProfileSection() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {experience.map((exp) => (
+                  {experience.length === 0 ? (
+                    <p className="text-sm text-gray-400">Sin experiencia registrada.</p>
+                  ) : experience.map((exp) => (
                     <motion.div
                       key={`exp-${exp.id}`}
                       initial={{ opacity: 0, x: -20 }}
@@ -536,7 +609,9 @@ export function ProfileSection() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {languages.map((lang) => (
+                    {languages.length === 0 ? (
+                      <p className="text-sm text-gray-400">Sin idiomas registrados.</p>
+                    ) : languages.map((lang) => (
                       <motion.div
                         key={`lang-${lang.id}`}
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -588,7 +663,9 @@ export function ProfileSection() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {skills.map((skill) => (
+                  {skills.length === 0 ? (
+                    <p className="text-sm text-gray-400">Sin habilidades registradas.</p>
+                  ) : skills.map((skill) => (
                     <motion.div
                       key={`skill-${skill.id}`}
                       initial={{ opacity: 0, x: -20 }}
