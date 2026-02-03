@@ -13,7 +13,15 @@ class DeveloperProfile extends Model
 {
     protected $fillable = [
         'user_id',
+        'headline',
         'skills',
+        'bio',
+        'links',
+    ];
+
+    protected $casts = [
+        'skills' => 'array',
+        'links' => 'array',
     ];
 
     public function user()
