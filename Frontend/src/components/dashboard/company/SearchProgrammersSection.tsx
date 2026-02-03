@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -9,7 +9,6 @@ import { Checkbox } from '../../ui/checkbox';
 import { Slider } from '../../ui/slider';
 import { ScrollArea } from '../../ui/scroll-area';
 import { Separator } from '../../ui/separator';
-import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { 
   Search, 
   Filter, 
@@ -25,32 +24,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
-
-interface Developer {
-  id: string;
-  name: string;
-  title: string;
-  location: string;
-  hourlyRate: number;
-  rating: number;
-  reviewsCount: number;
-  completedProjects: number;
-  availability: 'available' | 'busy' | 'unavailable';
-  avatar?: string;
-  skills: string[];
-  experience: number;
-  languages: string[];
-  bio: string;
-  portfolio: {
-    project: string;
-    image: string;
-    tech: string[];
-  }[];
-  lastActive: string;
-  responseTime: string;
-  isVerified: boolean;
-  isFavorite: boolean;
-}
+import { fetchDevelopers, type DeveloperProfile } from '../../../services/developerService';
 
 export function SearchProgrammersSection() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,127 +39,40 @@ export function SearchProgrammersSection() {
   });
   const [showFilters, setShowFilters] = useState(true);
   const [sortBy, setSortBy] = useState('relevance');
-
-  // Datos ficticios de desarrolladores
-  const developers: Developer[] = [
-    {
-      id: '1',
-      name: 'Carlos Mendoza',
-      title: 'Full Stack Developer',
-      location: 'Madrid, España',
-      hourlyRate: 75,
-      rating: 4.9,
-      reviewsCount: 127,
-      completedProjects: 89,
-      availability: 'available',
-      skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'AWS'],
-      experience: 6,
-      languages: ['Español', 'Inglés'],
-      bio: 'Desarrollador Full Stack con 6 años de experiencia especializado en React y Node.js. Apasionado por crear soluciones escalables y eficientes.',
-      portfolio: [
-        { project: 'E-commerce Platform', image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop', tech: ['React', 'Node.js'] },
-        { project: 'SaaS Dashboard', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop', tech: ['Vue.js', 'Python'] }
-      ],
-      lastActive: '2 horas',
-      responseTime: '1 hora',
-      isVerified: true,
-      isFavorite: false
-    },
-    {
-      id: '2',
-      name: 'Elena Rodríguez',
-      title: 'Frontend Developer & UI/UX Designer',
-      location: 'Barcelona, España',
-      hourlyRate: 65,
-      rating: 4.8,
-      reviewsCount: 94,
-      completedProjects: 67,
-      availability: 'available',
-      skills: ['Vue.js', 'React', 'Figma', 'TypeScript', 'SCSS'],
-      experience: 5,
-      languages: ['Español', 'Inglés', 'Francés'],
-      bio: 'Frontend Developer con fuerte background en diseño UX/UI. Experta en crear interfaces intuitivas y experiencias de usuario excepcionales.',
-      portfolio: [
-        { project: 'Mobile Banking App', image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=200&fit=crop', tech: ['React Native', 'Figma'] },
-        { project: 'E-learning Platform', image: 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=400&h=200&fit=crop', tech: ['Vue.js', 'SCSS'] }
-      ],
-      lastActive: '30 min',
-      responseTime: '30 min',
-      isVerified: true,
-      isFavorite: true
-    },
-    {
-      id: '3',
-      name: 'Miguel Torres',
-      title: 'Backend Developer',
-      location: 'Valencia, España',
-      hourlyRate: 70,
-      rating: 4.7,
-      reviewsCount: 156,
-      completedProjects: 112,
-      availability: 'busy',
-      skills: ['Python', 'Django', 'PostgreSQL', 'Docker', 'AWS'],
-      experience: 8,
-      languages: ['Español', 'Inglés'],
-      bio: 'Backend Developer especializado en Python y arquitecturas escalables. Experiencia en sistemas de alto rendimiento y DevOps.',
-      portfolio: [
-        { project: 'API Gateway System', image: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=400&h=200&fit=crop', tech: ['Python', 'Docker'] },
-        { project: 'Data Analytics Platform', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop', tech: ['Django', 'PostgreSQL'] }
-      ],
-      lastActive: '1 día',
-      responseTime: '2 horas',
-      isVerified: true,
-      isFavorite: false
-    },
-    {
-      id: '4',
-      name: 'Sofia Chen',
-      title: 'Mobile Developer',
-      location: 'Bilbao, España',
-      hourlyRate: 80,
-      rating: 5.0,
-      reviewsCount: 73,
-      completedProjects: 45,
-      availability: 'available',
-      skills: ['React Native', 'Flutter', 'Dart', 'Firebase', 'iOS'],
-      experience: 4,
-      languages: ['Español', 'Inglés', 'Chino'],
-      bio: 'Mobile Developer especializada en apps nativas y multiplataforma. Experta en React Native y Flutter con enfoque en UX móvil.',
-      portfolio: [
-        { project: 'Fintech Mobile App', image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=200&fit=crop', tech: ['Flutter', 'Firebase'] },
-        { project: 'Social Media App', image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400&h=200&fit=crop', tech: ['React Native', 'Node.js'] }
-      ],
-      lastActive: '15 min',
-      responseTime: '15 min',
-      isVerified: true,
-      isFavorite: false
-    },
-    {
-      id: '5',
-      name: 'David López',
-      title: 'DevOps Engineer',
-      location: 'Sevilla, España',
-      hourlyRate: 85,
-      rating: 4.6,
-      reviewsCount: 88,
-      completedProjects: 78,
-      availability: 'available',
-      skills: ['Docker', 'Kubernetes', 'AWS', 'Terraform', 'Jenkins'],
-      experience: 7,
-      languages: ['Español', 'Inglés'],
-      bio: 'DevOps Engineer con experiencia en automatización, CI/CD y infraestructura cloud. Especialista en AWS y contenedores.',
-      portfolio: [
-        { project: 'CI/CD Pipeline', image: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=400&h=200&fit=crop', tech: ['Jenkins', 'Docker'] },
-        { project: 'Cloud Infrastructure', image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=200&fit=crop', tech: ['AWS', 'Terraform'] }
-      ],
-      lastActive: '3 horas',
-      responseTime: '1 hora',
-      isVerified: true,
-      isFavorite: false
-    }
-  ];
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [developers, setDevelopers] = useState<DeveloperProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const allSkills = Array.from(new Set(developers.flatMap(d => d.skills))).sort();
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadDevelopers = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetchDevelopers();
+        if (!isMounted) return;
+        setDevelopers(response.data || []);
+      } catch (error) {
+        console.error('Error cargando desarrolladores', error);
+        if (isMounted) {
+          setError('No se pudieron cargar los desarrolladores.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadDevelopers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredDevelopers = developers.filter(dev => {
     const matchesSearch = searchQuery === '' || 
@@ -196,11 +83,14 @@ export function SearchProgrammersSection() {
     const matchesSkills = filters.skills.length === 0 || 
       filters.skills.some(skill => dev.skills.includes(skill));
 
-    const matchesExperience = dev.experience >= filters.experience[0] && 
-      dev.experience <= filters.experience[1];
+    const experience = dev.experience ?? 0;
+    const hourlyRate = dev.hourlyRate ?? 0;
 
-    const matchesRate = dev.hourlyRate >= filters.hourlyRate[0] && 
-      dev.hourlyRate <= filters.hourlyRate[1];
+    const matchesExperience = experience >= filters.experience[0] && 
+      experience <= filters.experience[1];
+
+    const matchesRate = hourlyRate >= filters.hourlyRate[0] && 
+      hourlyRate <= filters.hourlyRate[1];
 
     const matchesAvailability = !filters.availability || filters.availability === 'any' || 
       dev.availability === filters.availability;
@@ -212,6 +102,14 @@ export function SearchProgrammersSection() {
     return matchesSearch && matchesSkills && matchesExperience && 
            matchesRate && matchesAvailability && matchesRating && matchesVerified;
   });
+
+  const toggleFavorite = (developerId: string) => {
+    setFavorites((prev) =>
+      prev.includes(developerId)
+        ? prev.filter((id) => id !== developerId)
+        : [...prev, developerId]
+    );
+  };
 
   const toggleSkillFilter = (skill: string) => {
     setFilters(prev => ({
@@ -261,6 +159,17 @@ export function SearchProgrammersSection() {
           Encuentra el talento perfecto para tu proyecto en nuestra red de {developers.length}+ desarrolladores verificados
         </p>
       </div>
+
+      {error ? (
+        <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+          {error}
+        </div>
+      ) : null}
+      {isLoading ? (
+        <div className="rounded-lg border border-[#333333] bg-[#1A1A1A] p-4 text-sm text-gray-300">
+          Cargando desarrolladores...
+        </div>
+      ) : null}
 
       {/* Search and Filters Bar */}
       <Card className="bg-[#1A1A1A] border-[#333333]">
@@ -536,7 +445,7 @@ export function SearchProgrammersSection() {
                           <span className="text-xs text-gray-400">({developer.reviewsCount})</span>
                         </div>
                         <p className="text-lg font-semibold text-[#00FF85]">
-                          €{developer.hourlyRate}/h
+                          {developer.hourlyRate ? `€${developer.hourlyRate}/h` : 'Sin tarifa'}
                         </p>
                       </div>
                     </div>
@@ -566,21 +475,8 @@ export function SearchProgrammersSection() {
                     {/* Portfolio Preview */}
                     <div>
                       <p className="text-xs text-gray-400 mb-2">Proyectos recientes:</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {developer.portfolio.slice(0, 2).map((project, index) => (
-                          <div key={index} className="relative group">
-                            <ImageWithFallback
-                              src={project.image}
-                              alt={project.project}
-                              className="w-full h-20 object-cover rounded border border-[#333333] group-hover:border-[#00FF85] transition-colors"
-                            />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
-                              <p className="text-white text-xs font-medium text-center px-2">
-                                {project.project}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                      <div className="rounded border border-[#333333] bg-[#0D0D0D] p-3 text-xs text-gray-400">
+                        Sin portafolio disponible.
                       </div>
                     </div>
 
@@ -591,12 +487,12 @@ export function SearchProgrammersSection() {
                         <p className="text-xs text-gray-400">Proyectos</p>
                       </div>
                       <div>
-                        <p className="text-lg font-semibold text-white">{developer.experience}</p>
+                        <p className="text-lg font-semibold text-white">{developer.experience ?? 0}</p>
                         <p className="text-xs text-gray-400">Años exp.</p>
                       </div>
                       <div>
-                        <p className="text-lg font-semibold text-white">{developer.responseTime}</p>
-                        <p className="text-xs text-gray-400">Respuesta</p>
+                        <p className="text-lg font-semibold text-white">{developer.lastActive || 'Sin datos'}</p>
+                        <p className="text-xs text-gray-400">Últ. actividad</p>
                       </div>
                     </div>
 
@@ -612,11 +508,12 @@ export function SearchProgrammersSection() {
                       <Button 
                         size="sm" 
                         variant="outline" 
+                        onClick={() => toggleFavorite(developer.id)}
                         className={`border-[#333333] hover:bg-[#333333] ${
-                          developer.isFavorite ? 'text-red-400' : 'text-white'
+                          favorites.includes(developer.id) ? 'text-red-400' : 'text-white'
                         }`}
                       >
-                        <Heart className={`h-4 w-4 ${developer.isFavorite ? 'fill-current' : ''}`} />
+                        <Heart className={`h-4 w-4 ${favorites.includes(developer.id) ? 'fill-current' : ''}`} />
                       </Button>
                     </div>
                   </CardContent>

@@ -20,38 +20,6 @@ interface ActivityDashboardProps {
   isLoading?: boolean;
 }
 
-// Activity heatmap data - relatively static
-const activityData = [
-  { day: "Lun", hours: [2, 1, 0, 0, 1, 3, 8, 15, 22, 28, 32, 35, 38, 42, 39, 35, 28, 22, 18, 12, 8, 5, 3, 2] },
-  { day: "Mar", hours: [1, 0, 0, 0, 2, 4, 9, 18, 25, 31, 35, 38, 41, 45, 42, 38, 32, 25, 20, 14, 9, 6, 4, 2] },
-  { day: "Mié", hours: [2, 1, 0, 0, 1, 3, 8, 16, 24, 30, 34, 37, 40, 44, 41, 37, 30, 24, 19, 13, 8, 5, 3, 2] },
-  { day: "Jue", hours: [1, 0, 0, 0, 2, 4, 9, 17, 26, 32, 36, 39, 42, 46, 43, 39, 33, 26, 21, 15, 10, 7, 4, 2] },
-  { day: "Vie", hours: [2, 1, 0, 0, 1, 3, 7, 14, 21, 27, 31, 34, 37, 40, 37, 34, 28, 21, 17, 11, 7, 4, 3, 2] },
-  { day: "Sáb", hours: [3, 2, 1, 0, 1, 2, 4, 8, 12, 16, 20, 23, 26, 28, 26, 23, 20, 16, 13, 9, 6, 4, 3, 2] },
-  { day: "Dom", hours: [2, 1, 1, 0, 1, 2, 3, 6, 10, 14, 18, 21, 24, 26, 24, 21, 18, 14, 11, 8, 5, 3, 2, 1] }
-];
-
-const peakHours = [
-  { hour: "09:00-10:00", activity: 42, users: 120 },
-  { hour: "10:00-11:00", activity: 46, users: 135 },
-  { hour: "11:00-12:00", activity: 38, users: 110 },
-  { hour: "14:00-15:00", activity: 45, users: 128 },
-  { hour: "15:00-16:00", activity: 40, users: 115 }
-];
-
-const userEngagement = [
-  { type: "Nuevos usuarios", percentage: 25, color: "var(--color-chart-1)" },
-  { type: "Usuarios activos", percentage: 45, color: "var(--color-chart-2)" },
-  { type: "Usuarios recurrentes", percentage: 30, color: "var(--color-chart-3)" }
-];
-
-const activityTrends = [
-  { metric: "Tiempo en plataforma", current: "24 min", previous: "22 min", trend: "up" },
-  { metric: "Páginas por sesión", current: "4.2", previous: "3.8", trend: "up" },
-  { metric: "Tasa de rebote", current: "32%", previous: "35%", trend: "down" },
-  { metric: "Interacciones por sesión", current: "8.5", previous: "7.2", trend: "up" }
-];
-
 const kpiIcons: Record<string, JSX.Element> = {
   "Sesiones Promedio": <Clock className="w-5 h-5" />,
   "Mensajes Enviados": <MessageSquare className="w-5 h-5" />,
@@ -62,6 +30,10 @@ const kpiIcons: Record<string, JSX.Element> = {
 export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }: ActivityDashboardProps) {
   const timeSeriesData = metrics?.timeSeries ?? [];
   const kpiData = metrics?.kpis ?? [];
+  const activityData = metrics?.activityHeatmap ?? [];
+  const peakHours = metrics?.peakHours ?? [];
+  const userEngagement = metrics?.userEngagement ?? [];
+  const activityTrends = metrics?.activityTrends ?? [];
   
   // Transform time series data for project activity
   const projectActivityData = timeSeriesData.map((item: TimeSeriesPoint) => ({
@@ -184,7 +156,9 @@ export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {peakHours.map((hour) => (
+              {peakHours.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin datos disponibles.</p>
+              ) : peakHours.map((hour) => (
                 <div key={hour.hour} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
                   <div>
                     <p className="font-medium text-sm">{hour.hour}</p>
@@ -213,7 +187,9 @@ export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {userEngagement.map((type) => (
+              {userEngagement.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin datos disponibles.</p>
+              ) : userEngagement.map((type) => (
                 <div key={type.type} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">{type.type}</span>
@@ -247,7 +223,9 @@ export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {activityTrends.map((trend) => (
+              {activityTrends.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin datos disponibles.</p>
+              ) : activityTrends.map((trend) => (
                 <div key={trend.metric} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
                   <div>
                     <p className="font-medium text-sm">{trend.metric}</p>

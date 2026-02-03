@@ -25,6 +25,10 @@ export type ActivityMetrics = {
   kpis: KPI[];
   timeSeries: TimeSeriesPoint[];
   engagementScore: number;
+  activityHeatmap?: Array<{ day: string; hours: number[] }>;
+  peakHours?: Array<{ hour: string; activity: number; users: number }>;
+  userEngagement?: Array<{ type: string; percentage: number; color: string }>;
+  activityTrends?: Array<{ metric: string; current: string; previous: string; trend: 'up' | 'down' }>;
 };
 
 export type FinancialMetrics = {
@@ -46,6 +50,8 @@ export type GrowthMetrics = {
   kpis: KPI[];
   timeSeries: TimeSeriesPoint[];
   funnel: Array<{ label: string; value: number }>;
+  geographicData?: Array<{ country: string; users: number; percentage: number; flag?: string }>;
+  retention?: Array<{ period: string; retention: number[] }>;
 };
 
 export type ProjectsMetrics = {

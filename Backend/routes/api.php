@@ -5,7 +5,11 @@ use App\Http\Controllers\{
     ProjectController,
     ApplicationController,
     DashboardController,
-    AdminController
+    AdminController,
+    ConversationController,
+    DeveloperController,
+    ProfileController,
+    TaxonomyController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +58,25 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dashboards
     Route::get('/dashboard/company', [DashboardController::class, 'company']);
     Route::get('/dashboard/programmer', [DashboardController::class, 'programmer']);
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+
+    // Taxonomies
+    Route::get('/taxonomies/skills', [TaxonomyController::class, 'skills']);
+    Route::get('/taxonomies/categories', [TaxonomyController::class, 'categories']);
+
+    // Developers
+    Route::get('/developers', [DeveloperController::class, 'index']);
+
+    // Conversations
+    Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::get('/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
+    Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'storeMessage']);
+
+    // Company projects
+    Route::get('/company/projects', [ProjectController::class, 'companyProjects']);
 
     // Admin routes (solo administradores)
     Route::prefix('admin')->middleware('admin')->group(function () {

@@ -17,6 +17,11 @@ class Conversation extends Model
         return $this->hasMany(Message::class);
     }
 
+    public function latestMessage()
+    {
+        return $this->hasOne(Message::class)->latestOfMany();
+    }
+
     public function participants()
     {
         return $this->belongsToMany(User::class, 'conversation_participants');

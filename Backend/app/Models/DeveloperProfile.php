@@ -17,11 +17,18 @@ class DeveloperProfile extends Model
         'skills',
         'bio',
         'links',
+        'location',
+        'country',
+        'hourly_rate',
+        'availability',
+        'experience_years',
+        'languages',
     ];
 
     protected $casts = [
         'skills' => 'array',
         'links' => 'array',
+        'languages' => 'array',
     ];
 
     public function user()

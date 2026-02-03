@@ -20,76 +20,6 @@ interface SatisfactionDashboardProps {
   isLoading?: boolean;
 }
 
-// Static data for feedback - doesn't change much by period
-const recentFeedback = [
-  {
-    id: 1,
-    client: "TechCorp Inc.",
-    freelancer: "Ana García",
-    project: "E-commerce Platform",
-    rating: 5,
-    comment: "Excelente trabajo, entregado a tiempo y con calidad excepcional.",
-    date: "2024-01-08",
-    avatar: "/api/placeholder/32/32"
-  },
-  {
-    id: 2,
-    client: "StartupXYZ",
-    freelancer: "Carlos Ruiz",
-    project: "Mobile App iOS",
-    rating: 4,
-    comment: "Muy buen desarrollo, solo algunos ajustes menores en el diseño.",
-    date: "2024-01-07",
-    avatar: "/api/placeholder/32/32"
-  },
-  {
-    id: 3,
-    client: "Marketing Pro",
-    freelancer: "Laura Sánchez",
-    project: "Landing Page",
-    rating: 5,
-    comment: "Diseño increíble y muy profesional. Superó mis expectativas.",
-    date: "2024-01-06",
-    avatar: "/api/placeholder/32/32"
-  },
-  {
-    id: 4,
-    client: "DataFlow Ltd",
-    freelancer: "Miguel Torres",
-    project: "API Development",
-    rating: 4,
-    comment: "Buen trabajo técnico, documentación clara y código limpio.",
-    date: "2024-01-05",
-    avatar: "/api/placeholder/32/32"
-  },
-  {
-    id: 5,
-    client: "BlogMaster",
-    freelancer: "Sofia López",
-    project: "WordPress Plugin",
-    rating: 5,
-    comment: "Plugin funciona perfectamente, soporte excelente post-entrega.",
-    date: "2024-01-04",
-    avatar: "/api/placeholder/32/32"
-  }
-];
-
-const qualityMetrics = [
-  { metric: "Código Limpio", score: 94, icon: "💻" },
-  { metric: "Comunicación", score: 87, icon: "💬" },
-  { metric: "Cumplimiento", score: 91, icon: "⏰" },
-  { metric: "Creatividad", score: 88, icon: "🎨" },
-  { metric: "Soporte Post-Entrega", score: 85, icon: "🔧" }
-];
-
-const topRatedProjects = [
-  { project: "E-commerce Platform", rating: 4.9, reviews: 23, category: "Web Development" },
-  { project: "Mobile Banking App", rating: 4.8, reviews: 18, category: "Mobile Dev" },
-  { project: "Dashboard Analytics", rating: 4.9, reviews: 15, category: "UI/UX" },
-  { project: "API Gateway", rating: 4.7, reviews: 12, category: "Backend" },
-  { project: "Marketing Website", rating: 4.8, reviews: 20, category: "Web Design" }
-];
-
 const renderStars = (rating: number) => {
   return (
     <div className="flex space-x-1">
@@ -111,14 +41,12 @@ const renderStars = (rating: number) => {
 export function SatisfactionDashboard({ selectedPeriod, metrics, isLoading = false }: SatisfactionDashboardProps) {
   const kpiData = metrics?.kpis ?? [];
   const ratingData = metrics?.ratingData ?? [];
-  const feedback = metrics?.recentFeedback ?? recentFeedback;
-  const quality = metrics?.qualityMetrics ?? qualityMetrics;
-  const topProjects = metrics?.topRatedProjects ?? topRatedProjects;
+  const feedback = metrics?.recentFeedback ?? [];
+  const quality = metrics?.qualityMetrics ?? [];
+  const topProjects = metrics?.topRatedProjects ?? [];
   const maxRatingCount = Math.max(1, ...ratingData.map((rating) => rating.count));
-
-  // Generate dynamic values for gauges based on period
-  const npsValue = metrics?.nps ?? Math.max(0, Math.min(100, 68 + (Math.random() - 0.5) * 20));
-  const csatValue = metrics?.csat ?? Math.max(0, Math.min(100, 94 + (Math.random() - 0.5) * 10));
+  const npsValue = metrics?.nps ?? 0;
+  const csatValue = metrics?.csat ?? 0;
 
   return (
     <div className="space-y-6">
@@ -209,7 +137,9 @@ export function SatisfactionDashboard({ selectedPeriod, metrics, isLoading = fal
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {quality.map((metric) => (
+              {quality.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin datos disponibles.</p>
+              ) : quality.map((metric) => (
                 <div key={metric.metric} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
@@ -238,7 +168,9 @@ export function SatisfactionDashboard({ selectedPeriod, metrics, isLoading = fal
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topProjects.map((project, index) => (
+              {topProjects.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin datos disponibles.</p>
+              ) : topProjects.map((project, index) => (
                 <div key={project.project} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
@@ -284,7 +216,13 @@ export function SatisfactionDashboard({ selectedPeriod, metrics, isLoading = fal
               </TableRow>
             </TableHeader>
             <TableBody>
-              {feedback.map((feedback) => (
+              {feedback.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                    Sin feedback registrado.
+                  </TableCell>
+                </TableRow>
+              ) : feedback.map((feedback) => (
                 <TableRow key={feedback.id}>
                   <TableCell>
                     <div className="flex items-center space-x-2">

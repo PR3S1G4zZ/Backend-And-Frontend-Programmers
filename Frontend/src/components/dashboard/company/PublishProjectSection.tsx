@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -16,6 +16,8 @@ import {
   Send
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { createProject } from '../../../services/projectService';
+import { fetchCategories, fetchSkills, type TaxonomyItem } from '../../../services/taxonomyService';
 
 interface Skill {
   id: string;
@@ -44,30 +46,44 @@ export function PublishProjectSection() {
   const [requirements, setRequirements] = useState(['']);
   const [currentStep, setCurrentStep] = useState(1);
   const [, setIsDraft] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState<TaxonomyItem[]>([]);
+  const [skillOptions, setSkillOptions] = useState<TaxonomyItem[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
-  const popularSkills = [
-    'React', 'Node.js', 'TypeScript', 'Python', 'Vue.js', 'Angular',
-    'React Native', 'Flutter', 'Django', 'Laravel', 'PostgreSQL', 'MongoDB',
-    'AWS', 'Docker', 'GraphQL', 'REST API', 'UI/UX Design', 'Figma'
-  ];
+  const popularSkills = skillOptions.map((skill) => skill.name);
 
-  const categories = [
-    'Desarrollo Web Frontend',
-    'Desarrollo Web Backend', 
-    'Desarrollo Full Stack',
-    'Desarrollo Mobile',
-    'UI/UX Design',
-    'DevOps e Infraestructura',
-    'Data Science & Analytics',
-    'Machine Learning/AI',
-    'Blockchain',
-    'Testing & QA'
-  ];
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTaxonomies = async () => {
+      try {
+        const [categoriesResponse, skillsResponse] = await Promise.all([
+          fetchCategories(),
+          fetchSkills(),
+        ]);
+        if (!isMounted) return;
+        setCategoryOptions(categoriesResponse.data || []);
+        setSkillOptions(skillsResponse.data || []);
+      } catch (error) {
+        console.error('Error cargando taxonomías', error);
+      }
+    };
+
+    loadTaxonomies();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const addSkill = (skillName: string, required: boolean = false) => {
     if (skillName && !skills.find(s => s.name.toLowerCase() === skillName.toLowerCase())) {
+      const match = skillOptions.find(
+        (option) => option.name.toLowerCase() === skillName.toLowerCase()
+      );
       setSkills([...skills, { 
-        id: Date.now().toString(), 
+        id: match ? String(match.id) : Date.now().toString(), 
         name: skillName, 
         required 
       }]);
@@ -113,10 +129,48 @@ export function PublishProjectSection() {
     setRequirements(requirements.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (asDraft: boolean = false) => {
+  const handleSubmit = async (asDraft: boolean = false) => {
     setIsDraft(asDraft);
-    // Aquí iría la lógica para enviar el proyecto
-    console.log('Publicando proyecto:', { formData, skills, deliverables, requirements, isDraft: asDraft });
+    setIsSubmitting(true);
+    setSubmitMessage(null);
+
+    const budgetParts = formData.budget.split('-').map((value) => Number(value.trim()));
+    const budgetMin = Number.isFinite(budgetParts[0]) ? budgetParts[0] : null;
+    const budgetMax = Number.isFinite(budgetParts[1]) ? budgetParts[1] : budgetMin;
+
+    const skillIds = skills
+      .map((skill) => {
+        const id = Number(skill.id);
+        return Number.isFinite(id) ? id : null;
+      })
+      .filter((id): id is number => id !== null);
+
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      budget_min: budgetMin,
+      budget_max: budgetMax,
+      budget_type: formData.budgetType,
+      duration_value: formData.duration ? Number(formData.duration) : null,
+      duration_unit: formData.durationType,
+      level: formData.experienceLevel || null,
+      priority: formData.priority,
+      max_applicants: formData.teamSize ? Number(formData.teamSize) : null,
+      tags: deliverables.filter(Boolean),
+      category_ids: formData.category ? [Number(formData.category)] : [],
+      skill_ids: skillIds,
+      status: asDraft ? 'draft' : 'open',
+    };
+
+    try {
+      await createProject(payload);
+      setSubmitMessage('Proyecto guardado correctamente.');
+    } catch (error) {
+      console.error('Error publicando proyecto', error);
+      setSubmitMessage('No se pudo publicar el proyecto.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const steps = [
@@ -125,6 +179,7 @@ export function PublishProjectSection() {
     { id: 3, title: 'Habilidades y Requisitos', description: 'Skills necesarios y experiencia' },
     { id: 4, title: 'Entregables y Extras', description: 'Deliverables y información adicional' }
   ];
+  const selectedCategoryName = categoryOptions.find((category) => String(category.id) === formData.category)?.name;
 
   const renderStep = () => {
     switch (currentStep) {
@@ -152,9 +207,9 @@ export function PublishProjectSection() {
                   <SelectValue placeholder="Selecciona una categoría" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1A1A1A] border-[#333333]">
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category} className="text-white hover:bg-[#333333]">
-                      {category}
+                  {categoryOptions.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)} className="text-white hover:bg-[#333333]">
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -478,7 +533,7 @@ export function PublishProjectSection() {
               <CardContent className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-white">{formData.title || 'Título del proyecto'}</h3>
-                  <p className="text-sm text-gray-400">{formData.category || 'Categoría'}</p>
+                  <p className="text-sm text-gray-400">{selectedCategoryName || 'Categoría'}</p>
                 </div>
                 
                 <p className="text-gray-300 text-sm">
@@ -584,12 +639,18 @@ export function PublishProjectSection() {
         </CardContent>
       </Card>
 
+      {submitMessage ? (
+        <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-3 text-sm text-gray-200">
+          {submitMessage}
+        </div>
+      ) : null}
+
       {/* Navigation Buttons */}
       <div className="flex justify-between">
         <Button
           variant="outline"
           onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-          disabled={currentStep === 1}
+          disabled={currentStep === 1 || isSubmitting}
           className="border-[#333333] text-white hover:bg-[#333333]"
         >
           Anterior
@@ -599,10 +660,11 @@ export function PublishProjectSection() {
           <Button
             variant="outline"
             onClick={() => handleSubmit(true)}
+            disabled={isSubmitting}
             className="border-[#333333] text-white hover:bg-[#333333]"
           >
             <Save className="h-4 w-4 mr-2" />
-            Guardar Borrador
+            {isSubmitting ? 'Guardando...' : 'Guardar Borrador'}
           </Button>
 
           {currentStep < steps.length ? (
@@ -615,10 +677,11 @@ export function PublishProjectSection() {
           ) : (
             <Button
               onClick={() => handleSubmit(false)}
+              disabled={isSubmitting}
               className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
             >
               <Send className="h-4 w-4 mr-2" />
-              Publicar Proyecto
+              {isSubmitting ? 'Publicando...' : 'Publicar Proyecto'}
             </Button>
           )}
         </div>

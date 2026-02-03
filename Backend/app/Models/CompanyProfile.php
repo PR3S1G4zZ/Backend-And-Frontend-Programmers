@@ -15,6 +15,8 @@ class CompanyProfile extends Model
         'company_name',
         'website',
         'about',
+        'location',
+        'country',
     ];
 
     public function user()
