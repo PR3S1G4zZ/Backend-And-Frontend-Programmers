@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { useSweetAlert } from './ui/sweet-alert';
 import { ActivityDashboard } from './dashboard/components/admin/ActivityDashboard';
@@ -9,7 +9,10 @@ import { SatisfactionDashboard } from './dashboard/components/admin/Satisfaction
 import { UserManagement } from './dashboard/components/UserManagement';
 import { Card, CardContent, CardHeader, CardTitle } from './dashboard/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './dashboard/components/ui/tabs';
-import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield } from 'lucide-react';
+import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield, Menu } from 'lucide-react';
+import { fetchAdminMetrics, type AdminMetrics, type KPI } from '../services/adminMetricsService';
+import { fetchProjects, type ProjectResponse } from '../services/projectService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AdminDashboardProps {
   onLogout?: () => void;
@@ -18,7 +21,67 @@ interface AdminDashboardProps {
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { showAlert, Alert } = useSweetAlert();
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [projects, setProjects] = useState<ProjectResponse[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadMetrics = async () => {
+      setMetricsLoading(true);
+      setMetricsError(null);
+      const response = await fetchAdminMetrics(selectedPeriod);
+      if (!isMounted) return;
+      if (response.success && response.data) {
+        setMetrics(response.data);
+      } else {
+        setMetrics(null);
+        setMetricsError(response.message || 'No se pudieron cargar las métricas.');
+      }
+      setMetricsLoading(false);
+    };
+
+    loadMetrics();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedPeriod]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadProjects = async () => {
+      setProjectsLoading(true);
+      setProjectsError(null);
+      try {
+        const response = await fetchProjects();
+        if (!isMounted) return;
+        setProjects(response.data || []);
+      } catch (error) {
+        if (!isMounted) return;
+        setProjects([]);
+        setProjectsError('No se pudieron cargar los proyectos.');
+      } finally {
+        if (isMounted) {
+          setProjectsLoading(false);
+        }
+      }
+    };
+
+    if (currentSection === 'projects') {
+      loadProjects();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentSection]);
 
   const handleLogout = () => {
     showAlert({
@@ -42,6 +105,15 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     { value: 'month', label: 'Mes' },
     { value: 'year', label: 'Año' }
   ];
+  const sectionLabels: Record<string, string> = {
+    dashboard: 'Dashboard Admin',
+    users: 'Gestión de Usuarios',
+    projects: 'Todos los Proyectos',
+    analytics: 'Analíticas',
+    settings: 'Configuración',
+  };
+  const getKpiValue = (kpis: KPI[] | undefined, title: string) =>
+    kpis?.find(kpi => kpi.title === title)?.value ?? 0;
 
   const renderSection = () => {
     switch (currentSection) {
@@ -121,25 +193,30 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </TabsList>
 
                 <TabsContent value="activity" className="mt-6">
-                  <ActivityDashboard selectedPeriod={selectedPeriod} />
+                  <ActivityDashboard selectedPeriod={selectedPeriod} metrics={metrics?.activity} isLoading={metricsLoading} />
                 </TabsContent>
 
                 <TabsContent value="financial" className="mt-6">
-                  <FinancialDashboard selectedPeriod={selectedPeriod} />
+                  <FinancialDashboard selectedPeriod={selectedPeriod} metrics={metrics?.financial} isLoading={metricsLoading} />
                 </TabsContent>
 
                 <TabsContent value="growth" className="mt-6">
-                  <GrowthDashboard selectedPeriod={selectedPeriod} />
+                  <GrowthDashboard selectedPeriod={selectedPeriod} metrics={metrics?.growth} isLoading={metricsLoading} />
                 </TabsContent>
 
                 <TabsContent value="projects" className="mt-6">
-                  <ProjectsDashboard selectedPeriod={selectedPeriod} />
+                  <ProjectsDashboard selectedPeriod={selectedPeriod} metrics={metrics?.projects} isLoading={metricsLoading} />
                 </TabsContent>
 
                 <TabsContent value="satisfaction" className="mt-6">
-                  <SatisfactionDashboard selectedPeriod={selectedPeriod} />
+                  <SatisfactionDashboard selectedPeriod={selectedPeriod} metrics={metrics?.satisfaction} isLoading={metricsLoading} />
                 </TabsContent>
               </Tabs>
+              {metricsError ? (
+                <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+                  {metricsError}
+                </div>
+              ) : null}
             </div>
           </div>
         );
@@ -155,7 +232,35 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   <CardTitle className="text-[#00FF85]">Panel de Proyectos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-300">Panel completo para gestionar todos los proyectos del sistema.</p>
+                  {projectsLoading ? (
+                    <p className="text-gray-300">Cargando proyectos...</p>
+                  ) : projectsError ? (
+                    <p className="text-red-300">{projectsError}</p>
+                  ) : projects.length === 0 ? (
+                    <p className="text-gray-300">No hay proyectos disponibles.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {projects.map(project => (
+                        <div
+                          key={project.id}
+                          className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">{project.title}</h3>
+                              <p className="text-sm text-gray-400">
+                                {project.company?.name || 'Empresa no disponible'}
+                              </p>
+                            </div>
+                            <div className="text-sm text-gray-300">
+                              Estado: <span className="text-white font-medium">{project.status}</span>
+                            </div>
+                          </div>
+                          <p className="text-gray-300 mt-2 line-clamp-2">{project.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -171,7 +276,32 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   <CardTitle className="text-[#00FF85]">Estadísticas Avanzadas</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-300">Estadísticas y métricas avanzadas del sistema.</p>
+                  {metricsLoading ? (
+                    <p className="text-gray-300">Cargando métricas...</p>
+                  ) : metricsError ? (
+                    <p className="text-red-300">{metricsError}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
+                        <p className="text-gray-400 text-sm">Usuarios activos</p>
+                        <p className="text-2xl font-bold text-white">
+                          {getKpiValue(metrics?.activity?.kpis, 'Sesiones Promedio')}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
+                        <p className="text-gray-400 text-sm">Proyectos activos</p>
+                        <p className="text-2xl font-bold text-white">
+                          {getKpiValue(metrics?.projects?.kpis, 'Proyectos Activos')}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
+                        <p className="text-gray-400 text-sm">Ingresos estimados</p>
+                        <p className="text-2xl font-bold text-white">
+                          {getKpiValue(metrics?.financial?.kpis, 'Ingresos Netos')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -187,7 +317,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   <CardTitle className="text-[#00FF85]">Configuraciones Avanzadas</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-300">Configuraciones avanzadas y mantenimiento del sistema.</p>
+                  <div className="space-y-3">
+                    <p className="text-gray-300">Cuenta administradora activa:</p>
+                    <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
+                      <p className="text-white font-semibold">{user ? `${user.name} ${user.lastname}` : 'Usuario'}</p>
+                      <p className="text-gray-400 text-sm">{user?.email || 'Sin email'}</p>
+                      <p className="text-gray-500 text-xs mt-1">Tipo: {user?.user_type || 'admin'}</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -211,8 +348,25 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         currentSection={currentSection}
         onSectionChange={setCurrentSection}
         onLogout={handleLogout}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        user={user}
       />
       <div className="flex-1 overflow-auto">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[#333333] bg-[#0D0D0D] px-4 py-3 md:hidden">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            className="rounded-md border border-[#333333] p-2 text-white hover:bg-[#1A1A1A]"
+            aria-label="Abrir menú"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div>
+            <p className="text-sm text-gray-400">Panel administrativo</p>
+            <p className="text-base font-semibold text-white">{sectionLabels[currentSection] || 'Dashboard Admin'}</p>
+          </div>
+        </div>
         {renderSection()}
       </div>
       <Alert />
