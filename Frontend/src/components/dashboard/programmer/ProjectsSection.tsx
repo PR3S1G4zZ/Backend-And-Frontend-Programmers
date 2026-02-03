@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -29,6 +29,7 @@ import {
   BookmarkPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
+import { fetchProjects, type ProjectResponse } from '../../../services/projectService';
 
 interface Project {
   id: string;
@@ -59,11 +60,52 @@ interface Project {
   maxApplicants: number;
   postedDate: string;
   deadline: string;
-  priority: 'normal' | 'urgent';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   featured: boolean;
   status: 'open' | 'in-review' | 'closed';
   tags: string[];
 }
+
+const mapProject = (project: ProjectResponse): Project => {
+  const category = project.categories?.[0]?.name ?? 'Sin categoría';
+  const skills = project.skills?.map((skill) => skill.name) ?? [];
+  const budgetMin = project.budget_min ?? 0;
+  const budgetMax = project.budget_max ?? budgetMin;
+
+  return {
+    id: String(project.id),
+    title: project.title,
+    description: project.description,
+    company: {
+      name: project.company?.name ?? 'Empresa',
+      verified: Boolean(project.company?.email_verified_at),
+      rating: 0,
+      reviewsCount: 0,
+    },
+    budget: {
+      min: budgetMin,
+      max: budgetMax,
+      type: project.budget_type ?? 'fixed',
+    },
+    duration: {
+      value: project.duration_value ?? 0,
+      unit: project.duration_unit ?? 'weeks',
+    },
+    location: project.location ?? 'Remoto',
+    remote: project.remote ?? false,
+    skills,
+    category,
+    level: project.level ?? 'mid',
+    applicants: project.applications_count ?? 0,
+    maxApplicants: project.max_applicants ?? 0,
+    postedDate: project.created_at,
+    deadline: project.deadline ?? '',
+    priority: project.priority ?? 'medium',
+    featured: project.featured ?? false,
+    status: (project.status as Project['status']) ?? 'open',
+    tags: project.tags ?? [],
+  };
+};
 
 export function ProjectsSection() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,201 +117,28 @@ export function ProjectsSection() {
   const [appliedProjects, setAppliedProjects] = useState<string[]>([]);
   const [showAnimations, setShowAnimations] = useState(true);
 
-  // Datos ficticios de proyectos
-  const projects: Project[] = [
-    {
-      id: '1',
-      title: 'E-commerce Platform con React y Node.js',
-      description: 'Desarrollar una plataforma completa de comercio electrónico con funcionalidades avanzadas como carrito de compras, pagos integrados, gestión de inventario y panel de administración. Incluye integración con pasarelas de pago, optimización SEO y diseño responsive.',
-      company: {
-        name: 'TechCommerce SA',
-        verified: true,
-        rating: 4.9,
-        reviewsCount: 127
-      },
-      budget: { min: 8000, max: 12000, type: 'fixed' },
-      duration: { value: 8, unit: 'weeks' },
-      location: 'Madrid, España',
-      remote: true,
-      skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'Stripe API', 'AWS'],
-      category: 'Desarrollo Web',
-      level: 'senior',
-      applicants: 15,
-      maxApplicants: 25,
-      postedDate: '2024-08-01',
-      deadline: '2024-08-15',
-      priority: 'urgent',
-      featured: true,
-      status: 'open',
-      tags: ['Full Stack', 'E-commerce', 'Remoto', 'Alto presupuesto']
-    },
-    {
-      id: '2',
-      title: 'App Móvil para Fintech - React Native',
-      description: 'Crear una aplicación móvil innovadora para servicios financieros digitales. Incluye autenticación biométrica, transferencias P2P, visualización de gastos, notificaciones push y integración con APIs bancarias. Diseño centrado en UX/UI moderna.',
-      company: {
-        name: 'FinTech Innovations',
-        verified: true,
-        rating: 4.7,
-        reviewsCount: 89
-      },
-      budget: { min: 15000, max: 20000, type: 'fixed' },
-      duration: { value: 12, unit: 'weeks' },
-      location: 'Barcelona, España',
-      remote: false,
-      skills: ['React Native', 'TypeScript', 'Firebase', 'Biometric Auth', 'REST API'],
-      category: 'Desarrollo Mobile',
-      level: 'senior',
-      applicants: 22,
-      maxApplicants: 30,
-      postedDate: '2024-08-03',
-      deadline: '2024-08-20',
-      priority: 'normal',
-      featured: true,
-      status: 'open',
-      tags: ['Mobile', 'Fintech', 'Presencial', 'Innovation']
-    },
-    {
-      id: '3',
-      title: 'Dashboard de Analytics con Vue.js',
-      description: 'Desarrollar un dashboard interactivo para análisis de datos empresariales con gráficos dinámicos, filtros avanzados, reportes exportables y visualizaciones en tiempo real. Integración con múltiples fuentes de datos y APIs.',
-      company: {
-        name: 'DataInsights Pro',
-        verified: true,
-        rating: 4.6,
-        reviewsCount: 156
-      },
-      budget: { min: 5000, max: 8000, type: 'fixed' },
-      duration: { value: 6, unit: 'weeks' },
-      location: 'Valencia, España',
-      remote: true,
-      skills: ['Vue.js', 'D3.js', 'Python', 'Django', 'PostgreSQL', 'Chart.js'],
-      category: 'Data Science',
-      level: 'mid',
-      applicants: 8,
-      maxApplicants: 15,
-      postedDate: '2024-08-05',
-      deadline: '2024-08-25',
-      priority: 'normal',
-      featured: false,
-      status: 'open',
-      tags: ['Data Viz', 'Analytics', 'Remoto', 'Vue']
-    },
-    {
-      id: '4',
-      title: 'Sistema DevOps con Docker y Kubernetes',
-      description: 'Implementar infraestructura completa de CI/CD usando Docker, Kubernetes, Jenkins y AWS. Incluye monitoreo, logging, automated testing, deployment pipelines y configuración de ambientes de desarrollo, staging y producción.',
-      company: {
-        name: 'CloudTech Solutions',
-        verified: true,
-        rating: 4.8,
-        reviewsCount: 94
-      },
-      budget: { min: 120, max: 150, type: 'hourly' },
-      duration: { value: 10, unit: 'weeks' },
-      location: 'Sevilla, España',
-      remote: true,
-      skills: ['Docker', 'Kubernetes', 'Jenkins', 'AWS', 'Terraform', 'Monitoring'],
-      category: 'DevOps',
-      level: 'senior',
-      applicants: 12,
-      maxApplicants: 20,
-      postedDate: '2024-08-06',
-      deadline: '2024-09-01',
-      priority: 'urgent',
-      featured: false,
-      status: 'open',
-      tags: ['DevOps', 'Cloud', 'Remoto', 'Senior']
-    },
-    {
-      id: '5',
-      title: 'Chatbot IA con Natural Language Processing',
-      description: 'Desarrollar un chatbot inteligente con capacidades de procesamiento de lenguaje natural para atención al cliente automatizada. Integración con OpenAI, training con datos específicos de la empresa y deployment en web y móvil.',
-      company: {
-        name: 'AI Customer Care',
-        verified: false,
-        rating: 4.4,
-        reviewsCount: 34
-      },
-      budget: { min: 6000, max: 9000, type: 'fixed' },
-      duration: { value: 8, unit: 'weeks' },
-      location: 'Bilbao, España',
-      remote: true,
-      skills: ['Python', 'OpenAI API', 'NLP', 'FastAPI', 'React', 'Machine Learning'],
-      category: 'AI/ML',
-      level: 'mid',
-      applicants: 18,
-      maxApplicants: 25,
-      postedDate: '2024-08-07',
-      deadline: '2024-08-30',
-      priority: 'normal',
-      featured: false,
-      status: 'open',
-      tags: ['AI', 'Chatbot', 'Remoto', 'NLP']
-    },
-    {
-      id: '6',
-      title: 'Rediseño UX/UI para SaaS Platform',
-      description: 'Redesign completo de la experiencia de usuario y interfaz para una plataforma SaaS existente. Incluye research de usuarios, wireframes, prototipos interactivos, design system y implementación en React con animaciones modernas.',
-      company: {
-        name: 'SaaS Design Studio',
-        verified: true,
-        rating: 4.9,
-        reviewsCount: 76
-      },
-      budget: { min: 4000, max: 6500, type: 'fixed' },
-      duration: { value: 5, unit: 'weeks' },
-      location: 'Remoto',
-      remote: true,
-      skills: ['Figma', 'React', 'TypeScript', 'Framer Motion', 'UX Research', 'Design Systems'],
-      category: 'UI/UX Design',
-      level: 'mid',
-      applicants: 25,
-      maxApplicants: 35,
-      postedDate: '2024-08-08',
-      deadline: '2024-08-22',
-      priority: 'normal',
-      featured: true,
-      status: 'open',
-      tags: ['UX/UI', 'SaaS', 'Remoto', 'Design']
-    },
-    {
-      id: '7',
-      title: 'Blockchain DApp con Smart Contracts',
-      description: 'Desarrollar una aplicación descentralizada (DApp) en Ethereum con smart contracts para un marketplace de NFTs. Incluye wallet integration, smart contract development, testing, frontend con Web3.js y deployment en testnet/mainnet.',
-      company: {
-        name: 'CryptoTech Ventures',
-        verified: true,
-        rating: 4.3,
-        reviewsCount: 45
-      },
-      budget: { min: 10000, max: 15000, type: 'fixed' },
-      duration: { value: 10, unit: 'weeks' },
-      location: 'Zaragoza, España',
-      remote: true,
-      skills: ['Solidity', 'Web3.js', 'React', 'Ethereum', 'Smart Contracts', 'MetaMask'],
-      category: 'Blockchain',
-      level: 'senior',
-      applicants: 7,
-      maxApplicants: 15,
-      postedDate: '2024-08-09',
-      deadline: '2024-09-05',
-      priority: 'normal',
-      featured: false,
-      status: 'open',
-      tags: ['Blockchain', 'NFT', 'Remoto', 'Web3']
-    }
-  ];
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const categoryIconMap: Record<string, typeof Briefcase> = {
+    'Desarrollo Web': Code,
+    'Desarrollo Mobile': Smartphone,
+    'UI/UX Design': Palette,
+    'DevOps': Shield,
+    'Data Science': Database,
+    'AI/ML': Brain,
+    'Blockchain': Award,
+  };
 
   const categories = [
     { id: 'all', name: 'Todos los Proyectos', icon: Briefcase, count: projects.length },
-    { id: 'Desarrollo Web', name: 'Desarrollo Web', icon: Code, count: projects.filter(p => p.category === 'Desarrollo Web').length },
-    { id: 'Desarrollo Mobile', name: 'Mobile', icon: Smartphone, count: projects.filter(p => p.category === 'Desarrollo Mobile').length },
-    { id: 'UI/UX Design', name: 'UI/UX Design', icon: Palette, count: projects.filter(p => p.category === 'UI/UX Design').length },
-    { id: 'DevOps', name: 'DevOps', icon: Shield, count: projects.filter(p => p.category === 'DevOps').length },
-    { id: 'Data Science', name: 'Data Science', icon: Database, count: projects.filter(p => p.category === 'Data Science').length },
-    { id: 'AI/ML', name: 'AI/ML', icon: Brain, count: projects.filter(p => p.category === 'AI/ML').length },
-    { id: 'Blockchain', name: 'Blockchain', icon: Award, count: projects.filter(p => p.category === 'Blockchain').length }
+    ...Array.from(new Set(projects.map((project) => project.category))).map((category) => ({
+      id: category,
+      name: category,
+      icon: categoryIconMap[category] ?? Briefcase,
+      count: projects.filter((project) => project.category === category).length,
+    }))
   ];
 
   const filteredProjects = projects.filter(project => {
@@ -351,15 +220,44 @@ export function ProjectsSection() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    const loadProjects = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetchProjects();
+        if (!isMounted) return;
+        const items = response.data || [];
+        setProjects(items.map(mapProject));
+      } catch (error) {
+        console.error('Error cargando proyectos', error);
+        if (isMounted) {
+          setError('No se pudieron cargar los proyectos.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadProjects();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       {/* Header con animación */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2 glow-text">
               Proyectos Publicados
@@ -385,6 +283,17 @@ export function ProjectsSection() {
         </div>
       </motion.div>
 
+      {error ? (
+        <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+          {error}
+        </div>
+      ) : null}
+      {isLoading ? (
+        <div className="rounded-lg border border-[#333333] bg-[#1A1A1A] p-4 text-sm text-gray-300">
+          Cargando proyectos...
+        </div>
+      ) : null}
+
       {/* Search and Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -406,7 +315,7 @@ export function ProjectsSection() {
               </div>
 
               {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="bg-[#0D0D0D] border-[#333333] text-white">
                     <SelectValue placeholder="Categoría" />
@@ -636,7 +545,7 @@ export function ProjectsSection() {
                     </Badge>
                     
                     <div className="text-xs text-gray-400">
-                      Deadline: {new Date(project.deadline).toLocaleDateString()}
+                      Deadline: {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'Sin fecha'}
                     </div>
                   </div>
 

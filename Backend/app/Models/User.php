@@ -155,4 +155,24 @@ class User extends Authenticatable
     {
         $this->notify(new ResetPasswordNotification($token));
     }
+
+    public function developerProfile()
+    {
+        return $this->hasOne(DeveloperProfile::class);
+    }
+
+    public function companyProfile()
+    {
+        return $this->hasOne(CompanyProfile::class);
+    }
+
+    public function reviewsReceived()
+    {
+        return $this->hasMany(Review::class, 'developer_id');
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'developer_skill', 'developer_id', 'skill_id');
+    }
 }

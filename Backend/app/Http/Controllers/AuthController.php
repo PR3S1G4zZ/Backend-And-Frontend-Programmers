@@ -10,7 +10,6 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ResetPasswordMail;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -42,7 +41,7 @@ class AuthController extends Controller
                     'regex:/^\S+$/', // Sin espacios
                     'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,15}$/' // Mínimo 8, máximo 15, 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial
                 ],
-                'user_type' => 'required|in:programmer,company,admin'
+                'user_type' => 'required|in:programmer,company'
             ], [
                 'name.regex' => 'El nombre solo puede contener letras y espacios, sin espacios al inicio/fin.',
                 'lastname.regex' => 'El apellido solo puede contener letras y espacios, sin espacios al inicio/fin.',
@@ -84,10 +83,10 @@ class AuthController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
                 'message' => 'Error interno del servidor',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -152,10 +151,10 @@ class AuthController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
                 'message' => 'Error interno del servidor',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -174,10 +173,10 @@ class AuthController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al cerrar sesión',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -202,10 +201,10 @@ class AuthController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener información del usuario',
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -220,23 +219,24 @@ class AuthController extends Controller
 
     if (!$user) {
         return response()->json([
-            'success' => false,
-            'message' => 'No existe un usuario con este correo'
-        ], 404);
+            'success' => true,
+            'message' => 'Si el correo existe, se enviará un enlace de recuperación.'
+        ], 200);
     }
 
     // Generar token de reseteo
     $token = Password::createToken($user);
 
     // URL del frontend
-    $resetUrl = "http://localhost:5174/reset-password?token={$token}&email={$user->email}";
+    $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:5174'), '/');
+    $resetUrl = "{$frontendUrl}/reset-password?token={$token}&email={$user->email}";
 
     // Enviar correo
     Mail::to($user->email)->send(new ResetPasswordMail($resetUrl));
 
     return response()->json([
         'success' => true,
-        'message' => 'Correo enviado correctamente'
+        'message' => 'Si el correo existe, se enviará un enlace de recuperación.'
     ], 200);
 }
 
@@ -277,7 +277,7 @@ public function resetPassword(Request $request)
 
     return response()->json([
         'success' => false,
-        'message' => 'Error al restablecer la contraseña'
+        'message' => 'No se pudo restablecer la contraseña.'
     ], 400);
     }
 }
