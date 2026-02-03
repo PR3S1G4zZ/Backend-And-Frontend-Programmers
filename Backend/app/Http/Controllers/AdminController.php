@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Project;
 use App\Models\Application;
@@ -15,6 +16,57 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    /**
+     * Crear un usuario (solo para administradores)
+     */
+    public function createUser(Request $request): JsonResponse
+    {
+        try {
+            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Acceso no autorizado.'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
+                'lastname' => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
+                'email' => 'required|string|email|max:255|unique:users,email',
+                'user_type' => 'required|in:programmer,company,admin',
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'max:15',
+                    'regex:/^\S+$/',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,15}$/'
+                ],
+            ]);
+
+            $user = User::create([
+                'name' => strip_tags(trim($validated['name'])),
+                'lastname' => strip_tags(trim($validated['lastname'])),
+                'email' => strtolower(trim($validated['email'])),
+                'password' => Hash::make($validated['password']),
+                'user_type' => $validated['user_type'],
+                'role' => $validated['user_type'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario creado exitosamente.',
+                'user' => $user->only(['id', 'name', 'lastname', 'email', 'user_type', 'created_at', 'email_verified_at']),
+            ], 201);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear usuario.'
+            ], 500);
+        }
+    }
+
     /**
      * Obtener todos los usuarios (solo para administradores)
      */

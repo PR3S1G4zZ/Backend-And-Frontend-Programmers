@@ -80,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin routes (solo administradores)
     Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::post('/users', [AdminController::class, 'createUser']);
         Route::get('/users', [AdminController::class, 'getUsers']);
         Route::get('/users/stats', [AdminController::class, 'getUserStats']);
         Route::get('/users/{id}', [AdminController::class, 'getUser']);

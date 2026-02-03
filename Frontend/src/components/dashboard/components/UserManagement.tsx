@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useSweetAlert } from './ui/sweet-alert';
+import { apiRequest } from '../../../services/apiClient';
 import {
   Search,
   UserPlus,
@@ -31,6 +32,23 @@ interface User {
   email_verified_at?: string;
 }
 
+interface UsersResponse {
+  success: boolean;
+  users: User[];
+  pagination?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+interface UserResponse {
+  success: boolean;
+  message?: string;
+  user: User;
+}
+
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,44 +56,31 @@ export function UserManagement() {
   const [filterType, setFilterType] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDialog, setShowUserDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    lastname: '',
+    email: '',
+    user_type: 'programmer'
+  });
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    lastname: '',
+    email: '',
+    user_type: 'programmer',
+    password: '',
+    confirmPassword: ''
+  });
   const { showAlert, Alert } = useSweetAlert();
 
   // Obtener usuarios de la API
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth_token');
-
-      if (!token) {
-        showAlert({
-          title: 'Error de autenticación',
-          text: 'No se encontró el token de autenticación',
-          type: 'error'
-        });
-        return;
-      }
-
-      const response = await fetch('http://127.0.0.1:8000/api/admin/users', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || data);
-      } else if (response.status === 401) {
-        showAlert({
-          title: 'Sesión expirada',
-          text: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
-          type: 'error'
-        });
-      } else {
-        throw new Error('Error al obtener usuarios');
-      }
+      const data = await apiRequest<UsersResponse>('/admin/users');
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
       showAlert({
@@ -146,13 +151,15 @@ export function UserManagement() {
     setShowUserDialog(true);
   };
 
-  const handleEditUser = () => {
-    // TODO: Implementar edición de usuario
-    showAlert({
-      title: 'Funcionalidad próximamente',
-      text: 'La edición de usuarios estará disponible próximamente',
-      type: 'info'
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setEditForm({
+      name: user.name,
+      lastname: user.lastname,
+      email: user.email,
+      user_type: user.user_type
     });
+    setShowEditDialog(true);
   };
 
   const handleDeleteUser = (user: User) => {
@@ -165,25 +172,13 @@ export function UserManagement() {
       cancelButtonText: 'Cancelar',
       onConfirm: async () => {
         try {
-          const token = localStorage.getItem('auth_token');
-          const response = await fetch(`http://127.0.0.1:8000/api/admin/users/${user.id}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+          await apiRequest(`/admin/users/${user.id}`, { method: 'DELETE' });
+          setUsers(users.filter(u => u.id !== user.id));
+          showAlert({
+            title: 'Usuario eliminado',
+            text: 'El usuario ha sido eliminado exitosamente',
+            type: 'success'
           });
-
-          if (response.ok) {
-            setUsers(users.filter(u => u.id !== user.id));
-            showAlert({
-              title: 'Usuario eliminado',
-              text: 'El usuario ha sido eliminado exitosamente',
-              type: 'success'
-            });
-          } else {
-            throw new Error('Error al eliminar usuario');
-          }
         } catch (error) {
           showAlert({
             title: 'Error',
@@ -193,6 +188,106 @@ export function UserManagement() {
         }
       }
     });
+  };
+
+  const handleOpenCreateDialog = () => {
+    setCreateForm({
+      name: '',
+      lastname: '',
+      email: '',
+      user_type: 'programmer',
+      password: '',
+      confirmPassword: ''
+    });
+    setShowCreateDialog(true);
+  };
+
+  const handleCreateUser = async () => {
+    if (!createForm.name || !createForm.lastname || !createForm.email || !createForm.password) {
+      showAlert({
+        title: 'Campos requeridos',
+        text: 'Completa todos los campos obligatorios.',
+        type: 'warning'
+      });
+      return;
+    }
+    if (createForm.password !== createForm.confirmPassword) {
+      showAlert({
+        title: 'Contraseñas no coinciden',
+        text: 'Verifica la confirmación de contraseña.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await apiRequest<UserResponse>('/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: createForm.name,
+          lastname: createForm.lastname,
+          email: createForm.email,
+          user_type: createForm.user_type,
+          password: createForm.password
+        })
+      });
+      setUsers([response.user, ...users]);
+      setShowCreateDialog(false);
+      showAlert({
+        title: 'Usuario creado',
+        text: 'El usuario se creó correctamente.',
+        type: 'success'
+      });
+    } catch (error) {
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo crear el usuario.',
+        type: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+    if (!editForm.name || !editForm.lastname || !editForm.email) {
+      showAlert({
+        title: 'Campos requeridos',
+        text: 'Completa todos los campos obligatorios.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await apiRequest<UserResponse>(`/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: editForm.name,
+          lastname: editForm.lastname,
+          email: editForm.email,
+          user_type: editForm.user_type
+        })
+      });
+      setUsers(users.map(user => user.id === selectedUser.id ? response.user : user));
+      setShowEditDialog(false);
+      showAlert({
+        title: 'Usuario actualizado',
+        text: 'Los cambios se guardaron correctamente.',
+        type: 'success'
+      });
+    } catch (error) {
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo actualizar el usuario.',
+        type: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Estadísticas de usuarios
@@ -227,7 +322,10 @@ export function UserManagement() {
               Actualizar
             </Button>
 
-            <Button className="bg-[#00FF85] hover:bg-[#00C46A] text-[#0D0D0D] font-semibold">
+            <Button
+              className="bg-[#00FF85] hover:bg-[#00C46A] text-[#0D0D0D] font-semibold"
+              onClick={handleOpenCreateDialog}
+            >
               <UserPlus className="w-4 h-4 mr-2" />
               Nuevo Usuario
             </Button>
@@ -399,7 +497,7 @@ export function UserManagement() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={handleEditUser}
+                              onClick={() => handleEditUser(user)}
                               className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white"
                             >
                               <Edit className="w-4 h-4" />
@@ -429,6 +527,172 @@ export function UserManagement() {
             )}
           </CardContent>
         </Card>
+
+        {/* Dialog crear usuario */}
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-[#00FF85] flex items-center gap-2">
+                <UserPlus className="w-5 h-5" />
+                Crear Usuario
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-300">Nombre</label>
+                  <Input
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300">Apellido</label>
+                  <Input
+                    value={createForm.lastname}
+                    onChange={(e) => setCreateForm({ ...createForm, lastname: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-300">Email</label>
+                <Input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  className="bg-[#2A2A2A] border-[#333333] text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-300">Tipo de usuario</label>
+                <Select
+                  value={createForm.user_type}
+                  onValueChange={(value) => setCreateForm({ ...createForm, user_type: value })}
+                >
+                  <SelectTrigger className="bg-[#2A2A2A] border-[#333333] text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#2A2A2A] border-[#333333]">
+                    <SelectItem value="programmer" className="text-white hover:bg-[#333333]">Programador</SelectItem>
+                    <SelectItem value="company" className="text-white hover:bg-[#333333]">Empresa</SelectItem>
+                    <SelectItem value="admin" className="text-white hover:bg-[#333333]">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-300">Contraseña</label>
+                  <Input
+                    type="password"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300">Confirmar contraseña</label>
+                  <Input
+                    type="password"
+                    value={createForm.confirmPassword}
+                    onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="border-[#333333] text-white"
+                  onClick={() => setShowCreateDialog(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+                  onClick={handleCreateUser}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Guardando...' : 'Crear'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog editar usuario */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-[#00FF85] flex items-center gap-2">
+                <Edit className="w-5 h-5" />
+                Editar Usuario
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-gray-300">Nombre</label>
+                  <Input
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300">Apellido</label>
+                  <Input
+                    value={editForm.lastname}
+                    onChange={(e) => setEditForm({ ...editForm, lastname: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-300">Email</label>
+                <Input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="bg-[#2A2A2A] border-[#333333] text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-300">Tipo de usuario</label>
+                <Select
+                  value={editForm.user_type}
+                  onValueChange={(value) => setEditForm({ ...editForm, user_type: value })}
+                >
+                  <SelectTrigger className="bg-[#2A2A2A] border-[#333333] text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#2A2A2A] border-[#333333]">
+                    <SelectItem value="programmer" className="text-white hover:bg-[#333333]">Programador</SelectItem>
+                    <SelectItem value="company" className="text-white hover:bg-[#333333]">Empresa</SelectItem>
+                    <SelectItem value="admin" className="text-white hover:bg-[#333333]">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="border-[#333333] text-white"
+                  onClick={() => setShowEditDialog(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+                  onClick={handleUpdateUser}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Dialog de detalles del usuario */}
         <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
