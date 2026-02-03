@@ -9,17 +9,30 @@ import {
   Building2,
   Settings,
   LogOut,
-  Home
+  Home,
+  X
 } from "lucide-react";
+import type { User as AuthUser } from "../services/authService";
 
 interface SidebarProps {
   userType: 'programmer' | 'company' | 'admin';
   currentSection: string;
   onSectionChange: (section: string) => void;
   onLogout?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  user?: AuthUser | null;
 }
 
-export function Sidebar({ userType, currentSection, onSectionChange, onLogout }: SidebarProps) {
+export function Sidebar({
+  userType,
+  currentSection,
+  onSectionChange,
+  onLogout,
+  isOpen = false,
+  onClose,
+  user,
+}: SidebarProps) {
   const programmerSections = [
     { id: 'welcome', label: 'Mi Espacio', icon: Home },
     { id: 'portfolio', label: 'Mi Portafolio', icon: FolderOpen },
@@ -45,16 +58,53 @@ export function Sidebar({ userType, currentSection, onSectionChange, onLogout }:
   ];
 
   const sections = userType === 'programmer' ? programmerSections : userType === 'admin' ? adminSections : companySections;
+  const displayName = user ? `${user.name} ${user.lastname}`.trim() : 'Usuario';
+  const displaySubtitle =
+    userType === 'admin'
+      ? 'Administrador'
+      : userType === 'company'
+        ? 'Cuenta Empresa'
+        : 'Desarrollador';
+
+  const handleSectionChange = (sectionId: string) => {
+    onSectionChange(sectionId);
+    if (onClose) {
+      onClose();
+    }
+  };
 
   return (
-    <div className="w-64 bg-[#1A1A1A] border-r border-[#333333] h-screen flex flex-col">
+    <>
+      <button
+        type="button"
+        aria-label="Cerrar sidebar"
+        className={`fixed inset-0 z-40 bg-black/60 transition-opacity md:hidden ${
+          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={onClose}
+      />
+      <div
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-col border-r border-[#333333] bg-[#1A1A1A] transition-transform duration-200 md:static md:h-screen md:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
       {/* Logo */}
       <div className="p-6 border-b border-[#333333]">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
           <div className="bg-[#00FF85] p-2 rounded-lg">
             <Code className="h-5 w-5 text-[#0D0D0D]" />
           </div>
           <span className="text-lg font-bold text-[#00FF85] glow-text">Programmers</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-white md:hidden"
+            aria-label="Cerrar menú"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
@@ -65,16 +115,16 @@ export function Sidebar({ userType, currentSection, onSectionChange, onLogout }:
             <>
               <User className="h-8 w-8 text-[#00FF85]" />
               <div>
-                <div className="text-white font-semibold">Carlos Mendoza</div>
-                <div className="text-gray-400 text-sm">Full Stack Developer</div>
+                <div className="text-white font-semibold">{displayName}</div>
+                <div className="text-gray-400 text-sm">{displaySubtitle}</div>
               </div>
             </>
           ) : (
             <>
               <Building2 className="h-8 w-8 text-[#00FF85]" />
               <div>
-                <div className="text-white font-semibold">TechCorp SA</div>
-                <div className="text-gray-400 text-sm">Empresa Tecnológica</div>
+                <div className="text-white font-semibold">{displayName}</div>
+                <div className="text-gray-400 text-sm">{displaySubtitle}</div>
               </div>
             </>
           )}
@@ -95,7 +145,7 @@ export function Sidebar({ userType, currentSection, onSectionChange, onLogout }:
                     ? 'bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]'
                     : 'text-white hover:bg-[#333333] hover:text-white'
                 }`}
-                onClick={() => onSectionChange(section.id)}
+                onClick={() => handleSectionChange(section.id)}
               >
                 <Icon className="h-5 w-5 mr-3" />
                 {section.label}
@@ -124,5 +174,6 @@ export function Sidebar({ userType, currentSection, onSectionChange, onLogout }:
         </Button>
       </div>
     </div>
+    </>
   );
 }
