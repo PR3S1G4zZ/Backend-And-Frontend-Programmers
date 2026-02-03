@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
-import { generateKPIData, generateCategoryData, generateFunnelData } from "../../utils/mockDataGenerator";
-import type { CategoryData } from "../../utils/mockDataGenerator";
+import type { ProjectsMetrics } from "../../../../services/adminMetricsService";
 import { 
   Briefcase, 
   CheckCircle, 
@@ -18,6 +17,8 @@ import {
 
 interface ProjectsDashboardProps {
   selectedPeriod: string;
+  metrics?: ProjectsMetrics;
+  isLoading?: boolean;
 }
 
 const recentProjects = [
@@ -103,47 +104,47 @@ const projectTimeline = [
   { phase: "Entrega", duration: 1, color: "#22c55e" }
 ];
 
-export function ProjectsDashboard({ selectedPeriod }: ProjectsDashboardProps) {
-  const kpiData = generateKPIData(selectedPeriod).projects;
-  const categoryData = generateCategoryData(selectedPeriod);
-  const projectFunnelData = generateFunnelData(selectedPeriod, 'projects');
+export function ProjectsDashboard({ selectedPeriod, metrics, isLoading = false }: ProjectsDashboardProps) {
+  const kpiData = metrics?.kpis ?? [];
+  const categoryData = metrics?.categories ?? [];
+  const projectFunnelData = metrics?.funnel ?? [];
+  const maxCategoryValue = Math.max(1, ...categoryData.map((category) => category.projects));
+  const funnelColors = ["#00ff88", "#50c878", "#4ade80", "#22c55e"];
+  const funnelMax = Math.max(1, ...projectFunnelData.map((step) => step.value));
+  const funnelSteps = projectFunnelData.map((step, index) => ({
+    label: step.label,
+    value: step.value,
+    percentage: Math.round((step.value / funnelMax) * 100),
+    color: funnelColors[index % funnelColors.length],
+  }));
 
-  const kpiCards = [
-    {
-      title: kpiData[0].title,
-      value: kpiData[0].value,
-      icon: <Briefcase className="w-5 h-5" />,
-      change: kpiData[0].change,
-      description: "En desarrollo actualmente"
-    },
-    {
-      title: kpiData[1].title,
-      value: kpiData[1].value,
-      icon: <CheckCircle className="w-5 h-5" />,
-      change: kpiData[1].change,
-      description: `Este ${selectedPeriod === 'day' ? 'día' : selectedPeriod === 'week' ? 'semana' : selectedPeriod === 'year' ? 'año' : 'mes'}`
-    },
-    {
-      title: kpiData[2].title,
-      value: kpiData[2].value,
-      icon: <Clock className="w-5 h-5" />,
-      change: kpiData[2].change,
-      description: "Hasta contratación"
-    },
-    {
-      title: kpiData[3].title,
-      value: kpiData[3].value,
-      icon: <TrendingUp className="w-5 h-5" />,
-      change: kpiData[3].change,
-      description: "Proyectos completados exitosamente"
-    }
-  ];
+  const kpiCards = kpiData.map((kpi) => ({
+    ...kpi,
+    icon:
+      kpi.title === "Proyectos Activos"
+        ? <Briefcase className="w-5 h-5" />
+        : kpi.title === "Proyectos Completados"
+        ? <CheckCircle className="w-5 h-5" />
+        : kpi.title === "Tiempo Promedio"
+        ? <Clock className="w-5 h-5" />
+        : <TrendingUp className="w-5 h-5" />,
+    description:
+      kpi.title === "Proyectos Activos"
+        ? "En desarrollo actualmente"
+        : kpi.title === "Proyectos Completados"
+        ? `Este ${selectedPeriod === 'day' ? 'día' : selectedPeriod === 'week' ? 'semana' : selectedPeriod === 'year' ? 'año' : 'mes'}`
+        : kpi.title === "Tiempo Promedio"
+        ? "Hasta contratación"
+        : "Proyectos completados exitosamente",
+  }));
 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {kpiCards.map((kpi, index) => (
+        {isLoading && kpiCards.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Cargando métricas...</div>
+        ) : kpiCards.map((kpi, index) => (
           <KPICard
             key={index}
             title={kpi.title}
@@ -160,7 +161,7 @@ export function ProjectsDashboard({ selectedPeriod }: ProjectsDashboardProps) {
         <FunnelChart
           title="Embudo de Proyectos"
           description="Desde publicación hasta completado"
-          steps={projectFunnelData}
+          steps={funnelSteps}
         />
 
         {/* Categories Chart - Simple horizontal bar chart */}
@@ -173,14 +174,14 @@ export function ProjectsDashboard({ selectedPeriod }: ProjectsDashboardProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {categoryData.map((item: CategoryData) => (
+              {categoryData.map((item) => (
                 <div key={item.category} className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
                     <span className="text-sm font-medium w-24 text-left">{item.category}</span>
                     <div className="flex-1 bg-secondary rounded-full h-3 mx-2">
                       <div 
                         className="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-500" 
-                        style={{ width: `${Math.min(100, (item.projects / Math.max(...categoryData.map(c => c.projects))) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (item.projects / maxCategoryValue) * 100)}%` }}
                       />
                     </div>
                   </div>

@@ -2,8 +2,7 @@ import { KPICard } from "../KPICard";
 import { TrendChart } from "../TrendChart";
 import { GeographicMap } from "../GeographicMap";
 import { FunnelChart } from "../FunnelChart";
-import { generateTimeSeriesData, generateKPIData, generateFunnelData } from "../../utils/mockDataGenerator";
-import type { TimeSeriesData } from "../../utils/mockDataGenerator";
+import type { GrowthMetrics, TimeSeriesPoint } from "../../../../services/adminMetricsService";
 import { 
   Users, 
   UserPlus, 
@@ -13,6 +12,8 @@ import {
 
 interface GrowthDashboardProps {
   selectedPeriod: string;
+  metrics?: GrowthMetrics;
+  isLoading?: boolean;
 }
 
 // Geographic data remains static as it doesn't change much by time period
@@ -25,54 +26,51 @@ const geographicData = [
   { country: "Otros", users: 364, percentage: 10.1, flag: "🌍" }
 ];
 
-export function GrowthDashboard({ selectedPeriod }: GrowthDashboardProps) {
-  const timeSeriesData = generateTimeSeriesData(selectedPeriod);
-  const kpiData = generateKPIData(selectedPeriod).growth;
-  const conversionFunnelData = generateFunnelData(selectedPeriod, 'conversion');
-
-  // Transform time series data for new registrations chart
-  const newRegistrationsData = timeSeriesData.map((item: TimeSeriesData) => ({
-    month: item.period,
-    freelancers: Math.floor(item.users * 0.6), // 60% freelancers
-    clients: Math.floor(item.users * 0.4)      // 40% clients
+export function GrowthDashboard({ selectedPeriod, metrics, isLoading = false }: GrowthDashboardProps) {
+  const timeSeriesData = metrics?.timeSeries ?? [];
+  const kpiData = metrics?.kpis ?? [];
+  const conversionFunnelData = metrics?.funnel ?? [];
+  const funnelColors = ["#00ff88", "#50c878", "#4ade80", "#22c55e"];
+  const funnelMax = Math.max(1, ...conversionFunnelData.map((item) => item.value));
+  const funnelSteps = conversionFunnelData.map((step, index) => ({
+    label: step.label,
+    value: step.value,
+    percentage: Math.round((step.value / funnelMax) * 100),
+    color: funnelColors[index % funnelColors.length],
   }));
 
-  const kpiCards = [
-    {
-      title: kpiData[0].title,
-      value: kpiData[0].value,
-      icon: <UserPlus className="w-5 h-5" />,
-      change: kpiData[0].change,
-      description: `Registros este ${selectedPeriod === 'day' ? 'día' : selectedPeriod === 'week' ? 'semana' : selectedPeriod === 'year' ? 'año' : 'mes'}`
-    },
-    {
-      title: kpiData[1].title,
-      value: kpiData[1].value,
-      icon: <Users className="w-5 h-5" />,
-      change: kpiData[1].change,
-      description: `Registros este ${selectedPeriod === 'day' ? 'día' : selectedPeriod === 'week' ? 'semana' : selectedPeriod === 'year' ? 'año' : 'mes'}`
-    },
-    {
-      title: kpiData[2].title,
-      value: kpiData[2].value,
-      icon: <Target className="w-5 h-5" />,
-      change: kpiData[2].change,
-      description: "Visitante a contratación"
-    },
-    {
-      title: kpiData[3].title,
-      value: kpiData[3].value,
-      icon: <Repeat className="w-5 h-5" />,
-      change: kpiData[3].change,
-      description: "Usuarios activos después de 30 días"
-    }
-  ];
+  // Transform time series data for new registrations chart
+  const newRegistrationsData = timeSeriesData.map((item: TimeSeriesPoint) => ({
+    month: item.period,
+    freelancers: item.programmers,
+    clients: item.companies
+  }));
+
+  const kpiCards = kpiData.map((kpi) => ({
+    ...kpi,
+    icon:
+      kpi.title === "Nuevos Freelancers"
+        ? <UserPlus className="w-5 h-5" />
+        : kpi.title === "Nuevos Clientes"
+        ? <Users className="w-5 h-5" />
+        : kpi.title === "Tasa de Conversión"
+        ? <Target className="w-5 h-5" />
+        : <Repeat className="w-5 h-5" />,
+    description:
+      kpi.title === "Tasa de Conversión"
+        ? "Visitante a contratación"
+        : kpi.title === "Retención 30 días"
+        ? "Usuarios activos después de 30 días"
+        : `Registros este ${selectedPeriod === 'day' ? 'día' : selectedPeriod === 'week' ? 'semana' : selectedPeriod === 'year' ? 'año' : 'mes'}`,
+  }));
 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {kpiCards.map((kpi, index) => (
+        {isLoading && kpiCards.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Cargando métricas...</div>
+        ) : kpiCards.map((kpi, index) => (
           <KPICard
             key={index}
             title={kpi.title}
@@ -111,7 +109,7 @@ export function GrowthDashboard({ selectedPeriod }: GrowthDashboardProps) {
         <FunnelChart
           title="Embudo de Conversión"
           description="Del visitante al primer proyecto contratado"
-          steps={conversionFunnelData}
+          steps={funnelSteps}
         />
         
         {/* Retention Cohorts Table - Simplified */}

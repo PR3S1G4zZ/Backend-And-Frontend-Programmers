@@ -8,8 +8,6 @@ use App\Http\Controllers\{
     AdminController
 };
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,52 +18,11 @@ use Illuminate\Http\Request;
 Route::prefix('auth')->group(function () {
 
     // Registro y Login
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login',    [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1');
+    Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:6,1');
     // recuperar contraseña
-    Route::post('/forgot-password', [AuthController::class, 'sendResetLink']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | RECUPERAR CONTRASEÑA
-    |--------------------------------------------------------------------------
-    */
-
-    // Enviar enlace al correo
-    Route::post('/forgot-password', function (Request $request) {
-        $request->validate(['email' => 'required|email']);
-
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
-
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => 'Correo enviado correctamente'], 200)
-            : response()->json(['message' => 'No se pudo enviar el correo'], 400);
-    });
-
-    // Resetear contraseña con token
-    Route::post('/reset-password', function (Request $request) {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
-        ]);
-
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
-                $user->forceFill([
-                    'password' => bcrypt($password)
-                ])->save();
-            }
-        );
-
-        return $status === Password::PASSWORD_RESET
-            ? response()->json(['message' => 'Contraseña restablecida'], 200)
-            : response()->json(['message' => 'No se pudo restablecer la contraseña'], 400);
-    });
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 
     // Rutas protegidas
     Route::middleware('auth:sanctum')->group(function () {
@@ -105,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/{id}', [AdminController::class, 'getUser']);
         Route::put('/users/{id}', [AdminController::class, 'updateUser']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+        Route::get('/metrics', [AdminController::class, 'metrics']);
     });
 
     

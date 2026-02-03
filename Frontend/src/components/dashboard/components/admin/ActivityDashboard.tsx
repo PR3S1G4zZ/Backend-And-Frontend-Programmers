@@ -3,8 +3,7 @@ import { ActivityHeatmap } from "../ActivityHeatmap";
 import { CircularGauge } from "../CircularGauge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { generateTimeSeriesData } from "../../utils/mockDataGenerator";
-import type { TimeSeriesData } from "../../utils/mockDataGenerator";
+import type { ActivityMetrics, TimeSeriesPoint } from "../../../../services/adminMetricsService";
 import { 
   MessageSquare, 
   FileText, 
@@ -17,6 +16,8 @@ import {
 
 interface ActivityDashboardProps {
   selectedPeriod: string;
+  metrics?: ActivityMetrics;
+  isLoading?: boolean;
 }
 
 // Activity heatmap data - relatively static
@@ -51,67 +52,22 @@ const activityTrends = [
   { metric: "Interacciones por sesión", current: "8.5", previous: "7.2", trend: "up" }
 ];
 
-function generateActivityKPIs(period: string) {
-  const multipliers = {
-    day: { sessions: 0.04, messages: 0.03, files: 0.02 },
-    week: { sessions: 0.25, messages: 0.2, files: 0.15 },
-    month: { sessions: 1, messages: 1, files: 1 },
-    year: { sessions: 12, messages: 12, files: 12 }
-  };
+const kpiIcons: Record<string, JSX.Element> = {
+  "Sesiones Promedio": <Clock className="w-5 h-5" />,
+  "Mensajes Enviados": <MessageSquare className="w-5 h-5" />,
+  "Archivos Compartidos": <FileText className="w-5 h-5" />,
+  "Tiempo Promedio Sesión": <Activity className="w-5 h-5" />
+};
 
-  const mult = multipliers[period as keyof typeof multipliers] || multipliers.month;
-  
-  return [
-    {
-      title: "Sesiones Promedio",
-      value: (4.2 * mult.sessions).toFixed(1),
-      icon: <Clock className="w-5 h-5" />,
-      change: { value: 8.3 + (Math.random() - 0.5) * 10, isPositive: true, period: getPeriodLabel(period) },
-      description: `Por usuario ${period === 'day' ? 'diario' : period === 'week' ? 'semanal' : period === 'year' ? 'anual' : 'mensual'}`
-    },
-    {
-      title: "Mensajes Enviados",
-      value: Math.floor(12450 * mult.messages).toLocaleString(),
-      icon: <MessageSquare className="w-5 h-5" />,
-      change: { value: 15.7 + (Math.random() - 0.5) * 12, isPositive: true, period: getPeriodLabel(period) },
-      description: `Este ${period === 'day' ? 'día' : period === 'week' ? 'semana' : period === 'year' ? 'año' : 'mes'}`
-    },
-    {
-      title: "Archivos Compartidos",
-      value: Math.floor(3280 * mult.files).toLocaleString(),
-      icon: <FileText className="w-5 h-5" />,
-      change: { value: 12.1 + (Math.random() - 0.5) * 10, isPositive: true, period: getPeriodLabel(period) },
-      description: `Este ${period === 'day' ? 'día' : period === 'week' ? 'semana' : period === 'year' ? 'año' : 'mes'}`
-    },
-    {
-      title: "Tiempo Promedio Sesión",
-      value: `${Math.floor(24 + (Math.random() - 0.5) * 10)} min`,
-      icon: <Activity className="w-5 h-5" />,
-      change: { value: 3.2 + (Math.random() - 0.5) * 6, isPositive: Math.random() > 0.6, period: getPeriodLabel(period) },
-      description: "Duración media"
-    }
-  ];
-}
-
-function getPeriodLabel(period: string): string {
-  switch (period) {
-    case 'day': return 'día anterior';
-    case 'week': return 'semana anterior';
-    case 'month': return 'mes anterior';
-    case 'year': return 'año anterior';
-    default: return 'período anterior';
-  }
-}
-
-export function ActivityDashboard({ selectedPeriod }: ActivityDashboardProps) {
-  const timeSeriesData = generateTimeSeriesData(selectedPeriod);
-  const kpiData = generateActivityKPIs(selectedPeriod);
+export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }: ActivityDashboardProps) {
+  const timeSeriesData = metrics?.timeSeries ?? [];
+  const kpiData = metrics?.kpis ?? [];
   
   // Transform time series data for project activity
-  const projectActivityData = timeSeriesData.map((item: TimeSeriesData) => ({
+  const projectActivityData = timeSeriesData.map((item: TimeSeriesPoint) => ({
     month: item.period,
     published: item.projects,
-    proposals: Math.floor(item.projects * (2.5 + Math.random() * 0.5)) // 2.5-3x proposals per project
+    proposals: item.applications
   }));
 
   // Calculate engagement score based on period
@@ -122,18 +78,20 @@ export function ActivityDashboard({ selectedPeriod }: ActivityDashboardProps) {
     month: 0,
     year: 3
   };
-  const engagementValue = Math.max(0, Math.min(100, baseEngagement + (periodAdjustment[selectedPeriod as keyof typeof periodAdjustment] || 0) + (Math.random() - 0.5) * 10));
+  const engagementValue = metrics?.engagementScore ?? Math.max(0, Math.min(100, baseEngagement + (periodAdjustment[selectedPeriod as keyof typeof periodAdjustment] || 0)));
 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {kpiData.map((kpi, index) => (
+        {isLoading && kpiData.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Cargando métricas...</div>
+        ) : kpiData.map((kpi, index) => (
           <KPICard
             key={index}
             title={kpi.title}
             value={kpi.value}
-            icon={kpi.icon}
+            icon={kpiIcons[kpi.title]}
             change={kpi.change}
             description={kpi.description}
           />

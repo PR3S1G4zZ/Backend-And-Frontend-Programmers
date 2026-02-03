@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Progress } from "../ui/progress";
-import { generateRatingData } from "../../utils/mockDataGenerator";
-import type { RatingData } from "../../utils/mockDataGenerator";
+import type { SatisfactionMetrics } from "../../../../services/adminMetricsService";
 import { 
   Star, 
   Clock, 
@@ -17,6 +16,8 @@ import {
 
 interface SatisfactionDashboardProps {
   selectedPeriod: string;
+  metrics?: SatisfactionMetrics;
+  isLoading?: boolean;
 }
 
 // Static data for feedback - doesn't change much by period
@@ -106,82 +107,39 @@ const renderStars = (rating: number) => {
   );
 };
 
-function generateSatisfactionKPIs(period: string) {
-  const baseRating = 4.8;
-  const baseOnTime = 87.3;
-  const baseSatisfaction = 94.2;
-  const baseFeedback = 89.0;
 
-  // Small variations based on period
-  const periodVariation = {
-    day: { rating: -0.1, onTime: -2, satisfaction: -1, feedback: -1.5 },
-    week: { rating: 0, onTime: 0, satisfaction: 0, feedback: 0 },
-    month: { rating: 0, onTime: 0, satisfaction: 0, feedback: 0 },
-    year: { rating: 0.1, onTime: 2, satisfaction: 1, feedback: 1.5 }
-  };
-
-  const variation = periodVariation[period as keyof typeof periodVariation] || periodVariation.month;
-
-  return [
-    {
-      title: "Rating Promedio",
-      value: (baseRating + variation.rating + (Math.random() - 0.5) * 0.2).toFixed(1),
-      icon: <Star className="w-5 h-5" />,
-      change: { value: 0.2 + (Math.random() - 0.5) * 0.4, isPositive: true, period: getPeriodLabel(period) },
-      description: "Calificación general"
-    },
-    {
-      title: "Proyectos a Tiempo",
-      value: `${(baseOnTime + variation.onTime + (Math.random() - 0.5) * 4).toFixed(1)}%`,
-      icon: <Clock className="w-5 h-5" />,
-      change: { value: 3.1 + (Math.random() - 0.5) * 4, isPositive: true, period: getPeriodLabel(period) },
-      description: "Entregados puntualmente"
-    },
-    {
-      title: "Satisfacción Cliente",
-      value: `${(baseSatisfaction + variation.satisfaction + (Math.random() - 0.5) * 2).toFixed(1)}%`,
-      icon: <ThumbsUp className="w-5 h-5" />,
-      change: { value: 1.8 + (Math.random() - 0.5) * 3, isPositive: true, period: getPeriodLabel(period) },
-      description: "CSAT promedio"
-    },
-    {
-      title: "Feedback Positivo",
-      value: `${(baseFeedback + variation.feedback + (Math.random() - 0.5) * 3).toFixed(1)}%`,
-      icon: <MessageSquare className="w-5 h-5" />,
-      change: { value: 2.5 + (Math.random() - 0.5) * 4, isPositive: true, period: getPeriodLabel(period) },
-      description: "4-5 estrellas"
-    }
-  ];
-}
-
-function getPeriodLabel(period: string): string {
-  switch (period) {
-    case 'day': return 'día anterior';
-    case 'week': return 'semana anterior';
-    case 'month': return 'mes anterior';
-    case 'year': return 'año anterior';
-    default: return 'período anterior';
-  }
-}
-
-export function SatisfactionDashboard({ selectedPeriod }: SatisfactionDashboardProps) {
-  const kpiData = generateSatisfactionKPIs(selectedPeriod);
-  const ratingData = generateRatingData(selectedPeriod);
+export function SatisfactionDashboard({ selectedPeriod, metrics, isLoading = false }: SatisfactionDashboardProps) {
+  const kpiData = metrics?.kpis ?? [];
+  const ratingData = metrics?.ratingData ?? [];
+  const feedback = metrics?.recentFeedback ?? recentFeedback;
+  const quality = metrics?.qualityMetrics ?? qualityMetrics;
+  const topProjects = metrics?.topRatedProjects ?? topRatedProjects;
+  const maxRatingCount = Math.max(1, ...ratingData.map((rating) => rating.count));
 
   // Generate dynamic values for gauges based on period
-  const npsValue = Math.max(0, Math.min(100, 68 + (Math.random() - 0.5) * 20));
-  const csatValue = Math.max(0, Math.min(100, 94 + (Math.random() - 0.5) * 10));
+  const npsValue = metrics?.nps ?? Math.max(0, Math.min(100, 68 + (Math.random() - 0.5) * 20));
+  const csatValue = metrics?.csat ?? Math.max(0, Math.min(100, 94 + (Math.random() - 0.5) * 10));
 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {kpiData.map((kpi, index) => (
+        {isLoading && kpiData.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Cargando métricas...</div>
+        ) : kpiData.map((kpi, index) => (
           <KPICard
             key={index}
             title={kpi.title}
             value={kpi.value}
-            icon={kpi.icon}
+            icon={
+              kpi.title === "Rating Promedio"
+                ? <Star className="w-5 h-5" />
+                : kpi.title === "Proyectos a Tiempo"
+                ? <Clock className="w-5 h-5" />
+                : kpi.title === "Satisfacción Cliente"
+                ? <ThumbsUp className="w-5 h-5" />
+                : <MessageSquare className="w-5 h-5" />
+            }
             change={kpi.change}
             description={kpi.description}
           />
@@ -217,14 +175,14 @@ export function SatisfactionDashboard({ selectedPeriod }: SatisfactionDashboardP
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {ratingData.map((item: RatingData) => (
+              {ratingData.map((item) => (
                 <div key={item.rating} className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
                     <span className="text-sm font-medium w-12">{item.rating}</span>
                     <div className="flex-1 bg-secondary rounded-full h-3 mx-2">
                       <div 
                         className="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-500" 
-                        style={{ width: `${Math.min(100, (item.count / Math.max(...ratingData.map(r => r.count))) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (item.count / maxRatingCount) * 100)}%` }}
                       />
                     </div>
                   </div>
@@ -251,7 +209,7 @@ export function SatisfactionDashboard({ selectedPeriod }: SatisfactionDashboardP
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {qualityMetrics.map((metric) => (
+              {quality.map((metric) => (
                 <div key={metric.metric} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
@@ -280,7 +238,7 @@ export function SatisfactionDashboard({ selectedPeriod }: SatisfactionDashboardP
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topRatedProjects.map((project, index) => (
+              {topProjects.map((project, index) => (
                 <div key={project.project} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
@@ -326,12 +284,12 @@ export function SatisfactionDashboard({ selectedPeriod }: SatisfactionDashboardP
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentFeedback.map((feedback) => (
+              {feedback.map((feedback) => (
                 <TableRow key={feedback.id}>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={feedback.avatar} />
+                        <AvatarImage src={feedback.avatar ?? undefined} />
                         <AvatarFallback>{feedback.client.slice(0, 2)}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{feedback.client}</span>
