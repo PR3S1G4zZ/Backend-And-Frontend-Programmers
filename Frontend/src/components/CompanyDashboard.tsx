@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { WelcomeSection } from './dashboard/company/WelcomeSection';
 import { PublishProjectSection } from './dashboard/company/PublishProjectSection';
@@ -6,6 +7,7 @@ import { SearchProgrammersSection } from './dashboard/company/SearchProgrammersS
 import { MyProjectsSection } from './dashboard/company/MyProjectsSection';
 import { ChatSection } from './dashboard/ChatSection';
 import { useSweetAlert } from './ui/sweet-alert';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CompanyDashboardProps {
   onLogout?: () => void;
@@ -13,7 +15,17 @@ interface CompanyDashboardProps {
 
 export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
   const [currentSection, setCurrentSection] = useState('welcome');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { showAlert, Alert } = useSweetAlert();
+  const { user } = useAuth();
+
+  const sectionLabels: Record<string, string> = {
+    welcome: 'Dashboard',
+    'my-projects': 'Mis Proyectos',
+    'publish-project': 'Publicar Proyecto',
+    'search-programmers': 'Buscar Programadores',
+    chat: 'Chat',
+  };
 
   const handleLogout = () => {
     showAlert({
@@ -55,8 +67,25 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
         currentSection={currentSection}
         onSectionChange={setCurrentSection}
         onLogout={handleLogout}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        user={user}
       />
       <div className="flex-1 overflow-auto">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[#333333] bg-[#0D0D0D] px-4 py-3 md:hidden">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            className="rounded-md border border-[#333333] p-2 text-white hover:bg-[#1A1A1A]"
+            aria-label="Abrir menú"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div>
+            <p className="text-sm text-gray-400">Panel de empresa</p>
+            <p className="text-base font-semibold text-white">{sectionLabels[currentSection] || 'Dashboard'}</p>
+          </div>
+        </div>
         {renderSection()}
       </div>
       <Alert />

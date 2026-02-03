@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { useSweetAlert } from './ui/sweet-alert';
 import { ActivityDashboard } from './dashboard/components/admin/ActivityDashboard';
@@ -9,8 +9,11 @@ import { SatisfactionDashboard } from './dashboard/components/admin/Satisfaction
 import { UserManagement } from './dashboard/components/UserManagement';
 import { Card, CardContent, CardHeader, CardTitle } from './dashboard/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './dashboard/components/ui/tabs';
-import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield } from 'lucide-react';
+import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield, Menu } from 'lucide-react';
 import { fetchAdminMetrics, type AdminMetrics } from '../services/adminMetricsService';
+
+// ✅ Ajusta este import al path real de tu proyecto:
+import { useAuth } from '../hooks/useAuth';
 
 interface AdminDashboardProps {
   onLogout?: () => void;
@@ -19,24 +22,34 @@ interface AdminDashboardProps {
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { showAlert, Alert } = useSweetAlert();
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
 
+  // ✅ Resuelto el conflicto: dejamos useAuth
+  const { user } = useAuth();
+
   useEffect(() => {
     let isMounted = true;
+
     const loadMetrics = async () => {
       setMetricsLoading(true);
       setMetricsError(null);
+
       const response = await fetchAdminMetrics(selectedPeriod);
+
       if (!isMounted) return;
+
       if (response.success && response.data) {
         setMetrics(response.data);
+        setMetricsError(null);
       } else {
         setMetrics(null);
         setMetricsError(response.message || 'No se pudieron cargar las métricas.');
       }
+
       setMetricsLoading(false);
     };
 
@@ -55,20 +68,36 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       showCancelButton: true,
       confirmButtonText: 'Sí, cerrar sesión',
       cancelButtonText: 'Cancelar',
-      onConfirm: () => {
-        if (onLogout) {
-          onLogout();
-        }
-      }
+      onConfirm: () => onLogout?.(),
     });
   };
 
-  const periodOptions = [
-    { value: 'day', label: 'Día' },
-    { value: 'week', label: 'Semana' },
-    { value: 'month', label: 'Mes' },
-    { value: 'year', label: 'Año' }
-  ];
+  const periodOptions = useMemo(
+    () => [
+      { value: 'day', label: 'Día' },
+      { value: 'week', label: 'Semana' },
+      { value: 'month', label: 'Mes' },
+      { value: 'year', label: 'Año' },
+    ],
+    []
+  );
+
+  const sectionLabels: Record<string, string> = useMemo(
+    () => ({
+      dashboard: 'Dashboard Admin',
+      users: 'Gestión de Usuarios',
+      projects: 'Todos los Proyectos',
+      analytics: 'Analíticas',
+      settings: 'Configuración',
+    }),
+    []
+  );
+
+  // ✅ Cierra sidebar automáticamente al cambiar sección (especialmente mobile)
+  const handleSectionChange = (section: string) => {
+    setCurrentSection(section);
+    setIsSidebarOpen(false);
+  };
 
   const renderSection = () => {
     switch (currentSection) {
@@ -76,7 +105,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         return (
           <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
             <div className="max-w-7xl mx-auto space-y-6">
-              {/* Header */}
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-[#00FF85] glow-text flex items-center gap-3">
@@ -86,7 +114,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   <p className="text-gray-300 mt-2">Panel de control completo del sistema</p>
                 </div>
 
-                {/* Period Selector */}
                 <Card className="bg-[#1A1A1A] border-[#333333]">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
@@ -96,7 +123,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         onChange={(e) => setSelectedPeriod(e.target.value as typeof selectedPeriod)}
                         className="bg-[#2A2A2A] border border-[#333333] rounded px-3 py-1 text-white text-sm focus:outline-none focus:border-[#00FF85]"
                       >
-                        {periodOptions.map(option => (
+                        {periodOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -107,7 +134,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </Card>
               </div>
 
-              {/* Dashboard Tabs */}
               <Tabs defaultValue="activity" className="w-full">
                 <TabsList className="grid w-full grid-cols-5 bg-[#1A1A1A] border border-[#333333]">
                   <TabsTrigger
@@ -117,6 +143,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <BarChart3 className="w-4 h-4" />
                     Actividad
                   </TabsTrigger>
+
                   <TabsTrigger
                     value="financial"
                     className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
@@ -124,6 +151,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <DollarSign className="w-4 h-4" />
                     Financiero
                   </TabsTrigger>
+
                   <TabsTrigger
                     value="growth"
                     className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
@@ -131,6 +159,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <TrendingUp className="w-4 h-4" />
                     Crecimiento
                   </TabsTrigger>
+
                   <TabsTrigger
                     value="projects"
                     className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
@@ -138,6 +167,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <Users className="w-4 h-4" />
                     Proyectos
                   </TabsTrigger>
+
                   <TabsTrigger
                     value="satisfaction"
                     className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
@@ -148,11 +178,19 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </TabsList>
 
                 <TabsContent value="activity" className="mt-6">
-                  <ActivityDashboard selectedPeriod={selectedPeriod} metrics={metrics?.activity} isLoading={metricsLoading} />
+                  <ActivityDashboard
+                    selectedPeriod={selectedPeriod}
+                    metrics={metrics?.activity}
+                    isLoading={metricsLoading}
+                  />
                 </TabsContent>
 
                 <TabsContent value="financial" className="mt-6">
-                  <FinancialDashboard selectedPeriod={selectedPeriod} metrics={metrics?.financial} isLoading={metricsLoading} />
+                  <FinancialDashboard
+                    selectedPeriod={selectedPeriod}
+                    metrics={metrics?.financial}
+                    isLoading={metricsLoading}
+                  />
                 </TabsContent>
 
                 <TabsContent value="growth" className="mt-6">
@@ -160,13 +198,22 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </TabsContent>
 
                 <TabsContent value="projects" className="mt-6">
-                  <ProjectsDashboard selectedPeriod={selectedPeriod} metrics={metrics?.projects} isLoading={metricsLoading} />
+                  <ProjectsDashboard
+                    selectedPeriod={selectedPeriod}
+                    metrics={metrics?.projects}
+                    isLoading={metricsLoading}
+                  />
                 </TabsContent>
 
                 <TabsContent value="satisfaction" className="mt-6">
-                  <SatisfactionDashboard selectedPeriod={selectedPeriod} metrics={metrics?.satisfaction} isLoading={metricsLoading} />
+                  <SatisfactionDashboard
+                    selectedPeriod={selectedPeriod}
+                    metrics={metrics?.satisfaction}
+                    isLoading={metricsLoading}
+                  />
                 </TabsContent>
               </Tabs>
+
               {metricsError ? (
                 <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
                   {metricsError}
@@ -175,8 +222,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </div>
           </div>
         );
+
       case 'users':
         return <UserManagement />;
+
       case 'projects':
         return (
           <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
@@ -193,6 +242,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </div>
           </div>
         );
+
       case 'analytics':
         return (
           <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
@@ -209,15 +259,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </div>
           </div>
         );
+
       case 'settings':
         return (
           <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
             <div className="max-w-7xl mx-auto">
               <h1 className="text-3xl font-bold text-[#00FF85] glow-text mb-6">Configuración del Sistema</h1>
               <Card className="bg-[#1A1A1A] border-[#333333]">
-                <CardHeader>
-                  <CardTitle className="text-[#00FF85]">Configuraciones Avanzadas</CardTitle>
-                </CardHeader>
+                <CardTitle className="text-[#00FF85] p-6">Configuraciones Avanzadas</CardTitle>
                 <CardContent>
                   <p className="text-gray-300">Configuraciones avanzadas y mantenimiento del sistema.</p>
                 </CardContent>
@@ -225,6 +274,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </div>
           </div>
         );
+
       default:
         return (
           <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
@@ -241,12 +291,34 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       <Sidebar
         userType="admin"
         currentSection={currentSection}
-        onSectionChange={setCurrentSection}
+        onSectionChange={handleSectionChange}
         onLogout={handleLogout}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        user={user}
       />
+
       <div className="flex-1 overflow-auto">
+        {/* Mobile header */}
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[#333333] bg-[#0D0D0D] px-4 py-3 md:hidden">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            className="rounded-md border border-[#333333] p-2 text-white hover:bg-[#1A1A1A]"
+            aria-label="Abrir menú"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <div>
+            <p className="text-sm text-gray-400">Panel administrativo</p>
+            <p className="text-base font-semibold text-white">{sectionLabels[currentSection] || 'Dashboard Admin'}</p>
+          </div>
+        </div>
+
         {renderSection()}
       </div>
+
       <Alert />
     </div>
   );
