@@ -3,33 +3,34 @@ import { Button } from "./ui/button";
 import { Code, Menu, User, Building2, X } from "lucide-react";
 
 interface NavbarProps {
-  userType?: 'guest' | 'programmer' | 'company' | 'admin';
+  userType?: "guest" | "programmer" | "company" | "admin";
   currentPage?: string;
   onNavigate?: (page: string) => void;
   onLogout?: () => void;
 }
 
 export function Navbar({
-  userType = 'guest',
-  currentPage = 'home',
+  userType = "guest",
+  currentPage = "home",
   onNavigate,
   onLogout,
 }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleNavClick = (page: string) => {
-    if (onNavigate) {
-      onNavigate(page);
-    }
+    onNavigate?.(page);
     setIsMobileMenuOpen(false);
   };
 
   const handleLogoutClick = () => {
+    // Si hay handler real de logout, úsalo.
+    // Si no, vuelve a home como fallback.
     if (onLogout) {
       onLogout();
-    } else {
-      handleNavClick('home');
+      setIsMobileMenuOpen(false);
+      return;
     }
+    handleNavClick("home");
   };
 
   return (
@@ -40,39 +41,49 @@ export function Navbar({
           <button
             type="button"
             className="flex items-center space-x-2 cursor-pointer hover-neon"
-            onClick={() => handleNavClick('home')}
+            onClick={() => handleNavClick("home")}
           >
             <span className="bg-[#00FF85] p-2 rounded-lg">
               <Code className="h-6 w-6 text-[#0D0D0D]" />
             </span>
-            <span className="text-2xl font-bold text-[#00FF85] glow-text">Programmers</span>
+            <span className="text-2xl font-bold text-[#00FF85] glow-text">
+              Programmers
+            </span>
           </button>
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            {userType === 'guest' && (
+            {userType === "guest" && (
               <>
-                <button 
-                  onClick={() => handleNavClick('home')}
-                  className={`text-white hover:text-[#00FF85] transition-colors ${currentPage === 'home' ? 'text-[#00FF85]' : ''}`}
+                <button
+                  onClick={() => handleNavClick("home")}
+                  className={`text-white hover:text-[#00FF85] transition-colors ${
+                    currentPage === "home" ? "text-[#00FF85]" : ""
+                  }`}
                 >
                   Inicio
                 </button>
-                <button 
-                  onClick={() => handleNavClick('for-programmers')}
-                  className={`text-white hover:text-[#00FF85] transition-colors ${currentPage === 'for-programmers' ? 'text-[#00FF85]' : ''}`}
+                <button
+                  onClick={() => handleNavClick("for-programmers")}
+                  className={`text-white hover:text-[#00FF85] transition-colors ${
+                    currentPage === "for-programmers" ? "text-[#00FF85]" : ""
+                  }`}
                 >
                   Para Programadores
                 </button>
-                <button 
-                  onClick={() => handleNavClick('for-companies')}
-                  className={`text-white hover:text-[#00FF85] transition-colors ${currentPage === 'for-companies' ? 'text-[#00FF85]' : ''}`}
+                <button
+                  onClick={() => handleNavClick("for-companies")}
+                  className={`text-white hover:text-[#00FF85] transition-colors ${
+                    currentPage === "for-companies" ? "text-[#00FF85]" : ""
+                  }`}
                 >
                   Para Empresas
                 </button>
-                <button 
-                  onClick={() => handleNavClick('contact')}
-                  className={`text-white hover:text-[#00FF85] transition-colors ${currentPage === 'contact' ? 'text-[#00FF85]' : ''}`}
+                <button
+                  onClick={() => handleNavClick("contact")}
+                  className={`text-white hover:text-[#00FF85] transition-colors ${
+                    currentPage === "contact" ? "text-[#00FF85]" : ""
+                  }`}
                 >
                   Contacto
                 </button>
@@ -82,17 +93,17 @@ export function Navbar({
 
           {/* Auth Buttons / User Menu */}
           <div className="flex items-center space-x-4">
-            {userType === 'guest' ? (
+            {userType === "guest" ? (
               <>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => handleNavClick('login')}
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavClick("login")}
                   className="text-white hover:text-[#00FF85] hover:bg-[#1A1A1A]"
                 >
                   Iniciar Sesión
                 </Button>
-                <Button 
-                  onClick={() => handleNavClick('register')}
+                <Button
+                  onClick={() => handleNavClick("register")}
                   className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
                 >
                   Registrarse
@@ -101,7 +112,7 @@ export function Navbar({
             ) : (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 text-white">
-                  {userType === 'programmer' ? (
+                  {userType === "programmer" ? (
                     <>
                       <User className="h-5 w-5 text-[#00FF85]" />
                       <span>Carlos Mendoza</span>
@@ -113,8 +124,9 @@ export function Navbar({
                     </>
                   )}
                 </div>
-                <Button 
-                  variant="ghost" 
+
+                <Button
+                  variant="ghost"
                   onClick={handleLogoutClick}
                   className="text-white hover:text-[#00FF85] hover:bg-[#1A1A1A]"
                 >
@@ -122,7 +134,7 @@ export function Navbar({
                 </Button>
               </div>
             )}
-            
+
             {/* Mobile menu button */}
             <div className="md:hidden">
               <button
@@ -145,57 +157,60 @@ export function Navbar({
 
       {/* Mobile menu panel */}
       <div
-        className={`md:hidden ${isMobileMenuOpen ? 'block' : 'hidden'} border-t border-[#333333] bg-[#131313]`}
+        className={`md:hidden ${
+          isMobileMenuOpen ? "block" : "hidden"
+        } border-t border-[#333333] bg-[#131313]`}
       >
         <div className="px-4 py-4 space-y-3">
-          {userType === 'guest' ? (
+          {userType === "guest" ? (
             <>
               <button
                 type="button"
-                onClick={() => handleNavClick('home')}
+                onClick={() => handleNavClick("home")}
                 className={`w-full text-left text-white ${
-                  currentPage === 'home' ? 'text-[#00FF85]' : ''
+                  currentPage === "home" ? "text-[#00FF85]" : ""
                 }`}
               >
                 Inicio
               </button>
               <button
                 type="button"
-                onClick={() => handleNavClick('for-programmers')}
+                onClick={() => handleNavClick("for-programmers")}
                 className={`w-full text-left text-white ${
-                  currentPage === 'for-programmers' ? 'text-[#00FF85]' : ''
+                  currentPage === "for-programmers" ? "text-[#00FF85]" : ""
                 }`}
               >
                 Para Programadores
               </button>
               <button
                 type="button"
-                onClick={() => handleNavClick('for-companies')}
+                onClick={() => handleNavClick("for-companies")}
                 className={`w-full text-left text-white ${
-                  currentPage === 'for-companies' ? 'text-[#00FF85]' : ''
+                  currentPage === "for-companies" ? "text-[#00FF85]" : ""
                 }`}
               >
                 Para Empresas
               </button>
               <button
                 type="button"
-                onClick={() => handleNavClick('contact')}
+                onClick={() => handleNavClick("contact")}
                 className={`w-full text-left text-white ${
-                  currentPage === 'contact' ? 'text-[#00FF85]' : ''
+                  currentPage === "contact" ? "text-[#00FF85]" : ""
                 }`}
               >
                 Contacto
               </button>
+
               <div className="pt-3 border-t border-[#333333] space-y-2">
                 <Button
                   variant="ghost"
-                  onClick={() => handleNavClick('login')}
+                  onClick={() => handleNavClick("login")}
                   className="w-full justify-start text-white hover:text-[#00FF85] hover:bg-[#1A1A1A]"
                 >
                   Iniciar Sesión
                 </Button>
                 <Button
-                  onClick={() => handleNavClick('register')}
+                  onClick={() => handleNavClick("register")}
                   className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
                 >
                   Registrarse
@@ -206,11 +221,12 @@ export function Navbar({
             <>
               <button
                 type="button"
-                onClick={() => handleNavClick('home')}
+                onClick={() => handleNavClick("home")}
                 className="w-full text-left text-white"
               >
                 Inicio
               </button>
+
               <Button
                 variant="ghost"
                 onClick={handleLogoutClick}
