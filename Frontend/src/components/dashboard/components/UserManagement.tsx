@@ -458,7 +458,7 @@ export function UserManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                             <Mail className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-300">{user.email}</span>
                           </div>
@@ -470,7 +470,7 @@ export function UserManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                             <Calendar className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-300">{formatDate(user.created_at)}</span>
                           </div>
@@ -485,7 +485,7 @@ export function UserManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                             <Button
                               size="sm"
                               variant="outline"
