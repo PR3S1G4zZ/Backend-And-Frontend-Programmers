@@ -238,6 +238,7 @@ function AppContent() {
                 userType={userType}
                 currentPage={currentPage}
                 onNavigate={handleNavigate}
+                onLogout={handleLogout}
               />
             </motion.div>
           )}
