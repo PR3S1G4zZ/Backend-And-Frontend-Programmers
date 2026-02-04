@@ -195,7 +195,7 @@ function SweetAlertModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-10 sm:items-center sm:pt-4 z-[70]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -210,7 +210,7 @@ function SweetAlertModal({
           stiffness: 300,
           duration: 0.4 
         }}
-        className={`relative ${html ? 'max-w-2xl' : 'max-w-md'} w-full border-2 rounded-lg p-8 shadow-2xl overflow-hidden ${getThemeStyles()}`}
+        className={`relative ${html ? 'max-w-2xl' : 'max-w-md'} w-full max-h-[90vh] overflow-y-auto border-2 rounded-lg p-8 shadow-2xl ${getThemeStyles()}`}
       >
         {renderThemeElements()}
         
