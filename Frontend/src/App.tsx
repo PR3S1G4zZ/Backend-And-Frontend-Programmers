@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -13,7 +13,7 @@ import { CompanyDashboard } from './components/CompanyDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { PageTransition, usePageTransition, LoadingIndicator } from './components/PageTransition';
 import { CodeAnimations } from './components/CodeAnimations';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ForgotPasswordPage } from './components/ForgotPasswordPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 
@@ -33,9 +33,25 @@ type PageType =
 type UserType = 'guest' | 'programmer' | 'company' | 'admin';
 
 export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
   const [currentPage, setCurrentPage] = useState<PageType>('home');
   const [userType, setUserType] = useState<UserType>('guest');
-  const { isLoading, navigateWithLoading } = usePageTransition();
+  const { isLoading: isPageLoading, navigateWithLoading } = usePageTransition();
+  const { user, isLoading: isAuthLoading, logout } = useAuth();
+  const hasInitialized = useRef(false);
+
+  const dashboardByRole: Record<Exclude<UserType, 'guest'>, PageType> = {
+    programmer: 'programmer-dashboard',
+    company: 'company-dashboard',
+    admin: 'admin-dashboard',
+  };
 
   // 🔥 Detectar entrada directa desde rutas con path real (sin router)
   useEffect(() => {
@@ -43,12 +59,45 @@ export default function App() {
 
     if (path === "/reset-password") {
       setCurrentPage("reset-password");
+      hasInitialized.current = true;
     }
 
     if (path === "/forgot-password") {
       setCurrentPage("forgot-password");
+      hasInitialized.current = true;
     }
   }, []);
+
+  useEffect(() => {
+    if (isAuthLoading || hasInitialized.current) return;
+
+    const savedPage = localStorage.getItem('last_page') as PageType | null;
+    const publicPages: PageType[] = [
+      'home',
+      'for-programmers',
+      'for-companies',
+      'contact',
+      'login',
+      'register',
+      'forgot-password',
+      'reset-password',
+    ];
+
+    if (user) {
+      const role = user.user_type as Exclude<UserType, 'guest'>;
+      const dashboardPage = dashboardByRole[role];
+      const targetPage =
+        savedPage && savedPage.includes('dashboard') ? savedPage : dashboardPage;
+
+      setUserType(role);
+      setCurrentPage(targetPage);
+    } else {
+      setUserType('guest');
+      setCurrentPage(publicPages.includes(savedPage as PageType) ? savedPage! : 'home');
+    }
+
+    hasInitialized.current = true;
+  }, [isAuthLoading, user]);
 
   const handleNavigate = (page: string) => {
     try {
@@ -60,14 +109,13 @@ export default function App() {
         };
         setUserType(userTypeMap[page] || 'guest');
         setCurrentPage(page as PageType);
+        localStorage.setItem('last_page', page);
         return;
       }
 
       navigateWithLoading(page, () => {
-        if (page === 'home' && userType !== 'guest') {
-          setUserType('guest');
-        }
         setCurrentPage(page as PageType);
+        localStorage.setItem('last_page', page);
       });
     } catch (error) {
       console.error('Error during navigation:', error);
@@ -75,16 +123,19 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
+      await logout();
       navigateWithLoading('home', () => {
         setUserType('guest');
         setCurrentPage('home');
+        localStorage.setItem('last_page', 'home');
       });
     } catch (error) {
       console.error('Error during logout:', error);
       setUserType('guest');
       setCurrentPage('home');
+      localStorage.setItem('last_page', 'home');
     }
   };
 
@@ -157,13 +208,12 @@ export default function App() {
     ['programmer-dashboard', 'company-dashboard', 'admin-dashboard'].includes(currentPage);
 
   return (
-    <AuthProvider>
       <div className="dark min-h-screen bg-[#0D0D0D] flex flex-col relative">
 
         {!isDashboard && <CodeAnimations />}
 
         <AnimatePresence>
-          {isLoading && (
+          {isPageLoading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -207,7 +257,7 @@ export default function App() {
                 {renderPage()}
               </motion.div>
             ) : (
-              <PageTransition pageKey={currentPage} isLoading={isLoading}>
+              <PageTransition pageKey={currentPage} isLoading={isPageLoading}>
                 {renderPage()}
               </PageTransition>
             )}
@@ -229,8 +279,6 @@ export default function App() {
               </motion.div>
             )}
         </AnimatePresence>
-
       </div>
-    </AuthProvider>
   );
 }
