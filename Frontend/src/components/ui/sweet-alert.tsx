@@ -250,8 +250,15 @@ function SweetAlertModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+<<<<<<< develop
       className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
       onMouseDown={() => onClose()}
+=======
+      className="fixed inset-0 bg-black/25 backdrop-blur-xs flex items-start justify-center p-4 pt-10 sm:items-center sm:pt-4 z-40"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+>>>>>>> main
     >
       <div className="grid h-[100svh] w-full place-items-center overflow-y-auto p-3 sm:p-4">
       <motion.div
@@ -264,12 +271,16 @@ function SweetAlertModal({
           stiffness: 300,
           duration: 0.4 
         }}
+<<<<<<< develop
         aria-modal="true"
         className={`relative ${html ? 'max-w-2xl' : 'max-w-md'} w-full max-h-[100svh] overflow-hidden border-2 rounded-lg shadow-2xl ${getThemeStyles()}`}
         onMouseDown={(e) => e.stopPropagation()}
         ref={modalRef}
         role="dialog"
         tabIndex={-1}
+=======
+        className={`relative z-50 ${html ? 'max-w-2xl' : 'max-w-md'} w-full max-h-[90vh] overflow-y-auto border-2 rounded-lg p-8 shadow-2xl ${getThemeStyles()}`}
+>>>>>>> main
       >
         {renderThemeElements()}
         

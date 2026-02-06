@@ -195,7 +195,7 @@ function SweetAlertModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-10 sm:items-center sm:pt-4 z-[70]"
+      className="fixed inset-0 bg-black/25 backdrop-blur-xs flex items-start justify-center p-4 pt-[10vh] z-[9999]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -210,11 +210,11 @@ function SweetAlertModal({
           stiffness: 300,
           duration: 0.4 
         }}
-        className={`relative ${html ? 'max-w-2xl' : 'max-w-md'} w-full max-h-[90vh] overflow-y-auto border-2 rounded-lg p-8 shadow-2xl ${getThemeStyles()}`}
+        className={`relative z-50 ${html ? 'max-w-lg' : 'max-w-xs'} w-full max-h-[40vh] overflow-y-auto border-2 rounded-lg p-4 shadow-2xl ${getThemeStyles()}`}
       >
         {renderThemeElements()}
         
-        <div className={`relative z-10 ${html ? '' : 'text-center'} space-y-6`}>
+        <div className={`relative z-10 ${html ? '' : 'text-center'} space-y-2`}>
           {/* Icono con animación sutil - solo si no hay HTML personalizado */}
           {!html && (
             <motion.div
@@ -296,7 +296,7 @@ function SweetAlertModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className={`text-2xl font-bold text-white ${theme === 'code' || theme === 'cyber' ? 'text-shadow-sm' : ''}`}
+            className={`text-lg font-bold text-white ${theme === 'code' || theme === 'cyber' ? 'text-shadow-sm' : ''}`}
           >
             {title}
           </motion.h2>
@@ -316,7 +316,7 @@ function SweetAlertModal({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className={`text-gray-300 ${theme === 'terminal' ? 'font-mono' : ''}`}
+              className={`text-gray-300 text-sm ${theme === 'terminal' ? 'font-mono' : ''}`}
             >
               {text}
             </motion.p>
@@ -327,14 +327,14 @@ function SweetAlertModal({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className={`flex ${showCancelButton ? 'justify-center space-x-4' : 'justify-center'} pt-4`}
+            className={`flex ${showCancelButton ? 'justify-center space-x-3' : 'justify-center'} pt-1`}
           >
             {showCancelButton && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleCancel}
-                className={`px-6 py-3 rounded-lg border-2 transition-all duration-200 font-medium ${getButtonStyles('cancel')}`}
+                className={`px-4 py-2 text-sm rounded-lg border-2 transition-all duration-200 font-medium ${getButtonStyles('cancel')}`}
               >
                 {cancelButtonText}
               </motion.button>
@@ -344,7 +344,7 @@ function SweetAlertModal({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleConfirm}
-              className={`px-6 py-3 rounded-lg border-2 transition-all duration-200 font-medium relative overflow-hidden ${getButtonStyles('confirm')}`}
+              className={`px-4 py-2 text-sm rounded-lg border-2 transition-all duration-200 font-medium relative overflow-hidden ${getButtonStyles('confirm')}`}
             >
               <span className="relative z-10">{confirmButtonText}</span>
             </motion.button>
