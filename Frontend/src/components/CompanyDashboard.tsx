@@ -6,7 +6,7 @@ import { PublishProjectSection } from './dashboard/company/PublishProjectSection
 import { SearchProgrammersSection } from './dashboard/company/SearchProgrammersSection';
 import { MyProjectsSection } from './dashboard/company/MyProjectsSection';
 import { ChatSection } from './dashboard/ChatSection';
-import { useSweetAlert } from './ui/sweet-alert';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
 
 interface CompanyDashboardProps {
@@ -16,7 +16,7 @@ interface CompanyDashboardProps {
 export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
   const [currentSection, setCurrentSection] = useState('welcome');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { showAlert, Alert } = useSweetAlert();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const { user } = useAuth();
 
   const sectionLabels: Record<string, string> = {
@@ -28,19 +28,7 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
   };
 
   const handleLogout = () => {
-    showAlert({
-      title: '¿Cerrar Sesión?',
-      text: '¿Estás seguro de que quieres cerrar tu sesión?',
-      type: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cerrar sesión',
-      cancelButtonText: 'Cancelar',
-      onConfirm: () => {
-        if (onLogout) {
-          onLogout();
-        }
-      }
-    });
+    setIsLogoutDialogOpen(true);
   };
 
   const renderSection = () => {
@@ -88,7 +76,18 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
         </div>
         {renderSection()}
       </div>
-      <Alert />
+      <ConfirmDialog
+        cancelText="Cancelar"
+        confirmText="Sí, cerrar sesión"
+        description="¿Estás seguro de que quieres cerrar tu sesión?"
+        isOpen={isLogoutDialogOpen}
+        onCancel={() => setIsLogoutDialogOpen(false)}
+        onConfirm={() => {
+          setIsLogoutDialogOpen(false);
+          onLogout?.();
+        }}
+        title="¿Cerrar Sesión?"
+      />
     </div>
   );
 }

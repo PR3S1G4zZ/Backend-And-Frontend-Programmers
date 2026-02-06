@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Sidebar } from './Sidebar';
-import { useSweetAlert } from './ui/sweet-alert';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 import { ActivityDashboard } from './dashboard/components/admin/ActivityDashboard';
 import { FinancialDashboard } from './dashboard/components/admin/FinancialDashboard';
 import { GrowthDashboard } from './dashboard/components/admin/GrowthDashboard';
@@ -22,7 +22,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { showAlert, Alert } = useSweetAlert();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -123,15 +123,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   }, [currentSection]);
 
   const handleLogout = () => {
-    showAlert({
-      title: '¿Cerrar Sesión?',
-      text: '¿Estás seguro de que quieres cerrar tu sesión?',
-      type: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cerrar sesión',
-      cancelButtonText: 'Cancelar',
-      onConfirm: () => onLogout?.(),
-    });
+    setIsLogoutDialogOpen(true);
   };
 
   const renderSection = () => {
@@ -386,7 +378,18 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         {renderSection()}
       </div>
 
-      <Alert />
+      <ConfirmDialog
+        cancelText="Cancelar"
+        confirmText="Sí, cerrar sesión"
+        description="¿Estás seguro de que quieres cerrar tu sesión?"
+        isOpen={isLogoutDialogOpen}
+        onCancel={() => setIsLogoutDialogOpen(false)}
+        onConfirm={() => {
+          setIsLogoutDialogOpen(false);
+          onLogout?.();
+        }}
+        title="¿Cerrar Sesión?"
+      />
     </div>
   );
 }
