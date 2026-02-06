@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { useSweetAlert } from './ui/sweet-alert';
 import { apiRequest } from '../../../services/apiClient';
+import { ConfirmDialog } from '../../ui/ConfirmDialog';
 import {
   Search,
   UserPlus,
@@ -60,6 +61,7 @@ export function UserManagement() {
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -165,31 +167,29 @@ export function UserManagement() {
   };
 
   const handleDeleteUser = (user: User) => {
-    showAlert({
-      title: '¿Eliminar usuario?',
-      text: `¿Estás seguro de que quieres eliminar al usuario ${user.name} ${user.lastname}?`,
-      type: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      onConfirm: async () => {
-        try {
-          await apiRequest(`/admin/users/${user.id}`, { method: 'DELETE' });
-          setUsers(users.filter(u => u.id !== user.id));
-          showAlert({
-            title: 'Usuario eliminado',
-            text: 'El usuario ha sido eliminado exitosamente',
-            type: 'success'
-          });
-        } catch (error) {
-          showAlert({
-            title: 'Error',
-            text: 'No se pudo eliminar el usuario',
-            type: 'error'
-          });
-        }
-      }
-    });
+    setUserToDelete(user);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await apiRequest(`/admin/users/${userToDelete.id}`, { method: 'DELETE' });
+      setUsers(users.filter(u => u.id !== userToDelete.id));
+      showAlert({
+        title: 'Usuario eliminado',
+        text: 'El usuario ha sido eliminado exitosamente',
+        type: 'success'
+      });
+    } catch (error) {
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo eliminar el usuario',
+        type: 'error'
+      });
+    } finally {
+      setUserToDelete(null);
+    }
   };
 
   const handleOpenCreateDialog = () => {
@@ -816,5 +816,26 @@ export function UserManagement() {
         </Dialog>
 
       <Alert />
+<<<<<<< develop
+
+      <ConfirmDialog
+        cancelText="Cancelar"
+        confirmText="Sí, eliminar"
+        description={
+          userToDelete
+            ? `¿Estás seguro de que quieres eliminar al usuario ${userToDelete.name} ${userToDelete.lastname}?`
+            : '¿Estás seguro de que quieres eliminar este usuario?'
+        }
+        isOpen={Boolean(userToDelete)}
+        onCancel={() => setUserToDelete(null)}
+        onConfirm={confirmDeleteUser}
+        title="¿Eliminar usuario?"
+        variant="danger"
+      />
+    </div>
+  );
+}
+=======
     </div>  );
 }
+>>>>>>> main
