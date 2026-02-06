@@ -150,7 +150,7 @@
     /* Mejora el rendering para animaciones */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transform: translateZ(0);
+
   }
 
   /* Scrollbar styling */

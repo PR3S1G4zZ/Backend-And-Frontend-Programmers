@@ -32,7 +32,6 @@ export function ConfirmDialog({
     <BaseModal
       closeOnEsc
       closeOnOutsideClick
-      description={description}
       isOpen={isOpen}
       onClose={onCancel}
       size="sm"

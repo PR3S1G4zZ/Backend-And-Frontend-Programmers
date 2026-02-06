@@ -434,9 +434,7 @@ export function UserManagement() {
               </div>
             ) : (
               <>
-                <div className="w-full overflow-x-auto -mx-6 px-6">
-                  <div className="inline-block min-w-full">
-                    <Table>
+                <Table>
                     <TableHeader>
                       <TableRow className="border-[#333333] hover:bg-[#2A2A2A]">
                         <TableHead className="text-[#00FF85]">Usuario</TableHead>
@@ -444,7 +442,7 @@ export function UserManagement() {
                         <TableHead className="text-[#00FF85]">Tipo</TableHead>
                         <TableHead className="text-[#00FF85]">Registro</TableHead>
                         <TableHead className="text-[#00FF85]">Estado</TableHead>
-                        <TableHead className="text-[#00FF85]">Acciones</TableHead>
+                        <TableHead className="text-[#00FF85] sticky right-0 bg-[#1A1A1A]">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -488,7 +486,7 @@ export function UserManagement() {
                               {user.email_verified_at ? 'Verificado' : 'Pendiente'}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="sticky right-0 bg-[#1A1A1A] border-l border-[#333333]">
                             <div className="flex items-center justify-end gap-2">
                               {/* Botones para pantallas medianas y grandes */}
                               <div className="hidden sm:flex items-center gap-2">
@@ -572,8 +570,6 @@ export function UserManagement() {
                       ))}
                     </TableBody>
                   </Table>
-                  </div>
-                </div>
 
                 {filteredUsers.length === 0 && (
                   <div className="text-center py-12">
@@ -816,7 +812,6 @@ export function UserManagement() {
         </Dialog>
 
       <Alert />
-<<<<<<< develop
 
       <ConfirmDialog
         cancelText="Cancelar"
@@ -835,7 +830,3 @@ export function UserManagement() {
     </div>
   );
 }
-=======
-    </div>  );
-}
->>>>>>> main
