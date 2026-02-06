@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, AlertCircle, XCircle, Info } from 'lucide-react';
@@ -74,6 +74,16 @@ export function useSweetAlert() {
   return { showAlert, hideAlert, hideAllAlerts, Alert };
 }
 
+
+const FOCUSABLE_SELECTORS = [
+  'button:not([disabled])',
+  'a[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 function SweetAlertModal({
   title,
   text,
@@ -88,7 +98,52 @@ function SweetAlertModal({
   customIcon,
   theme = 'default'
 }: AlertState & { onClose: () => void }) {
-  
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const node = modalRef.current;
+    const focusables = node?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS);
+    (focusables?.[0] ?? node)?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !node) return;
+
+      const elements = node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS);
+      if (elements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [onClose]);
+
   const handleConfirm = () => {
     if (onConfirm) onConfirm();
     onClose();
@@ -195,11 +250,10 @@ function SweetAlertModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-10 sm:items-center sm:pt-4 z-[70]"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm"
+      onMouseDown={() => onClose()}
     >
+      <div className="grid h-[100svh] w-full place-items-center overflow-y-auto p-3 sm:p-4">
       <motion.div
         initial={{ scale: 0.8, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -210,11 +264,16 @@ function SweetAlertModal({
           stiffness: 300,
           duration: 0.4 
         }}
-        className={`relative ${html ? 'max-w-2xl' : 'max-w-md'} w-full max-h-[90vh] overflow-y-auto border-2 rounded-lg p-8 shadow-2xl ${getThemeStyles()}`}
+        aria-modal="true"
+        className={`relative ${html ? 'max-w-2xl' : 'max-w-md'} w-full max-h-[100svh] overflow-hidden border-2 rounded-lg shadow-2xl ${getThemeStyles()}`}
+        onMouseDown={(e) => e.stopPropagation()}
+        ref={modalRef}
+        role="dialog"
+        tabIndex={-1}
       >
         {renderThemeElements()}
         
-        <div className={`relative z-10 ${html ? '' : 'text-center'} space-y-6`}>
+        <div className={`relative z-10 ${html ? '' : 'text-center'} max-h-[calc(100svh-2rem)] overflow-y-auto p-5 sm:p-8 space-y-6`}>
           {/* Icono con animación sutil - solo si no hay HTML personalizado */}
           {!html && (
             <motion.div
@@ -327,7 +386,7 @@ function SweetAlertModal({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className={`flex ${showCancelButton ? 'justify-center space-x-4' : 'justify-center'} pt-4`}
+            className={`sticky bottom-0 flex ${showCancelButton ? 'justify-center gap-3 flex-col-reverse sm:flex-row' : 'justify-center'} border-t border-white/10 bg-[#1A1A1A]/95 pt-4`}
           >
             {showCancelButton && (
               <motion.button
@@ -361,6 +420,7 @@ function SweetAlertModal({
           </>
         )}
       </motion.div>
+      </div>
     </motion.div>
   );
 }
