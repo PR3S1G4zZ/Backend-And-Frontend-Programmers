@@ -178,7 +178,14 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
       try {
         const response = await fetchCompanyProjects();
         if (!isMounted) return;
-        setProjects(response.map(mapProject));
+        // Check if response has data property (API Resource wrapper)
+        const projectsData = 'data' in response ? response.data : response;
+        if (Array.isArray(projectsData)) {
+          setProjects(projectsData.map(mapProject));
+        } else {
+          console.error('Projects data is not an array', response);
+          setProjects([]);
+        }
       } catch (error) {
         console.error('Error cargando proyectos de la empresa', error);
         if (isMounted) {

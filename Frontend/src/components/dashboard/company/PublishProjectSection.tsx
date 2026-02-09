@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useSweetAlert } from '../../ui/sweet-alert';
 import { motion } from 'motion/react';
-import { createProject, updateProject, type ProjectResponse } from '../../../services/projectService';
+import { createProject, updateProject, fundProject, type ProjectResponse } from '../../../services/projectService';
 import { fetchCategories, fetchSkills, type TaxonomyItem } from '../../../services/taxonomyService';
 
 interface Skill {
@@ -176,9 +176,26 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
     setIsSubmitting(true);
     setSubmitMessage(null);
 
+    // Validate required fields
+    if (!formData.title || !formData.description || !formData.category || !formData.budget) {
+      showAlert({
+        title: 'Campos Incompletos',
+        text: 'Por favor, completa todos los campos obligatorios (Título, Categoría, Descripción, Presupuesto) antes de publicar.',
+        type: 'warning'
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Simple single value parsing for budget to make 50% calc easier for now
+    // If user enters range "5000-8000", we take the first part? Or force single value for simplicity as per request "X.XX (50%)"
+    // Let's assume single value for this "Escrow" flow or take the min.
+
+    // ... (keep existing BudgetMin/Max logic if compatible, or simplify)
     const budgetParts = formData.budget.split('-').map((value) => Number(value.trim()));
     const budgetMin = Number.isFinite(budgetParts[0]) ? budgetParts[0] : null;
     const budgetMax = Number.isFinite(budgetParts[1]) ? budgetParts[1] : budgetMin;
+
 
     // Parse team size range to max applicants number
     let maxApplicants = 1;
@@ -211,26 +228,56 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
       tags: deliverables.filter(Boolean),
       category_ids: formData.category ? [Number(formData.category)] : [],
       skill_ids: skillIds,
-      status: asDraft ? 'draft' : 'open',
+      status: asDraft ? 'draft' : 'pending_payment', // Default to pending_payment if not draft
     };
 
     try {
       if (isEditing && initialData?.id) {
         await updateProject(String(initialData.id), payload);
+        // If editing and standard flow, just show success
         showAlert({
           title: '¡Proyecto Actualizado!',
           text: 'Los cambios han sido guardados exitosamente.',
           type: 'success'
         });
       } else {
-        await createProject(payload);
-        showAlert({
-          title: asDraft ? 'Borrador Guardado' : '¡Proyecto Publicado!',
-          text: asDraft
-            ? 'Tu proyecto se ha guardado como borrador.'
-            : 'Tu proyecto ha sido enviado y ahora es visible para los desarrolladores.',
-          type: 'success'
-        });
+        const response = await createProject(payload);
+        const projectId = response.data.id;
+
+        if (asDraft) {
+          showAlert({
+            title: 'Borrador Guardado',
+            text: 'Tu proyecto se ha guardado como borrador.',
+            type: 'success'
+          });
+        } else {
+          // Funding Flow
+          if (projectId && budgetMin) {
+            try {
+              setSubmitMessage('Procesando depósito del 50%...');
+              await fundProject(projectId);
+              showAlert({
+                title: '¡Proyecto Publicado y Financiado!',
+                text: `Se ha depositado el 50% ($${(budgetMin * 0.5).toFixed(2)}) y el proyecto está activo.`,
+                type: 'success'
+              });
+            } catch (fundError) {
+              console.error("Fund error", fundError);
+              showAlert({
+                title: 'Proyecto Creado pero Pago Fallido',
+                text: 'El proyecto se creó pero no se pudo procesar el depósito. Por favor verifica tu saldo en la Billetera.',
+                type: 'warning'
+              });
+              // Could redirect to wallet or show retry
+            }
+          } else {
+            showAlert({
+              title: '¡Proyecto Publicado!',
+              text: 'Tu proyecto ha sido enviado.',
+              type: 'success'
+            });
+          }
+        }
       }
 
       if (onSectionChange) {
@@ -337,7 +384,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
 
               <div>
                 <Label htmlFor="budget" className="text-white">
-                  Presupuesto ({formData.budgetType === 'fixed' ? 'Total' : 'Por Hora'}) *
+                  Presupuesto Total ({formData.budgetType === 'fixed' ? 'Total' : 'Por Hora'}) *
                 </Label>
                 <div className="relative mt-2">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -345,10 +392,16 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                     id="budget"
                     value={formData.budget}
                     onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    placeholder={formData.budgetType === 'fixed' ? '5000-8000' : '50-80'}
+                    placeholder={formData.budgetType === 'fixed' ? '5000' : '50'} // Simplified placeholder
                     className="pl-10 bg-[#0D0D0D] border-[#333333] text-white"
                   />
                 </div>
+                {formData.budget && !isNaN(Number(formData.budget)) && (
+                  <div className="mt-2 text-sm text-[#00FF85] bg-[#00FF85]/10 p-2 rounded">
+                    <p>Depósito requerido hoy (50%): <strong>${(Number(formData.budget) * 0.5).toFixed(2)}</strong></p>
+                    <p className="text-xs opacity-80">El 50% restante se paga al finalizar el proyecto.</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -762,7 +815,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
               className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
             >
               <Send className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Guardando...' : (isEditing ? 'Actualizar Proyecto' : 'Publicar Proyecto')}
+              {isSubmitting ? 'Procesando...' : (isEditing ? 'Actualizar Proyecto' : 'Pagar 50% y Publicar')}
             </Button>
           )}
         </div>

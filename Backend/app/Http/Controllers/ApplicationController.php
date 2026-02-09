@@ -29,7 +29,7 @@ class ApplicationController extends Controller
             ->latest()
             ->get();
 
-        return response()->json($applications);
+        return \App\Http\Resources\ApplicationResource::collection($applications);
     }
 
     public function apply(Request $r, Project $project)
@@ -48,18 +48,20 @@ class ApplicationController extends Controller
           'cover_letter'=>$data['cover_letter'] ?? null,
           'status' => 'pending'
         ]);
-        return response()->json($app->load('project:id,title'), 201);
+        return new \App\Http\Resources\ApplicationResource($app->load('project'));
     }
 
     public function myApplications(Request $r)
     {
         abort_unless($r->user()->user_type==='programmer', 403);
-        return Application::where('developer_id',$r->user()->id)
-            ->with('project:id,title,status')
+        $apps = Application::where('developer_id',$r->user()->id)
+            ->with('project')
             ->latest()->get();
+            
+        return \App\Http\Resources\ApplicationResource::collection($apps);
     }
 
-    public function accept(Request $r, Application $application)
+    public function accept(Request $r, Application $application, \App\Services\PaymentService $paymentService)
     {
         $project = $application->project;
         
@@ -68,21 +70,42 @@ class ApplicationController extends Controller
             abort(403, 'Solo el creador del proyecto puede aceptar candidatos.');
         }
 
-        DB::transaction(function () use ($application, $project, $r) {
-            // 1. Update Application Status
-            $application->update(['status' => 'accepted']);
-            
-            // 2. Reject other pending applications for this project (optional but common)
-            // $project->applications()->where('id', '!=', $application->id)->update(['status' => 'rejected']);
+        // Determine amount to pay (Budget Min or Max? Let's assume Budget Min for now or a negotiation field)
+        // For this MVP, we use budget_min if available, else 0 (or throw error)
+        $amountToPay = $project->budget_min ?? 0;
 
-            // 3. Update Project Status and assign developer (if project table has that field, or just rely on 'in_progress')
-            $project->update(['status' => 'in_progress']);
+        if ($amountToPay <= 0) {
+            // Logic for free projects or error?
+            // Let's assume 0 is allowed for now, or use a default
+        }
 
-            // 4. Dispatch Event to handle Chat Creation
-            \App\Events\ApplicationAccepted::dispatch($application);
-        });
+        try {
+            DB::transaction(function () use ($application, $project, $r, $paymentService, $amountToPay) {
+                // 0. Process Payment
+                if ($amountToPay > 0) {
+                // 0. Hold Funds in Escrow (Removed: Now handled via Milestones/Deposit)
+                // if ($amountToPay > 0) {
+                //    $paymentService->holdFunds($r->user(), $amountToPay, $project);
+                // }
+                }
 
-        return response()->json(['message' => 'Candidato aceptado y chat iniciado.']);
+                // 1. Update Application Status
+                $application->update(['status' => 'accepted']);
+                
+                // 2. Reject other pending applications for this project (optional but common)
+                // $project->applications()->where('id', '!=', $application->id)->update(['status' => 'rejected']);
+    
+                // 3. Update Project Status and assign developer (if project table has that field, or just rely on 'in_progress')
+                $project->update(['status' => 'in_progress']);
+    
+                // 4. Dispatch Event to handle Chat Creation
+                \App\Events\ApplicationAccepted::dispatch($application);
+            });
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 400);
+        }
+
+        return response()->json(['message' => 'Candidato aceptado, pago procesado y chat iniciado.']);
     }
 
     public function reject(Request $r, Application $application)

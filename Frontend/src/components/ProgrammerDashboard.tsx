@@ -8,6 +8,7 @@ import { ProfileSection } from './dashboard/programmer/ProfileSection';
 import { ChatSection } from './dashboard/ChatSection';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
+import { PaymentMethodsSettings } from './dashboard/settings/PaymentMethodsSettings';
 
 interface ProgrammerDashboardProps {
   onLogout?: () => void;
@@ -25,6 +26,7 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
     projects: 'Proyectos Publicados',
     profile: 'Mi Perfil',
     chat: 'Chat',
+    settings: 'Configuración de Cobro',
   };
 
   const handleLogout = () => {
@@ -43,6 +45,15 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
         return <ProfileSection />;
       case 'chat':
         return <ChatSection userType="programmer" />;
+      case 'settings':
+        return (
+          <div className="p-8">
+            <h2 className="text-3xl font-bold text-white mb-6">Configuración de Cobro</h2>
+            <div className="max-w-4xl">
+              <PaymentMethodsSettings userType="programmer" />
+            </div>
+          </div>
+        );
       default:
         return <WelcomeSection onSectionChange={setCurrentSection} />;
     }
@@ -50,7 +61,7 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
 
   return (
     <div className="flex h-screen bg-[#0D0D0D]">
-      <Sidebar 
+      <Sidebar
         userType="programmer"
         currentSection={currentSection}
         onSectionChange={setCurrentSection}

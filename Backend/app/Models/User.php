@@ -175,4 +175,8 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Skill::class, 'developer_skill', 'developer_id', 'skill_id');
     }
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
 }

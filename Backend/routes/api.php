@@ -9,7 +9,9 @@ use App\Http\Controllers\{
     ConversationController,
     DeveloperController,
     ProfileController,
-    TaxonomyController
+    TaxonomyController,
+    PaymentMethodController,
+    WalletController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -49,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::get('/projects/{project}', [ProjectController::class, 'show']);
     Route::put('/projects/{project}', [ProjectController::class, 'update']);
+    Route::post('/projects/{project}/fund', [ProjectController::class, 'fund']);
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
 
     // Aplicaciones (programadores)
@@ -59,6 +62,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/projects/{project}/applications', [ApplicationController::class, 'index']); // Listar candidatos
     Route::post('/applications/{application}/accept', [ApplicationController::class, 'accept']); // Aceptar candidato
     Route::post('/applications/{application}/reject', [ApplicationController::class, 'reject']); // Rechazar candidato
+
+    // Wallet
+    Route::get('/wallet', [\App\Http\Controllers\WalletController::class, 'show']);
+    Route::post('/wallet/recharge', [\App\Http\Controllers\WalletController::class, 'recharge']);
 
     // Dashboards
     Route::get('/dashboard/company', [DashboardController::class, 'company']);
@@ -94,5 +101,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/metrics', [AdminController::class, 'metrics']);
     });
 
+    // Payment Methods
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store']);
+    Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy']);
     
 });

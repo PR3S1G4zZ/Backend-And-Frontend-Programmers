@@ -23,6 +23,14 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
   const data = await response.json();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      // Limpiar toda la sesión para evitar bucles de recarga
+      authService.clearToken();
+      authService.clearStoredUser();
+      localStorage.removeItem('last_page');
+      window.location.href = '/';
+      return {} as T;
+    }
     throw new Error(data.message || 'Error en la petición');
   }
 

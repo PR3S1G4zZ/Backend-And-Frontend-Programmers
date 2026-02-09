@@ -25,8 +25,8 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
 
     const loadCandidates = async () => {
         try {
-            const data = await fetchProjectApplications(String(project.id));
-            setCandidates(data);
+            const response = await fetchProjectApplications(String(project.id));
+            setCandidates(response.data);
         } catch (error) {
             console.error('Error loading candidates', error);
             showAlert({

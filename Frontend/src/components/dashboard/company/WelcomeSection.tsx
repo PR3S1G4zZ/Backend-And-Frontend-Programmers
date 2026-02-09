@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
-import { 
-  TrendingUp, 
-  Users, 
-  FolderOpen, 
+import {
+  TrendingUp,
+  Users,
+  FolderOpen,
   MessageSquare,
   DollarSign,
   CheckCircle,
@@ -13,6 +13,7 @@ import {
   Search
 } from 'lucide-react';
 import { useAuth } from "../../../contexts/AuthContext";
+import { PaymentMethodBanner } from "../settings/PaymentMethodBanner";
 
 interface WelcomeSectionProps {
   onSectionChange: (section: string) => void;
@@ -114,6 +115,11 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
         </p>
       </div>
 
+      <PaymentMethodBanner
+        userType="company"
+        onSetupClick={() => onSectionChange('settings')}
+      />
+
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric, index) => {
@@ -147,7 +153,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
           <Card className="bg-[#1A1A1A] border-[#333333]">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-white">Proyectos Activos</CardTitle>
-              <Button 
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onSectionChange('my-projects')}
@@ -171,20 +177,20 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                       <div className="text-xs text-gray-400">{project.status}</div>
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Progreso</span>
                       <span className="text-white">{project.progress}%</span>
                     </div>
                     <div className="w-full bg-[#333333] rounded-full h-2">
-                      <div 
-                        className="bg-[#00FF85] h-2 rounded-full transition-all duration-300" 
+                      <div
+                        className="bg-[#00FF85] h-2 rounded-full transition-all duration-300"
                         style={{ width: `${project.progress}%` }}
                       ></div>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-400">Deadline: {project.deadline}</span>
                     <div className="flex space-x-2">
@@ -228,7 +234,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm font-medium">{activity.title}</p>
                     <p className="text-gray-400 text-xs mt-1">{activity.description}</p>
@@ -243,10 +249,10 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                   )}
                 </div>
               ))}
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
+
+              <Button
+                variant="ghost"
+                size="sm"
                 className="w-full text-[#00FF85] hover:bg-[#333333]"
               >
                 Ver toda la actividad
@@ -263,15 +269,15 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Button 
+            <Button
               onClick={() => onSectionChange('publish-project')}
               className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] p-6 h-auto flex-col space-y-2"
             >
               <Plus className="h-6 w-6" />
               <span>Publicar Proyecto</span>
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={() => onSectionChange('search-programmers')}
               variant="outline"
               className="border-[#333333] text-white hover:bg-[#333333] p-6 h-auto flex-col space-y-2"
@@ -279,8 +285,8 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
               <Search className="h-6 w-6" />
               <span>Buscar Desarrolladores</span>
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={() => onSectionChange('my-projects')}
               variant="outline"
               className="border-[#333333] text-white hover:bg-[#333333] p-6 h-auto flex-col space-y-2"
@@ -288,8 +294,8 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
               <FolderOpen className="h-6 w-6" />
               <span>Gestionar Proyectos</span>
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={() => onSectionChange('chat')}
               variant="outline"
               className="border-[#333333] text-white hover:bg-[#333333] p-6 h-auto flex-col space-y-2"

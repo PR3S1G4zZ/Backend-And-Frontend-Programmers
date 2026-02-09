@@ -1,3 +1,8 @@
+import { WalletBalance } from './dashboard/wallet/WalletBalance';
+import { TransactionHistory } from './dashboard/wallet/TransactionHistory';
+import { RechargeButton } from './dashboard/wallet/RechargeButton';
+
+// ... (existing imports)
 import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
@@ -10,6 +15,7 @@ import { ProjectCandidatesSection } from './dashboard/company/ProjectCandidatesS
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
 import type { ProjectResponse } from '../services/projectService';
+import { PaymentMethodsSettings } from './dashboard/settings/PaymentMethodsSettings';
 
 interface CompanyDashboardProps {
   onLogout?: () => void;
@@ -47,6 +53,7 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
     messages: 'Mensajes',
     notifications: 'Notificaciones',
     settings: 'Configuración',
+    wallet: 'Billetera & Pagos',
   };
 
   const handleLogout = () => {
@@ -66,6 +73,8 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
       setViewingCandidates(null);
     }
   };
+
+  // ... (existing code)
 
   const renderSection = () => {
     switch (currentSection) {
@@ -96,10 +105,35 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
       case 'chat':
       case 'messages':
         return <ChatSection userType="company" />;
+      case 'wallet':
+        return (
+          <div className="p-8">
+            <h2 className="text-3xl font-bold text-white mb-6">Billetera & Pagos</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <WalletBalance />
+                <div className="mt-4">
+                  <RechargeButton onRecharge={() => window.location.reload()} />
+                  {/* Reload is a quick hack to refresh balance, ideal would be a context or callback refetch */}
+                </div>
+              </div>
+              <div>
+                <TransactionHistory />
+              </div>
+            </div>
+          </div>
+        );
       case 'notifications':
         return <div className="text-white p-8">Notificaciones (Próximamente)</div>;
       case 'settings':
-        return <div className="text-white p-8">Configuración (Próximamente)</div>;
+        return (
+          <div className="p-8">
+            <h2 className="text-3xl font-bold text-white mb-6">Configuración</h2>
+            <div className="max-w-4xl">
+              <PaymentMethodsSettings userType="company" />
+            </div>
+          </div>
+        );
       default:
         return <WelcomeSection onSectionChange={handleSectionChange} />;
     }

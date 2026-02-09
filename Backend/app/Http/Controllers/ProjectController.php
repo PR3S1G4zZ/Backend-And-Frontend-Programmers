@@ -9,6 +9,31 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class ProjectController extends Controller
 {
 
+    public function fund(Request $r, Project $project)
+    {
+        if ($project->company_id !== $r->user()->id) {
+            abort(403);
+        }
+
+        // Validate amount (50% of budget_min or full amount?)
+        // User request: "Anticipo del 50%"
+        $amount = $project->budget_min * 0.5;
+
+        try {
+            $paymentService = app(\App\Services\PaymentService::class);
+            $paymentService->fundProject($r->user(), $amount, $project);
+            
+            // Activate Project? Maybe change status from 'pending_payment' to 'open'
+            if ($project->status === 'pending_payment') {
+                $project->update(['status' => 'open']);
+            }
+
+            return response()->json(['message' => 'Proyecto financiado con éxito.', 'project' => $project]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+    }
+
     public function index(Request $r)
     {
         // filtros simples: status, search
@@ -50,27 +75,29 @@ class ProjectController extends Controller
         if ($r->filled('remote')) {
             $q->where('remote', filter_var($r->remote, FILTER_VALIDATE_BOOLEAN));
         }
-        return $q->latest()->paginate(12);
+        return \App\Http\Resources\ProjectResource::collection($q->latest()->paginate(12));
     }
 
     public function show(Project $project)
     {
-        return $project->load(['company:id,name','categories:id,name','skills:id,name','applications'=>function($q){
-            $q->with('developer:id,name');
-        }]);
+        $project->load(['company', 'categories', 'skills']);
+        // If owner, load applications with developers
+        // Logic for loading applications could be conditional or separate, but ProjectResource handles 'whenLoaded'
+        
+        return new \App\Http\Resources\ProjectResource($project);
     }
 
     public function companyProjects(Request $request)
     {
         abort_unless($request->user()->user_type === 'company', 403);
 
-        $projects = Project::with(['categories:id,name', 'skills:id,name', 'applications.developer:id,name'])
+        $projects = Project::with(['categories', 'skills'])
             ->withCount('applications')
             ->where('company_id', $request->user()->id)
             ->latest()
             ->get();
 
-        return $projects;
+        return \App\Http\Resources\ProjectResource::collection($projects);
     }
 
     public function store(Request $r)
@@ -109,7 +136,7 @@ class ProjectController extends Controller
         if (!empty($data['skill_ids'])) {
             $project->skills()->sync($data['skill_ids']);
         }
-        return response()->json($project, 201);
+        return new \App\Http\Resources\ProjectResource($project);
     }
 
     public function update(Request $r, Project $project)
@@ -131,12 +158,30 @@ class ProjectController extends Controller
             'deadline'=>'nullable|date',
             'max_applicants'=>'nullable|integer|min:1',
             'tags'=>'nullable|array',
-            'status'=>'nullable|in:open,in_progress,completed,cancelled,draft',
+            'status'=>'nullable|in:open,in_progress,completed,cancelled,draft,pending_payment',
             'category_ids'=>'nullable|array',
             'category_ids.*'=>'integer|exists:project_categories,id',
             'skill_ids'=>'nullable|array',
             'skill_ids.*'=>'integer|exists:skills,id',
         ]);
+        // Check if completing project
+        if (($data['status'] ?? '') === 'completed' && $project->status !== 'completed') {
+             // Find accepted application
+             $acceptedApp = $project->applications()->where('status', 'accepted')->first();
+             if ($acceptedApp) {
+                 // Release Funds
+                 $amount = $project->budget_min ?? 0; // consistent with accept logic
+                 if ($amount > 0) {
+                     $paymentService = app(\App\Services\PaymentService::class);
+                     try {
+                        $paymentService->releaseFunds($r->user(), $acceptedApp->developer, $amount, $project);
+                     } catch (\Exception $e) {
+                         return response()->json(['message' => 'Error liberando fondos: ' . $e->getMessage()], 400);
+                     }
+                 }
+             }
+        }
+        
         $project->update($data);
         if (array_key_exists('category_ids', $data)) {
             $project->categories()->sync($data['category_ids'] ?? []);
@@ -144,7 +189,7 @@ class ProjectController extends Controller
         if (array_key_exists('skill_ids', $data)) {
             $project->skills()->sync($data['skill_ids'] ?? []);
         }
-        return $project;
+        return new \App\Http\Resources\ProjectResource($project);
     }
 
     public function destroy(Request $r, Project $project)
