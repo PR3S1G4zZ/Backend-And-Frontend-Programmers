@@ -54,6 +54,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Aplicaciones (programadores)
     Route::post('/projects/{project}/apply', [ApplicationController::class, 'apply']);
     Route::get('/applications/mine', [ApplicationController::class, 'myApplications']);
+    
+    // Gestión de Candidatos (Empresa)
+    Route::get('/projects/{project}/applications', [ApplicationController::class, 'index']); // Listar candidatos
+    Route::post('/applications/{application}/accept', [ApplicationController::class, 'accept']); // Aceptar candidato
+    Route::post('/applications/{application}/reject', [ApplicationController::class, 'reject']); // Rechazar candidato
 
     // Dashboards
     Route::get('/dashboard/company', [DashboardController::class, 'company']);

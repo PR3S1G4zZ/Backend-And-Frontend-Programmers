@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { WelcomeSection } from './dashboard/company/WelcomeSection';
@@ -6,54 +6,111 @@ import { PublishProjectSection } from './dashboard/company/PublishProjectSection
 import { SearchProgrammersSection } from './dashboard/company/SearchProgrammersSection';
 import { MyProjectsSection } from './dashboard/company/MyProjectsSection';
 import { ChatSection } from './dashboard/ChatSection';
+import { ProjectCandidatesSection } from './dashboard/company/ProjectCandidatesSection';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
+import type { ProjectResponse } from '../services/projectService';
 
 interface CompanyDashboardProps {
   onLogout?: () => void;
 }
 
 export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
-  const [currentSection, setCurrentSection] = useState('welcome');
+  const [currentSection, setCurrentSection] = useState(() => {
+    return localStorage.getItem('company_dashboard_section') || 'overview';
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<ProjectResponse | null>(null);
+  const [viewingCandidates, setViewingCandidates] = useState<ProjectResponse | null>(null);
   const { user } = useAuth();
 
+  // Persist storage and handle missing data on refresh
+  useEffect(() => {
+    localStorage.setItem('company_dashboard_section', currentSection);
+
+    // Fallback logic: If on a section that needs data but data is null (refresh), go back to relevant list
+    if ((currentSection === 'edit-project' && !editingProject) ||
+      (currentSection === 'view-candidates' && !viewingCandidates)) {
+      setCurrentSection('my-projects');
+    }
+  }, [currentSection, editingProject, viewingCandidates]);
+
   const sectionLabels: Record<string, string> = {
-    welcome: 'Dashboard',
+    overview: 'Dashboard',
     'my-projects': 'Mis Proyectos',
     'publish-project': 'Publicar Proyecto',
+    'edit-project': 'Editar Proyecto',
     'search-programmers': 'Buscar Programadores',
     chat: 'Chat',
+    'view-candidates': 'Candidatos del Proyecto',
+    messages: 'Mensajes',
+    notifications: 'Notificaciones',
+    settings: 'Configuración',
   };
 
   const handleLogout = () => {
     setIsLogoutDialogOpen(true);
   };
 
+  const handleSectionChange = (section: string, data?: any) => {
+    setCurrentSection(section);
+    if (section === 'edit-project' && data) {
+      setEditingProject(data);
+      setViewingCandidates(null);
+    } else if (section === 'view-candidates' && data) {
+      setViewingCandidates(data);
+      setEditingProject(null);
+    } else {
+      setEditingProject(null);
+      setViewingCandidates(null);
+    }
+  };
+
   const renderSection = () => {
     switch (currentSection) {
-      case 'welcome':
-        return <WelcomeSection onSectionChange={setCurrentSection} />;
+      case 'overview':
+        return <WelcomeSection onSectionChange={handleSectionChange} />;
       case 'my-projects':
-        return <MyProjectsSection onSectionChange={setCurrentSection} />;
+        return <MyProjectsSection onSectionChange={handleSectionChange} />;
       case 'publish-project':
-        return <PublishProjectSection />;
+        return <PublishProjectSection onSectionChange={handleSectionChange} />;
+      case 'edit-project':
+        return (
+          <PublishProjectSection
+            onSectionChange={handleSectionChange}
+            initialData={editingProject || undefined}
+            isEditing={true}
+          />
+        );
+      case 'view-candidates':
+        return viewingCandidates ? (
+          <ProjectCandidatesSection
+            project={viewingCandidates}
+            onBack={() => handleSectionChange('my-projects')}
+            onSectionChange={handleSectionChange}
+          />
+        ) : <MyProjectsSection onSectionChange={handleSectionChange} />;
       case 'search-programmers':
         return <SearchProgrammersSection />;
       case 'chat':
+      case 'messages':
         return <ChatSection userType="company" />;
+      case 'notifications':
+        return <div className="text-white p-8">Notificaciones (Próximamente)</div>;
+      case 'settings':
+        return <div className="text-white p-8">Configuración (Próximamente)</div>;
       default:
-        return <WelcomeSection onSectionChange={setCurrentSection} />;
+        return <WelcomeSection onSectionChange={handleSectionChange} />;
     }
   };
 
   return (
     <div className="flex h-screen bg-[#0D0D0D]">
-      <Sidebar 
+      <Sidebar
         userType="company"
         currentSection={currentSection}
-        onSectionChange={setCurrentSection}
+        onSectionChange={handleSectionChange}
         onLogout={handleLogout}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}

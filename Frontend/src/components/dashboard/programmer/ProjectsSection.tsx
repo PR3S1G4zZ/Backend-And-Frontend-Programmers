@@ -5,10 +5,10 @@ import { Input } from '../../ui/input';
 import { Badge } from '../../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
+import {
+  Search,
+  MapPin,
+  Clock,
   DollarSign,
   Calendar,
   Users,
@@ -64,6 +64,7 @@ interface Project {
   featured: boolean;
   status: 'open' | 'in-review' | 'closed';
   tags: string[];
+  hasApplied: boolean;
 }
 
 const mapProject = (project: ProjectResponse): Project => {
@@ -104,6 +105,7 @@ const mapProject = (project: ProjectResponse): Project => {
     featured: project.featured ?? false,
     status: (project.status as Project['status']) ?? 'open',
     tags: project.tags ?? [],
+    hasApplied: project.has_applied ?? false,
   };
 };
 
@@ -142,7 +144,7 @@ export function ProjectsSection() {
   ];
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -150,7 +152,7 @@ export function ProjectsSection() {
 
     const matchesCategory = selectedCategory === 'all' || project.category === selectedCategory;
     const matchesLevel = selectedLevel === 'all' || project.level === selectedLevel;
-    const matchesLocation = selectedLocation === 'all' || 
+    const matchesLocation = selectedLocation === 'all' ||
       project.location.toLowerCase().includes(selectedLocation.toLowerCase()) ||
       (selectedLocation === 'remoto' && project.remote);
 
@@ -158,15 +160,23 @@ export function ProjectsSection() {
   });
 
   const toggleFavorite = (projectId: string) => {
-    setFavorites(prev => 
-      prev.includes(projectId) 
+    setFavorites(prev =>
+      prev.includes(projectId)
         ? prev.filter(id => id !== projectId)
         : [...prev, projectId]
     );
   };
 
-  const applyToProject = (projectId: string) => {
-    setAppliedProjects(prev => [...prev, projectId]);
+  const applyToProject = async (projectId: string) => {
+    try {
+      await import('../../../services/projectService').then(m => m.applyToProject(projectId));
+      setAppliedProjects(prev => [...prev, projectId]);
+      // Optional: Add success toast/alert here
+    } catch (error) {
+      console.error("Error applying to project:", error);
+      // Optional: Add error toast
+      setError('Error al postularse al proyecto.');
+    }
   };
 
   const getBudgetText = (budget: Project['budget']) => {
@@ -177,8 +187,8 @@ export function ProjectsSection() {
   };
 
   const getDurationText = (duration: Project['duration']) => {
-    const unit = duration.unit === 'weeks' ? 'sem' : 
-                 duration.unit === 'months' ? 'mes' : 'días';
+    const unit = duration.unit === 'weeks' ? 'sem' :
+      duration.unit === 'months' ? 'mes' : 'días';
     return `${duration.value} ${unit}`;
   };
 
@@ -206,7 +216,7 @@ export function ProjectsSection() {
     const now = new Date();
     const posted = new Date(date);
     const diffInHours = Math.floor((now.getTime() - posted.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 24) return `${diffInHours}h`;
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d`;
@@ -229,7 +239,9 @@ export function ProjectsSection() {
         const response = await fetchProjects();
         if (!isMounted) return;
         const items = response.data || [];
-        setProjects(items.map(mapProject));
+        const mappedProjects = items.map(mapProject);
+        setProjects(mappedProjects);
+        setAppliedProjects(mappedProjects.filter(p => p.hasApplied).map(p => p.id));
       } catch (error) {
         console.error('Error cargando proyectos', error);
         if (isMounted) {
@@ -266,7 +278,7 @@ export function ProjectsSection() {
               Descubre oportunidades perfectas para tu perfil profesional
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <motion.div
               initial={{ scale: 0 }}
@@ -397,11 +409,10 @@ export function ProjectsSection() {
               <Button
                 variant={selectedCategory === category.id ? "default" : "outline"}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`flex items-center space-x-2 whitespace-nowrap ${
-                  selectedCategory === category.id 
-                    ? 'bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]' 
-                    : 'border-[#333333] text-white hover:bg-[#333333]'
-                }`}
+                className={`flex items-center space-x-2 whitespace-nowrap ${selectedCategory === category.id
+                  ? 'bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]'
+                  : 'border-[#333333] text-white hover:bg-[#333333]'
+                  }`}
               >
                 <IconComponent className="h-4 w-4" />
                 <span>{category.name}</span>
@@ -424,17 +435,16 @@ export function ProjectsSection() {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
-              transition={{ 
-                delay: showAnimations ? 0.1 * index : 0, 
+              transition={{
+                delay: showAnimations ? 0.1 * index : 0,
                 duration: 0.5,
                 layout: { duration: 0.3 }
               }}
               whileHover={{ scale: 1.02 }}
               className="relative group"
             >
-              <Card className={`bg-[#1A1A1A] border-[#333333] hover-neon overflow-hidden transition-all duration-300 ${
-                project.featured ? 'ring-2 ring-[#00FF85]/30' : ''
-              }`}>
+              <Card className={`bg-[#1A1A1A] border-[#333333] hover-neon overflow-hidden transition-all duration-300 ${project.featured ? 'ring-2 ring-[#00FF85]/30' : ''
+                }`}>
                 {/* Featured Badge */}
                 {project.featured && (
                   <motion.div
@@ -471,7 +481,7 @@ export function ProjectsSection() {
                           {project.title}
                         </h3>
                       </div>
-                      
+
                       <div className="flex items-center space-x-3 mb-3">
                         <div className="flex items-center space-x-2">
                           <Avatar className="h-8 w-8">
@@ -480,7 +490,7 @@ export function ProjectsSection() {
                               {project.company.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
-                          
+
                           <div>
                             <div className="flex items-center space-x-1">
                               <span className="text-sm text-white font-medium">{project.company.name}</span>
@@ -496,7 +506,7 @@ export function ProjectsSection() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-4 ml-auto text-xs text-gray-400">
                           <span className="flex items-center">
                             <Clock className="h-3 w-3 mr-1" />
@@ -525,7 +535,7 @@ export function ProjectsSection() {
                         <span className="text-white">{getDurationText(project.duration)}</span>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <MapPin className="h-4 w-4 text-orange-400" />
@@ -543,7 +553,7 @@ export function ProjectsSection() {
                     <Badge className={`${getLevelColor(project.level)} text-white`}>
                       {getLevelText(project.level)}
                     </Badge>
-                    
+
                     <div className="text-xs text-gray-400">
                       Deadline: {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'Sin fecha'}
                     </div>
@@ -592,11 +602,10 @@ export function ProjectsSection() {
                           size="sm"
                           disabled={appliedProjects.includes(project.id)}
                           onClick={() => applyToProject(project.id)}
-                          className={`${
-                            appliedProjects.includes(project.id)
-                              ? 'bg-green-600 text-white cursor-not-allowed'
-                              : 'bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]'
-                          } transition-all duration-200`}
+                          className={`${appliedProjects.includes(project.id)
+                            ? 'bg-green-600 text-white cursor-not-allowed'
+                            : 'bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]'
+                            } transition-all duration-200`}
                         >
                           {appliedProjects.includes(project.id) ? (
                             <>
@@ -611,7 +620,7 @@ export function ProjectsSection() {
                           )}
                         </Button>
                       </motion.div>
-                      
+
                       <Button size="sm" variant="outline" className="border-[#333333] text-white hover:bg-[#333333]">
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -626,20 +635,19 @@ export function ProjectsSection() {
                           size="sm"
                           variant="ghost"
                           onClick={() => toggleFavorite(project.id)}
-                          className={`p-2 ${
-                            favorites.includes(project.id) 
-                              ? 'text-red-400 hover:text-red-300' 
-                              : 'text-gray-400 hover:text-red-400'
-                          }`}
+                          className={`p-2 ${favorites.includes(project.id)
+                            ? 'text-red-400 hover:text-red-300'
+                            : 'text-gray-400 hover:text-red-400'
+                            }`}
                         >
                           <Heart className={`h-4 w-4 ${favorites.includes(project.id) ? 'fill-current' : ''}`} />
                         </Button>
                       </motion.div>
-                      
+
                       <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white p-2">
                         <MessageSquare className="h-4 w-4" />
                       </Button>
-                      
+
                       <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white p-2">
                         <BookmarkPlus className="h-4 w-4" />
                       </Button>
@@ -662,11 +670,11 @@ export function ProjectsSection() {
           <Card className="bg-[#1A1A1A] border-[#333333] p-12">
             <div className="text-center">
               <motion.div
-                animate={{ 
+                animate={{
                   rotate: [0, 10, -10, 0],
                   scale: [1, 1.1, 1]
                 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   repeat: Infinity,
                   repeatDelay: 3

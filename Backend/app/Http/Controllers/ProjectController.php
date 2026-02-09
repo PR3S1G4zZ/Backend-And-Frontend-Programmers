@@ -18,7 +18,10 @@ class ProjectController extends Controller
                 'categories:id,name',
                 'skills:id,name',
             ])
-            ->withCount('applications');
+            ->withCount('applications')
+            ->withExists(['applications as has_applied' => function ($query) use ($r) {
+                $query->where('developer_id', $r->user()->id ?? 0);
+            }]);
         if ($r->filled('status')) {
             $q->where('status', $r->status);
         }
@@ -147,6 +150,15 @@ class ProjectController extends Controller
     public function destroy(Request $r, Project $project)
     {
         abort_unless($r->user()->user_type==='company' && $project->company_id==$r->user()->id, 403);
+        // Verificar si tiene desarrolladores asignados (aplicaciones aceptadas)
+        $hasAcceptedDevelopers = $project->applications()->where('status', 'accepted')->exists();
+        
+        if ($hasAcceptedDevelopers) {
+             return response()->json([
+                'message' => 'No se puede eliminar un proyecto que ya tiene un desarrollador asignado.'
+             ], 403);
+        }
+
         $project->delete();
         return response()->noContent();
     }

@@ -7,16 +7,17 @@ import { Label } from '../../ui/label';
 import { Badge } from '../../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Checkbox } from '../../ui/checkbox';
-import { 
-  Plus, 
-  X, 
-  DollarSign, 
+import {
+  Plus,
+  X,
+  DollarSign,
   Eye,
   Save,
   Send
 } from 'lucide-react';
+import { useSweetAlert } from '../../ui/sweet-alert';
 import { motion } from 'motion/react';
-import { createProject } from '../../../services/projectService';
+import { createProject, updateProject, type ProjectResponse } from '../../../services/projectService';
 import { fetchCategories, fetchSkills, type TaxonomyItem } from '../../../services/taxonomyService';
 
 interface Skill {
@@ -25,7 +26,13 @@ interface Skill {
   required: boolean;
 }
 
-export function PublishProjectSection() {
+interface PublishProjectSectionProps {
+  onSectionChange?: (section: string) => void;
+  initialData?: ProjectResponse | null;
+  isEditing?: boolean;
+}
+
+export function PublishProjectSection({ onSectionChange, initialData, isEditing = false }: PublishProjectSectionProps) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -52,6 +59,39 @@ export function PublishProjectSection() {
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
   const popularSkills = skillOptions.map((skill) => skill.name);
+
+  // Load initial data if editing
+  useEffect(() => {
+    if (isEditing && initialData) {
+      setFormData({
+        title: initialData.title || '',
+        description: initialData.description || '',
+        category: initialData.categories?.[0]?.id?.toString() || '',
+        budget: initialData.budget_type === 'fixed'
+          ? `${initialData.budget_min || ''}-${initialData.budget_max || ''}`
+          : initialData.budget_max?.toString() || '',
+        budgetType: initialData.budget_type || 'fixed',
+        duration: initialData.duration_value?.toString() || '',
+        durationType: initialData.duration_unit || 'weeks',
+        experienceLevel: initialData.level || '',
+        teamSize: String(initialData.max_applicants || '1'),
+        startDate: '', // Start date needed from API if available
+        priority: initialData.priority || 'medium'
+      });
+
+      if (initialData.skills) {
+        setSkills(initialData.skills.map(s => ({
+          id: s.id.toString(),
+          name: s.name,
+          required: false // API might not have required flag for skills yet, defaulting to false
+        })));
+      }
+
+      if (initialData.tags) {
+        setDeliverables(initialData.tags.length > 0 ? initialData.tags : ['']);
+      }
+    }
+  }, [isEditing, initialData]);
 
   useEffect(() => {
     let isMounted = true;
@@ -82,10 +122,10 @@ export function PublishProjectSection() {
       const match = skillOptions.find(
         (option) => option.name.toLowerCase() === skillName.toLowerCase()
       );
-      setSkills([...skills, { 
-        id: match ? String(match.id) : Date.now().toString(), 
-        name: skillName, 
-        required 
+      setSkills([...skills, {
+        id: match ? String(match.id) : Date.now().toString(),
+        name: skillName,
+        required
       }]);
       setNewSkill('');
     }
@@ -96,7 +136,7 @@ export function PublishProjectSection() {
   };
 
   const toggleSkillRequired = (skillId: string) => {
-    setSkills(skills.map(s => 
+    setSkills(skills.map(s =>
       s.id === skillId ? { ...s, required: !s.required } : s
     ));
   };
@@ -129,6 +169,8 @@ export function PublishProjectSection() {
     setRequirements(requirements.filter((_, i) => i !== index));
   };
 
+  const { showAlert, Alert } = useSweetAlert();
+
   const handleSubmit = async (asDraft: boolean = false) => {
     setIsDraft(asDraft);
     setIsSubmitting(true);
@@ -137,6 +179,16 @@ export function PublishProjectSection() {
     const budgetParts = formData.budget.split('-').map((value) => Number(value.trim()));
     const budgetMin = Number.isFinite(budgetParts[0]) ? budgetParts[0] : null;
     const budgetMax = Number.isFinite(budgetParts[1]) ? budgetParts[1] : budgetMin;
+
+    // Parse team size range to max applicants number
+    let maxApplicants = 1;
+    switch (formData.teamSize) {
+      case '1': maxApplicants = 1; break;
+      case '2-3': maxApplicants = 3; break;
+      case '4-5': maxApplicants = 5; break;
+      case '6+': maxApplicants = 10; break;
+      default: maxApplicants = Number(formData.teamSize) || 1;
+    }
 
     const skillIds = skills
       .map((skill) => {
@@ -155,7 +207,7 @@ export function PublishProjectSection() {
       duration_unit: formData.durationType,
       level: formData.experienceLevel || null,
       priority: formData.priority,
-      max_applicants: formData.teamSize ? Number(formData.teamSize) : null,
+      max_applicants: maxApplicants,
       tags: deliverables.filter(Boolean),
       category_ids: formData.category ? [Number(formData.category)] : [],
       skill_ids: skillIds,
@@ -163,11 +215,36 @@ export function PublishProjectSection() {
     };
 
     try {
-      await createProject(payload);
-      setSubmitMessage('Proyecto guardado correctamente.');
+      if (isEditing && initialData?.id) {
+        await updateProject(String(initialData.id), payload);
+        showAlert({
+          title: '¡Proyecto Actualizado!',
+          text: 'Los cambios han sido guardados exitosamente.',
+          type: 'success'
+        });
+      } else {
+        await createProject(payload);
+        showAlert({
+          title: asDraft ? 'Borrador Guardado' : '¡Proyecto Publicado!',
+          text: asDraft
+            ? 'Tu proyecto se ha guardado como borrador.'
+            : 'Tu proyecto ha sido enviado y ahora es visible para los desarrolladores.',
+          type: 'success'
+        });
+      }
+
+      if (onSectionChange) {
+        setTimeout(() => {
+          onSectionChange('my-projects');
+        }, 1500);
+      }
     } catch (error) {
-      console.error('Error publicando proyecto', error);
-      setSubmitMessage('No se pudo publicar el proyecto.');
+      console.error('Error procesando proyecto', error);
+      showAlert({
+        title: 'Error',
+        text: 'Hubo un problema al guardar el proyecto. Por favor intenta de nuevo.',
+        type: 'error'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -191,7 +268,7 @@ export function PublishProjectSection() {
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Ej: Desarrollo de SaaS Dashboard para Analytics"
                 className="mt-2 bg-[#0D0D0D] border-[#333333] text-white"
               />
@@ -202,7 +279,7 @@ export function PublishProjectSection() {
 
             <div>
               <Label htmlFor="category" className="text-white">Categoría *</Label>
-              <Select onValueChange={(value) => setFormData({...formData, category: value})}>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                 <SelectTrigger className="mt-2 bg-[#0D0D0D] border-[#333333] text-white">
                   <SelectValue placeholder="Selecciona una categoría" />
                 </SelectTrigger>
@@ -221,7 +298,7 @@ export function PublishProjectSection() {
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Describe detalladamente el proyecto, objetivos, tecnologías preferidas..."
                 className="mt-2 bg-[#0D0D0D] border-[#333333] text-white min-h-[120px]"
               />
@@ -240,18 +317,18 @@ export function PublishProjectSection() {
                 <Label className="text-white">Tipo de Presupuesto *</Label>
                 <div className="mt-2 space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
+                    <Checkbox
                       id="fixed"
                       checked={formData.budgetType === 'fixed'}
-                      onCheckedChange={() => setFormData({...formData, budgetType: 'fixed'})}
+                      onCheckedChange={() => setFormData({ ...formData, budgetType: 'fixed' })}
                     />
                     <Label htmlFor="fixed" className="text-white">Precio Fijo</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
+                    <Checkbox
                       id="hourly"
                       checked={formData.budgetType === 'hourly'}
-                      onCheckedChange={() => setFormData({...formData, budgetType: 'hourly'})}
+                      onCheckedChange={() => setFormData({ ...formData, budgetType: 'hourly' })}
                     />
                     <Label htmlFor="hourly" className="text-white">Por Hora</Label>
                   </div>
@@ -267,7 +344,7 @@ export function PublishProjectSection() {
                   <Input
                     id="budget"
                     value={formData.budget}
-                    onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                     placeholder={formData.budgetType === 'fixed' ? '5000-8000' : '50-80'}
                     className="pl-10 bg-[#0D0D0D] border-[#333333] text-white"
                   />
@@ -282,11 +359,11 @@ export function PublishProjectSection() {
                   <Input
                     id="duration"
                     value={formData.duration}
-                    onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                     placeholder="4-6"
                     className="bg-[#0D0D0D] border-[#333333] text-white"
                   />
-                  <Select onValueChange={(value) => setFormData({...formData, durationType: value})}>
+                  <Select value={formData.durationType} onValueChange={(value) => setFormData({ ...formData, durationType: value })}>
                     <SelectTrigger className="w-32 bg-[#0D0D0D] border-[#333333] text-white">
                       <SelectValue placeholder="Semanas" />
                     </SelectTrigger>
@@ -305,7 +382,7 @@ export function PublishProjectSection() {
                   id="startDate"
                   type="date"
                   value={formData.startDate}
-                  onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                   className="mt-2 bg-[#0D0D0D] border-[#333333] text-white"
                 />
               </div>
@@ -314,7 +391,7 @@ export function PublishProjectSection() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label className="text-white">Tamaño del Equipo</Label>
-                <Select onValueChange={(value) => setFormData({...formData, teamSize: value})}>
+                <Select value={formData.teamSize} onValueChange={(value) => setFormData({ ...formData, teamSize: value })}>
                   <SelectTrigger className="mt-2 bg-[#0D0D0D] border-[#333333] text-white">
                     <SelectValue placeholder="1 desarrollador" />
                   </SelectTrigger>
@@ -329,7 +406,7 @@ export function PublishProjectSection() {
 
               <div>
                 <Label className="text-white">Prioridad del Proyecto</Label>
-                <Select onValueChange={(value) => setFormData({...formData, priority: value})}>
+                <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
                   <SelectTrigger className="mt-2 bg-[#0D0D0D] border-[#333333] text-white">
                     <SelectValue placeholder="Media" />
                   </SelectTrigger>
@@ -360,7 +437,7 @@ export function PublishProjectSection() {
                     className="bg-[#0D0D0D] border-[#333333] text-white"
                     onKeyPress={(e) => e.key === 'Enter' && addSkill(newSkill)}
                   />
-                  <Button 
+                  <Button
                     onClick={() => addSkill(newSkill)}
                     className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
                   >
@@ -429,7 +506,7 @@ export function PublishProjectSection() {
 
             <div>
               <Label className="text-white">Nivel de Experiencia Requerido *</Label>
-              <Select onValueChange={(value) => setFormData({...formData, experienceLevel: value})}>
+              <Select value={formData.experienceLevel} onValueChange={(value) => setFormData({ ...formData, experienceLevel: value })}>
                 <SelectTrigger className="mt-2 bg-[#0D0D0D] border-[#333333] text-white">
                   <SelectValue placeholder="Selecciona el nivel" />
                 </SelectTrigger>
@@ -535,7 +612,7 @@ export function PublishProjectSection() {
                   <h3 className="text-lg font-semibold text-white">{formData.title || 'Título del proyecto'}</h3>
                   <p className="text-sm text-gray-400">{selectedCategoryName || 'Categoría'}</p>
                 </div>
-                
+
                 <p className="text-gray-300 text-sm">
                   {formData.description || 'Descripción del proyecto...'}
                 </p>
@@ -583,9 +660,13 @@ export function PublishProjectSection() {
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Publicar Nuevo Proyecto</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">
+          {isEditing ? 'Editar Proyecto' : 'Publicar Nuevo Proyecto'}
+        </h1>
         <p className="text-gray-300">
-          Encuentra el talento perfecto para tu proyecto en nuestra red de desarrolladores
+          {isEditing
+            ? 'Actualiza la información de tu proyecto'
+            : 'Encuentra el talento perfecto para tu proyecto en nuestra red de desarrolladores'}
         </p>
       </div>
 
@@ -595,13 +676,12 @@ export function PublishProjectSection() {
           <div className="flex items-center justify-between">
             {steps.map((step) => (
               <div key={step.id} className="flex items-center space-x-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  currentStep === step.id 
-                    ? 'bg-[#00FF85] text-[#0D0D0D]'
-                    : currentStep > step.id
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep === step.id
+                  ? 'bg-[#00FF85] text-[#0D0D0D]'
+                  : currentStep > step.id
                     ? 'bg-green-600 text-white'
                     : 'bg-[#333333] text-gray-400'
-                }`}>
+                  }`}>
                   {currentStep > step.id ? '✓' : step.id}
                 </div>
                 <div className="hidden md:block">
@@ -609,9 +689,8 @@ export function PublishProjectSection() {
                   <p className="text-xs text-gray-400">{step.description}</p>
                 </div>
                 {step.id < steps.length && (
-                  <div className={`hidden md:block w-12 h-px ${
-                    currentStep > step.id ? 'bg-green-600' : 'bg-[#333333]'
-                  }`} />
+                  <div className={`hidden md:block w-12 h-px ${currentStep > step.id ? 'bg-green-600' : 'bg-[#333333]'
+                    }`} />
                 )}
               </div>
             ))}
@@ -657,15 +736,17 @@ export function PublishProjectSection() {
         </Button>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button
-            variant="outline"
-            onClick={() => handleSubmit(true)}
-            disabled={isSubmitting}
-            className="border-[#333333] text-white hover:bg-[#333333]"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {isSubmitting ? 'Guardando...' : 'Guardar Borrador'}
-          </Button>
+          {!isEditing && (
+            <Button
+              variant="outline"
+              onClick={() => handleSubmit(true)}
+              disabled={isSubmitting}
+              className="border-[#333333] text-white hover:bg-[#333333]"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {isSubmitting ? 'Guardando...' : 'Guardar Borrador'}
+            </Button>
+          )}
 
           {currentStep < steps.length ? (
             <Button
@@ -681,11 +762,12 @@ export function PublishProjectSection() {
               className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
             >
               <Send className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Publicando...' : 'Publicar Proyecto'}
+              {isSubmitting ? 'Guardando...' : (isEditing ? 'Actualizar Proyecto' : 'Publicar Proyecto')}
             </Button>
           )}
         </div>
       </div>
+      <Alert />
     </div>
   );
 }

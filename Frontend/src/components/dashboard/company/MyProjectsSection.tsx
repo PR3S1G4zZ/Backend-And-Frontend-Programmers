@@ -6,24 +6,32 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs';
 import { Progress } from '../../ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
+import {
+  Plus,
+  Search,
+  Filter,
   MoreVertical,
   Calendar,
   DollarSign,
-  Users,
-  Clock,
-  CheckCircle,
-  Play,
-  MessageSquare,
-  Eye,
   Edit,
-  Star
+  Trash2,
+  Clock,
+  Users,
+  CheckCircle,
+  Star,
+  Eye,
+  MessageSquare,
+  Play
 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { fetchCompanyProjects, type ProjectResponse } from '../../../services/projectService';
+import { motion } from 'framer-motion';
+import { fetchCompanyProjects, deleteProject, updateProject, type ProjectResponse } from '../../../services/projectService';
+import { useSweetAlert } from '../../ui/sweet-alert';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../ui/dropdown-menu';
 
 interface Project {
   id: string;
@@ -46,10 +54,11 @@ interface Project {
   priority: 'low' | 'medium' | 'high' | 'urgent';
   lastUpdate: string;
   messages: number;
+  originalData: ProjectResponse;
 }
 
 interface MyProjectsSectionProps {
-  onSectionChange: (section: string) => void;
+  onSectionChange: (section: string, data?: any) => void;
 }
 
 const mapProject = (project: ProjectResponse): Project => {
@@ -82,9 +91,9 @@ const mapProject = (project: ProjectResponse): Project => {
     deadline: project.deadline ?? '',
     developer: acceptedApplication?.developer
       ? {
-          name: acceptedApplication.developer.name,
-          rating: 0,
-        }
+        name: acceptedApplication.developer.name,
+        rating: 0,
+      }
       : undefined,
     applicants: project.applications_count ?? 0,
     category,
@@ -92,6 +101,7 @@ const mapProject = (project: ProjectResponse): Project => {
     priority: project.priority ?? 'medium',
     lastUpdate: project.updated_at ?? '',
     messages: 0,
+    originalData: project
   };
 };
 
@@ -102,6 +112,63 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showAlert, Alert } = useSweetAlert();
+
+  const handleDelete = async (projectId: string) => {
+    try {
+      await deleteProject(projectId);
+      setProjects(projects.filter(p => p.id !== projectId));
+      showAlert({
+        title: 'Proyecto eliminado',
+        text: 'El proyecto ha sido movido a la papelera.',
+        type: 'success'
+      });
+    } catch (error: any) {
+      console.error('Error deleting project', error);
+      // Backend returns 403 if project has accepted developers
+      const message = error.response?.data?.message || 'No se pudo eliminar el proyecto.';
+      showAlert({
+        title: 'Error',
+        text: message,
+        type: 'error'
+      });
+    }
+    /* ... handleDelete ... */
+  };
+
+  const handleEdit = (project: Project) => {
+    // Navigate to edit page
+    onSectionChange('edit-project', project.originalData);
+  };
+
+  const handleComplete = (project: Project) => {
+    showAlert({
+      title: '¿Marcar como completado?',
+      text: 'El proyecto se marcará como terminado. Esta acción no se puede deshacer.',
+      type: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, completar',
+      cancelButtonText: 'Cancelar',
+      onConfirm: async () => {
+        try {
+          await updateProject(String(project.id), { ...project.originalData, status: 'completed' });
+          setProjects(projects.map(p => p.id === String(project.id) ? { ...p, status: 'completed' } : p));
+          showAlert({
+            title: '¡Proyecto Completado!',
+            text: 'El proyecto ha sido marcado como finalizado.',
+            type: 'success'
+          });
+        } catch (error) {
+          console.error('Error completing project', error);
+          showAlert({
+            title: 'Error',
+            text: 'No se pudo actualizar el estado del proyecto.',
+            type: 'error'
+          });
+        }
+      }
+    });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -193,7 +260,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
             Gestiona todos tus proyectos activos, completados y en borrador
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => onSectionChange('publish-project')}
           className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
         >
@@ -221,21 +288,21 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
             <div className="text-gray-400 text-sm">Total</div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1A1A1A] border-[#333333]">
           <CardContent className="p-6 text-center">
             <div className="text-2xl font-bold text-yellow-400">{stats.active}</div>
             <div className="text-gray-400 text-sm">Activos</div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1A1A1A] border-[#333333]">
           <CardContent className="p-6 text-center">
             <div className="text-2xl font-bold text-green-400">{stats.completed}</div>
             <div className="text-gray-400 text-sm">Completados</div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1A1A1A] border-[#333333]">
           <CardContent className="p-6 text-center">
             <div className="text-2xl font-bold text-gray-400">{stats.drafts}</div>
@@ -314,7 +381,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                           </Badge>
                         </div>
                         <p className="text-gray-300 text-sm mb-3 line-clamp-2">{project.description}</p>
-                        
+
                         {/* Skills */}
                         <div className="flex flex-wrap gap-1">
                           {project.skills.map((skill) => (
@@ -325,36 +392,77 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                         </div>
                       </div>
 
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="focus:outline-none" onClick={(e) => e.stopPropagation()}>
+                          <div className="h-8 w-8 rounded-md flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#333333] transition-colors cursor-pointer relative z-20">
+                            <MoreVertical className="h-4 w-4" />
+                          </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-[#1A1A1A] border-[#333333] z-[9999]">
+                          <DropdownMenuItem
+                            className="text-white hover:bg-[#333333] cursor-pointer"
+                            onSelect={() => handleEdit(project)}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Editar</span>
+                          </DropdownMenuItem>
+                          {project.status !== 'completed' && (
+                            <DropdownMenuItem
+                              className="text-blue-400 hover:bg-blue-900/20 hover:text-blue-300 cursor-pointer"
+                              onSelect={() => handleComplete(project)}
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              <span>Marcar Finalizado</span>
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            className="text-red-400 hover:bg-red-900/20 hover:text-red-300 cursor-pointer"
+                            onSelect={(e) => {
+                              e.preventDefault(); // Prevent menu from closing immediately if needed, though usually usually fine
+                              console.log('Delete clicked for project:', project.id);
+                              showAlert({
+                                title: '¿Eliminar proyecto?',
+                                text: 'Esta acción no se puede deshacer. El proyecto será movido a la papelera.',
+                                type: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, eliminar',
+                                cancelButtonText: 'Cancelar',
+                                onConfirm: () => handleDelete(project.id)
+                              });
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Eliminar</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
                     {/* Project Info */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4 text-[#00FF85]" />
-                        <span className="text-white">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mt-4">
+                      <div className="flex items-center space-x-2 overflow-hidden">
+                        <DollarSign className="h-4 w-4 text-[#00FF85] flex-shrink-0" />
+                        <span className="text-white truncate">
                           €{project.budget.toLocaleString()}{project.budgetType === 'hourly' ? '/h' : ''}
                         </span>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-blue-400" />
-                        <span className="text-white">{project.applicants} candidatos</span>
+
+                      <div className="flex items-center space-x-2 overflow-hidden">
+                        <Users className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                        <span className="text-white truncate">{project.applicants} candidatos</span>
                       </div>
-                      
+
                       {project.deadline && (
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-orange-400" />
-                          <span className="text-white">{new Date(project.deadline).toLocaleDateString()}</span>
+                        <div className="flex items-center space-x-2 overflow-hidden">
+                          <Calendar className="h-4 w-4 text-orange-400 flex-shrink-0" />
+                          <span className="text-white truncate">{new Date(project.deadline).toLocaleDateString()}</span>
                         </div>
                       )}
-                      
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <span className="text-white">
-                          Act. {project.lastUpdate ? new Date(project.lastUpdate).toLocaleDateString() : 'Sin actualizaciones'}
+
+                      <div className="flex items-center space-x-2 overflow-hidden">
+                        <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-white truncate">
+                          Act. {project.lastUpdate ? new Date(project.lastUpdate).toLocaleDateString() : 'Sin act.'}
                         </span>
                       </div>
                     </div>
@@ -369,7 +477,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                           </div>
                           <Progress value={project.progress} className="h-2" />
                         </div>
-                        
+
                         {project.developer && (
                           <div className="flex items-center space-x-3">
                             <Avatar className="h-8 w-8">
@@ -394,12 +502,16 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                   {/* Actions */}
                   <div className="ml-6 flex flex-col space-y-2">
                     {project.status === 'published' && (
-                      <Button size="sm" className="bg-blue-600 text-white hover:bg-blue-700">
+                      <Button
+                        size="sm"
+                        className="bg-blue-600 text-white hover:bg-blue-700"
+                        onClick={() => onSectionChange('view-candidates', project.originalData)}
+                      >
                         <Users className="h-4 w-4 mr-2" />
                         Ver Candidatos
                       </Button>
                     )}
-                    
+
                     {project.status === 'in-progress' && (
                       <>
                         <Button size="sm" className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
@@ -419,7 +531,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                         )}
                       </>
                     )}
-                    
+
                     {project.status === 'draft' && (
                       <>
                         <Button size="sm" className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
@@ -432,7 +544,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                         </Button>
                       </>
                     )}
-                    
+
                     {project.status === 'completed' && (
                       <Button size="sm" variant="outline" className="border-green-600 text-green-400 hover:bg-green-600 hover:text-white">
                         <CheckCircle className="h-4 w-4 mr-2" />
@@ -457,7 +569,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
             <p className="text-gray-400 mb-4">
               No tienes proyectos en esta categoría. ¡Empieza creando tu primer proyecto!
             </p>
-            <Button 
+            <Button
               onClick={() => onSectionChange('publish-project')}
               className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
             >
@@ -467,6 +579,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
           </div>
         </Card>
       )}
+      <Alert />
     </div>
   );
 }

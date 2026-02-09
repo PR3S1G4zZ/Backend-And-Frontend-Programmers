@@ -16,6 +16,10 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     headers,
   });
 
+  if (response.status === 204) {
+    return {} as T;
+  }
+
   const data = await response.json();
 
   if (!response.ok) {

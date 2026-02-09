@@ -207,79 +207,87 @@ function AppContent() {
   const isDashboard =
     ['programmer-dashboard', 'company-dashboard', 'admin-dashboard'].includes(currentPage);
 
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+        <LoadingIndicator />
+      </div>
+    );
+  }
+
   return (
-      <div className="dark min-h-screen bg-[#0D0D0D] flex flex-col relative">
+    <div className="dark min-h-screen bg-[#0D0D0D] flex flex-col relative">
 
-        {!isDashboard && <CodeAnimations />}
+      {!isDashboard && <CodeAnimations />}
 
-        <AnimatePresence>
-          {isPageLoading && (
+      <AnimatePresence>
+        {isPageLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+          >
+            <LoadingIndicator />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Navbar */}
+      <AnimatePresence>
+        {shouldShowNavbarAndFooter && (
+          <motion.div
+            initial={{ y: -30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -30, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <Navbar
+              userType={userType}
+              currentPage={currentPage}
+              onNavigate={handleNavigate}
+              onLogout={handleLogout}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Contenido */}
+      <main className="flex-1 relative z-10">
+        <AnimatePresence mode="wait">
+          {isDashboard ? (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
-            >
-              <LoadingIndicator />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Navbar */}
-        <AnimatePresence>
-          {shouldShowNavbarAndFooter && (
-            <motion.div
-              initial={{ y: -30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -30, opacity: 0 }}
+              key={currentPage}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
-              <Navbar
-                userType={userType}
-                currentPage={currentPage}
-                onNavigate={handleNavigate}
-                onLogout={handleLogout}
-              />
+              {renderPage()}
             </motion.div>
+          ) : (
+            <PageTransition pageKey={currentPage} isLoading={isPageLoading}>
+              {renderPage()}
+            </PageTransition>
           )}
         </AnimatePresence>
+      </main>
 
-        {/* Contenido */}
-        <main className="flex-1 relative z-10">
-          <AnimatePresence mode="wait">
-            {isDashboard ? (
-              <motion.div
-                key={currentPage}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                {renderPage()}
-              </motion.div>
-            ) : (
-              <PageTransition pageKey={currentPage} isLoading={isPageLoading}>
-                {renderPage()}
-              </PageTransition>
-            )}
-          </AnimatePresence>
-        </main>
-
-        {/* Footer */}
-        <AnimatePresence>
-          {shouldShowNavbarAndFooter &&
-            !['login', 'register', 'forgot-password', 'reset-password']
-              .includes(currentPage) && (
-              <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 30, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                <Footer />
-              </motion.div>
-            )}
-        </AnimatePresence>
-      </div>
+      {/* Footer */}
+      <AnimatePresence>
+        {shouldShowNavbarAndFooter &&
+          !['login', 'register', 'forgot-password', 'reset-password']
+            .includes(currentPage) && (
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 30, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <Footer />
+            </motion.div>
+          )}
+      </AnimatePresence>
+    </div>
   );
 }

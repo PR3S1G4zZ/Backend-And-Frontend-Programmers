@@ -16,9 +16,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property float $budget_max
  * @property string $status
  */
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Project extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     //campos asignables
     protected $fillable = [
