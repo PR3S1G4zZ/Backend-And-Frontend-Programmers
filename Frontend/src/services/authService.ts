@@ -106,9 +106,13 @@ class AuthService {
       body: JSON.stringify(data),
     });
 
+    // Eliminamos el auto-login: No guardamos el token automáticamente.
+    // El usuario deberá iniciar sesión manualmente.
+    /*
     if (response.success && response.token) {
       this.setToken(response.token);
     }
+    */
 
     return response;
   }
