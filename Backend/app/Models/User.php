@@ -102,7 +102,13 @@ class User extends Authenticatable
     {
         $rules = [
             'name'      => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
-            'lastname'  => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
+            // lastname es opcional si es empresa
+            'lastname'  => [
+                $user->user_type === 'company' ? 'nullable' : 'required', 
+                'string', 
+                'max:255', 
+                'regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/'
+            ],
             'email'     => [
                 'required', 'string', 'email', 'max:255',
                 'regex:/^[^@\s]+@[^@\.\s]+\.[^@\.\s]+$/i',
@@ -125,7 +131,7 @@ class User extends Authenticatable
 
                     $len = mb_strlen($value);
                     if ($len < 8)  return $fail('La contraseña debe tener al menos 8 caracteres.');
-                    if ($len > 15) return $fail('La contraseña no puede tener más de 15 caracteres.');
+                    if ($len > 64) return $fail('La contraseña no puede tener más de 64 caracteres.');
 
                     if (!preg_match('/[A-Z]/', $value)) return $fail('Debe contener al menos una mayúscula.');
                     if (!preg_match('/[a-z]/', $value)) return $fail('Debe contener al menos una minúscula.');
@@ -178,5 +184,10 @@ class User extends Authenticatable
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
+    }
+
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class);
     }
 }

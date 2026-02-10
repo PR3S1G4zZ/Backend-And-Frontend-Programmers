@@ -22,11 +22,13 @@ export interface LoginData {
 
 export interface RegisterData {
   name: string;
-  lastname: string;
+  lastname?: string; // Ahora es opcional porque para empresas puede no aplicar igual
   email: string;
   password: string;
   password_confirmation: string;
   user_type: 'programmer' | 'company' | 'admin';
+  company_name?: string;
+  position?: string;
 }
 
 // Configuración de la API
@@ -46,7 +48,7 @@ class AuthService {
     options: RequestInit = {}
   ): Promise<AuthResponse> {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',

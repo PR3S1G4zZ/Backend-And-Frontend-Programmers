@@ -8,7 +8,7 @@ import { ProfileSection } from './dashboard/programmer/ProfileSection';
 import { ChatSection } from './dashboard/ChatSection';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
-import { PaymentMethodsSettings } from './dashboard/settings/PaymentMethodsSettings';
+import { WalletPaymentMethods } from './dashboard/wallet/WalletPaymentMethods';
 
 interface ProgrammerDashboardProps {
   onLogout?: () => void;
@@ -26,7 +26,8 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
     projects: 'Proyectos Publicados',
     profile: 'Mi Perfil',
     chat: 'Chat',
-    settings: 'Configuración de Cobro',
+    wallet: 'Billetera & Cobros',
+    settings: 'Configuración',
   };
 
   const handleLogout = () => {
@@ -48,9 +49,18 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
       case 'settings':
         return (
           <div className="p-8">
-            <h2 className="text-3xl font-bold text-white mb-6">Configuración de Cobro</h2>
+            <h2 className="text-3xl font-bold text-white mb-6">Configuración</h2>
             <div className="max-w-4xl">
-              <PaymentMethodsSettings userType="programmer" />
+              <p className="text-gray-400">La configuración de cobros se ha movido a la sección de Billetera.</p>
+            </div>
+          </div>
+        );
+      case 'wallet':
+        return (
+          <div className="p-8">
+            <h2 className="text-3xl font-bold text-white mb-6">Billetera & Cobros</h2>
+            <div className="max-w-6xl space-y-8">
+              <WalletPaymentMethods userType="programmer" />
             </div>
           </div>
         );

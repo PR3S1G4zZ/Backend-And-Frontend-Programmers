@@ -2,10 +2,10 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
-import { 
-  Code, 
-  Mail, 
-  Lock, 
+import {
+  Code,
+  Mail,
+  Lock,
   ArrowRight,
   Eye,
   EyeOff
@@ -15,7 +15,8 @@ import { UserTypeSelector } from "./auth/UserTypeSelector";
 import { SocialAuthButtons } from "./auth/SocialAuthButtons";
 import type { UserType, RegisterFormData } from "./auth/constants";
 import { USER_TYPES, INITIAL_FORM_DATA, DEMO_ACCOUNTS, EMAIL_SINGLE_DOT_REGEX } from "./auth/constants";
-import { useAuth } from "../contexts/AuthContext";
+
+import { authService } from "../services/authService";
 import { useSweetAlert } from "./ui/sweet-alert";
 
 interface RegisterPageProps {
@@ -38,34 +39,26 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   const [termsTouched, setTermsTouched] = useState<boolean>(false);
 
-  const NAME_REGEX = /^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/;
+  const NAME_REGEX = /^(?!\s)[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-\.]+(?<!\s)$/;
   const PASSWORD_NO_SPACE_REGEX = /^\S+$/;
-  
-  const { register } = useAuth();
+
+
   const { showAlert, Alert } = useSweetAlert();
 
   const showValidationErrors = (errors: Record<string, string[]>) => {
     console.log('showValidationErrors llamado con:', errors);
-    console.log('Tipo de errors:', typeof errors);
-    console.log('Es un objeto?', errors instanceof Object);
-    console.log('Keys:', Object.keys(errors));
-    
+
     // Mapear los errores del backend a mensajes más amigables
     const errorMessages: string[] = [];
     const requirements: string[] = [];
 
     Object.entries(errors).forEach(([field, messages]) => {
-      console.log(`Procesando campo: ${field}, mensajes:`, messages);
-      console.log(`Tipo de mensajes: ${typeof messages}, es array: ${Array.isArray(messages)}`);
-      
-      // Asegurarse de que messages es un array
       const messageArray = Array.isArray(messages) ? messages : [messages];
-      
+
       messageArray.forEach((message) => {
         const errorMsg = typeof message === 'string' ? message : String(message);
-        console.log(`Agregando error: ${errorMsg}`);
         errorMessages.push(errorMsg);
-        
+
         // Agregar requisitos según el campo
         if (field === 'email') {
           if (!requirements.includes('El correo debe contener "@" y exactamente un punto en el dominio (ej: usuario@dominio.tld)')) {
@@ -82,42 +75,14 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
               requirements.push('La contraseña no puede tener más de 15 caracteres');
             }
           }
-          if (message.includes('mayúscula') || message.includes('mayuscula') || message.includes('uppercase')) {
-            if (!requirements.includes('La contraseña debe tener al menos una mayúscula')) {
-              requirements.push('La contraseña debe tener al menos una mayúscula');
-            }
-          }
-          if (message.includes('minúscula') || message.includes('minuscula') || message.includes('lowercase')) {
-            if (!requirements.includes('La contraseña debe tener al menos una minúscula')) {
-              requirements.push('La contraseña debe tener al menos una minúscula');
-            }
-          }
-          if (message.includes('número') || message.includes('numero') || message.includes('number') || message.includes('digit')) {
-            if (!requirements.includes('La contraseña debe tener al menos un número')) {
-              requirements.push('La contraseña debe tener al menos un número');
-            }
-          }
-          if (message.includes('carácter especial') || message.includes('caracter especial') || message.includes('special')) {
-            if (!requirements.includes('La contraseña debe tener al menos un carácter especial (@$!%*?&#)')) {
-              requirements.push('La contraseña debe tener al menos un carácter especial (@$!%*?&#)');
-            }
-          }
-          if (message.includes('confirmado') || message.includes('confirmed')) {
-            if (!requirements.includes('Las contraseñas deben coincidir')) {
-              requirements.push('Las contraseñas deben coincidir');
-            }
-          }
           // Si no hay requisitos específicos de password, agregar todos los requisitos generales
           if (requirements.filter(r => r.includes('contraseña')).length === 0) {
             requirements.push('La contraseña debe tener entre 8 y 15 caracteres');
-            requirements.push('La contraseña debe tener al menos una mayúscula');
-            requirements.push('La contraseña debe tener al menos una minúscula');
-            requirements.push('La contraseña debe tener al menos un número');
-            requirements.push('La contraseña debe tener al menos un carácter especial (@$!%*?&#)');
+            requirements.push('La contraseña no debe contener espacios');
           }
         } else if (field === 'name' || field === 'lastname') {
-          if (!requirements.includes('El nombre y apellido solo pueden contener letras y espacios')) {
-            requirements.push('El nombre y apellido solo pueden contener letras y espacios');
+          if (!requirements.includes('El nombre y apellido no deben tener espacios al inicio o final')) {
+            requirements.push('El nombre y apellido no deben tener espacios al inicio o final');
           }
         }
       });
@@ -139,7 +104,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
 
     // Crear el contenido HTML del modal
     const errorList = uniqueErrors.map((err, idx) => `<div class="error-item">${idx + 1}. ${err}</div>`).join('');
-    const requirementsList = uniqueRequirements.length > 0 
+    const requirementsList = uniqueRequirements.length > 0
       ? uniqueRequirements.map((req) => `<div class="requirement-item">✓ ${req}</div>`).join('')
       : '<div class="requirement-item">Todos los campos deben cumplir con los requisitos establecidos</div>';
 
@@ -181,7 +146,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
             <h3 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
               <span className="text-2xl">❌</span> Errores encontrados:
             </h3>
-            <div 
+            <div
               className="space-y-2 text-sm"
               dangerouslySetInnerHTML={{ __html: errorList }}
             />
@@ -190,7 +155,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
             <h3 className="text-lg font-semibold text-green-400 mb-4 flex items-center gap-2">
               <span className="text-2xl">✓</span> Requisitos que debe cumplir:
             </h3>
-            <div 
+            <div
               className="space-y-2 text-sm"
               dangerouslySetInnerHTML={{ __html: requirementsList }}
             />
@@ -200,15 +165,27 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
       type: 'error',
       theme: 'code'
     });
-    
+
     console.log('Alert ID:', alertId);
     console.log('Modal debería estar visible ahora');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    console.log('Intento de registro:', {
+      ...formData,
+      password: '***',
+      confirmPassword: '***',
+      userType
+    });
+
     if (formData.password !== formData.confirmPassword) {
+      showAlert({
+        title: 'Error',
+        text: 'Las contraseñas no coinciden',
+        type: 'error'
+      });
       return;
     }
 
@@ -221,13 +198,23 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
       return;
     }
 
-    // Validación de email con un solo punto después del "@" (sin alerta)
+    // Validación de email con un solo punto después del "@"
     if (!EMAIL_SINGLE_DOT_REGEX.test(formData.email)) {
+      showAlert({
+        title: 'Email inválido',
+        text: 'El correo debe tener un formato válido (ej. usuario@dominio.com) y solo un punto después del @',
+        type: 'warning'
+      });
       return;
     }
 
-    // Validación de contraseña sin espacios (sin alerta)
+    // Validación de contraseña sin espacios
     if (!PASSWORD_NO_SPACE_REGEX.test(formData.password)) {
+      showAlert({
+        title: 'Contraseña inválida',
+        text: 'La contraseña no puede contener espacios',
+        type: 'warning'
+      });
       return;
     }
 
@@ -253,41 +240,39 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
     }
 
     setIsLoading(true);
-    
+
     try {
-      const response = await register({
+      // Usamos authService directamente para evitar el auto-login del Context
+      const response = await authService.register({
         name: formData.firstName,
-        lastname: userType === USER_TYPES.PROGRAMMER ? formData.lastName : formData.firstName, // Para empresas usamos el mismo nombre
+        lastname: userType === USER_TYPES.PROGRAMMER ? formData.lastName : undefined,
         email: formData.email,
         password: formData.password,
         password_confirmation: formData.confirmPassword,
-        user_type: userType
+        user_type: userType,
+        company_name: userType === USER_TYPES.COMPANY ? formData.companyName : undefined,
+        position: userType === USER_TYPES.COMPANY ? formData.position : undefined,
       });
-      
+
       if (response.success) {
         showAlert({
-          title: '¡Registro exitoso!',
-          text: `Tu cuenta ha sido creada. Ahora puedes iniciar sesión con tus credenciales.`,
+          title: '¡Cuenta creada!',
+          text: `Registro exitoso. Por favor inicia sesión con tus credenciales.`,
           type: 'success',
           timer: 2000
         });
 
         if (onNavigate) {
-          setTimeout(() => onNavigate('login'), 2000);
+          setTimeout(() => onNavigate('/login'), 2000);
         }
       } else {
         // Si hay errores de validación, mostrarlos en el modal detallado
         console.log('Response recibida:', response);
         console.log('Errores:', response.errors);
-        console.log('Tipo de errors:', typeof response.errors);
-        console.log('Keys de errors:', response.errors ? Object.keys(response.errors) : 'No hay errors');
-        
+
         if (response.errors && Object.keys(response.errors).length > 0) {
-          console.log('Mostrando errores de validación');
-          console.log('Contenido completo de errors:', JSON.stringify(response.errors, null, 2));
           showValidationErrors(response.errors);
         } else {
-          console.log('No hay errores específicos, mostrando mensaje general');
           showAlert({
             title: 'Error en el registro',
             text: response.message || 'No se pudo crear la cuenta',
@@ -298,7 +283,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
     } catch (error: any) {
       // Capturar errores de validación que puedan venir en el error
       console.error('Error en registro:', error);
-      
+
       // Si el error tiene errores de validación, mostrarlos
       if (error?.errors && Object.keys(error.errors).length > 0) {
         showValidationErrors(error.errors);
@@ -321,7 +306,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
       alert("Por favor selecciona si eres programador o empresa primero");
       return;
     }
-    
+
     alert(`Registrándose con ${provider} como ${userType}...`);
     if (onNavigate) {
       const dashboardPage = userType === USER_TYPES.PROGRAMMER ? 'programmer-dashboard' : 'company-dashboard';
@@ -332,7 +317,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
   return (
     <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="absolute inset-0 code-pattern opacity-5"></div>
-      
+
       <div className="relative max-w-lg w-full space-y-8">
         {/* Header */}
         <div className="text-center">
@@ -371,7 +356,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-white mb-2">Nombre</label>
-                      <Input 
+                      <Input
                         type="text"
                         placeholder="Carlos"
                         value={formData.firstName}
@@ -381,7 +366,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                           if (!value) {
                             setFirstNameError("");
                           } else if (!NAME_REGEX.test(value)) {
-                            setFirstNameError('Solo letras y espacios, sin espacios al inicio/fin.');
+                            setFirstNameError('Solo letras, números, puntos y guiones.');
                           } else {
                             setFirstNameError("");
                           }
@@ -396,7 +381,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                     </div>
                     <div>
                       <label className="block text-white mb-2">Apellido</label>
-                      <Input 
+                      <Input
                         type="text"
                         placeholder="Mendoza"
                         value={formData.lastName}
@@ -406,7 +391,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                           if (!value) {
                             setLastNameError("");
                           } else if (!NAME_REGEX.test(value)) {
-                            setLastNameError('Solo letras y espacios, sin espacios al inicio/fin.');
+                            setLastNameError('Solo letras, números, puntos y guiones.');
                           } else {
                             setLastNameError("");
                           }
@@ -424,7 +409,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                   <>
                     <div>
                       <label className="block text-white mb-2">Nombre de la Empresa</label>
-                      <Input 
+                      <Input
                         type="text"
                         placeholder="TechCorp SA"
                         value={formData.companyName}
@@ -434,7 +419,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                           if (!value) {
                             setCompanyNameError("");
                           } else if (!NAME_REGEX.test(value)) {
-                            setCompanyNameError('Solo letras y espacios, sin espacios al inicio/fin.');
+                            setCompanyNameError('Solo letras, números, puntos y guiones.');
                           } else {
                             setCompanyNameError("");
                           }
@@ -450,7 +435,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-white mb-2">Tu Nombre</label>
-                        <Input 
+                        <Input
                           type="text"
                           placeholder="Ana"
                           value={formData.firstName}
@@ -460,7 +445,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                             if (!value) {
                               setFirstNameError("");
                             } else if (!NAME_REGEX.test(value)) {
-                              setFirstNameError('Solo letras y espacios, sin espacios al inicio/fin.');
+                              setFirstNameError('Solo letras, números, puntos y guiones.');
                             } else {
                               setFirstNameError("");
                             }
@@ -475,7 +460,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                       </div>
                       <div>
                         <label className="block text-white mb-2">Cargo</label>
-                        <Input 
+                        <Input
                           type="text"
                           placeholder="CTO"
                           value={formData.position}
@@ -485,7 +470,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                             if (!value) {
                               setPositionError("");
                             } else if (!NAME_REGEX.test(value)) {
-                              setPositionError('Solo letras y espacios, sin espacios al inicio/fin.');
+                              setPositionError('Solo letras, números, puntos y guiones.');
                             } else {
                               setPositionError("");
                             }
@@ -506,7 +491,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                   <label className="block text-white mb-2">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input 
+                    <Input
                       type="email"
                       placeholder="tu@email.com"
                       value={formData.email}
@@ -543,7 +528,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                   <label className="block text-white mb-2">Contraseña</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input 
+                    <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Mínimo 8 caracteres"
                       value={formData.password}
@@ -560,7 +545,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                       }}
                       required
                       minLength={8}
-                      maxLength={15}
+                      maxLength={64}
                       aria-invalid={!!passwordError}
                       className={`pl-10 pr-10 bg-[#0D0D0D] ${passwordError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
                     />
@@ -581,7 +566,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                   <label className="block text-white mb-2">Confirmar Contraseña</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input 
+                    <Input
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Repite tu contraseña"
                       value={formData.confirmPassword}
@@ -599,7 +584,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                         }
                       }}
                       required
-                      maxLength={15}
+                      maxLength={64}
                       aria-invalid={!!confirmPasswordError}
                       className={`pl-10 pr-10 bg-[#0D0D0D] ${confirmPasswordError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
                     />
@@ -635,7 +620,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                   <p className="mt-1 text-xs text-red-400">Debes aceptar los términos y la política para continuar.</p>
                 )}
 
-                <Button 
+                <Button
                   type="submit"
                   disabled={
                     isLoading ||
@@ -667,7 +652,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
         <div className="text-center">
           <p className="text-gray-300">
             ¿Ya tienes cuenta?{" "}
-            <button 
+            <button
               onClick={() => onNavigate && onNavigate('login')}
               className="text-[#00FF85] hover:text-[#00C46A] font-semibold transition-colors"
             >
@@ -693,7 +678,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
           </CardContent>
         </Card>
       </div>
-      
+
       <Alert />
     </div>
   );

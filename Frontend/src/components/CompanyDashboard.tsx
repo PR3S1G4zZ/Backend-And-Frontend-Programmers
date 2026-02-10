@@ -1,6 +1,6 @@
 import { WalletBalance } from './dashboard/wallet/WalletBalance';
 import { TransactionHistory } from './dashboard/wallet/TransactionHistory';
-import { RechargeButton } from './dashboard/wallet/RechargeButton';
+import { WalletRecharge } from './dashboard/wallet/WalletRecharge';
 
 // ... (existing imports)
 import { useState, useEffect } from 'react';
@@ -15,7 +15,7 @@ import { ProjectCandidatesSection } from './dashboard/company/ProjectCandidatesS
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
 import type { ProjectResponse } from '../services/projectService';
-import { PaymentMethodsSettings } from './dashboard/settings/PaymentMethodsSettings';
+import { WalletPaymentMethods } from './dashboard/wallet/WalletPaymentMethods';
 
 interface CompanyDashboardProps {
   onLogout?: () => void;
@@ -109,16 +109,16 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
         return (
           <div className="p-8">
             <h2 className="text-3xl font-bold text-white mb-6">Billetera & Pagos</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 space-y-6">
                 <WalletBalance />
-                <div className="mt-4">
-                  <RechargeButton onRecharge={() => window.location.reload()} />
-                  {/* Reload is a quick hack to refresh balance, ideal would be a context or callback refetch */}
-                </div>
+                <WalletRecharge onRechargeSuccess={() => window.location.reload()} />
               </div>
-              <div>
+              <div className="lg:col-span-2">
                 <TransactionHistory />
+              </div>
+              <div className="lg:col-span-3 mt-4">
+                <WalletPaymentMethods userType="company" />
               </div>
             </div>
           </div>
@@ -130,7 +130,7 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
           <div className="p-8">
             <h2 className="text-3xl font-bold text-white mb-6">Configuración</h2>
             <div className="max-w-4xl">
-              <PaymentMethodsSettings userType="company" />
+              <p className="text-gray-400">La configuración de métodos de pago se ha movido a la sección de Billetera.</p>
             </div>
           </div>
         );

@@ -19,6 +19,13 @@ export async function addPaymentMethod(payload: { type: string; details: string;
     });
 }
 
+export async function updatePaymentMethod(id: number, payload: { type?: string; details?: string; is_default?: boolean }) {
+    return apiRequest<{ data: PaymentMethod; message: string }>(`/payment-methods/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+}
+
 export async function deletePaymentMethod(id: number) {
     return apiRequest<void>(`/payment-methods/${id}`, {
         method: 'DELETE',

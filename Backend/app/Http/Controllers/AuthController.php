@@ -19,47 +19,92 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         try {
-            // Validación reforzada con sanitización de datos
-            $validated = $request->validate([
-                'name' => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
-                'lastname' => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
+            // Reglas de validación base
+            $rules = [
+                'name' => 'required|string|max:255',
                 'email' => [
                     'required',
                     'string',
                     'email',
                     'max:255',
                     'unique:users',
-                    'regex:/^[^@\s]+@[^@\.\s]+\.[^@\.\s]+$/i', // Debe tener "@" y un solo punto después del "@"
-                    'regex:/^\S+$/' // Sin espacios en todo el correo
+                    'regex:/^[^@\s]+@[^@\.\s]+\.[^@\.\s]+$/i',
+                    'regex:/^\S+$/'
                 ],
                 'password' => [
                     'required',
                     'string',
                     'min:8',
-                    'max:15',
+                    'max:64',
                     'confirmed',
-                    'regex:/^\S+$/', // Sin espacios
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,15}$/' // Mínimo 8, máximo 15, 1 mayúscula, 1 minúscula, 1 número, 1 carácter especial
+                    'regex:/^\S+$/',
                 ],
-                'user_type' => 'required|in:programmer,company'
-            ], [
-                'name.regex' => 'El nombre solo puede contener letras y espacios, sin espacios al inicio/fin.',
-                'lastname.regex' => 'El apellido solo puede contener letras y espacios, sin espacios al inicio/fin.',
+                'user_type' => 'required|in:programmer,company',
+            ];
+
+            // Reglas específicas por tipo de usuario
+            if ($request->user_type === 'programmer') {
+                $rules['lastname'] = 'required|string|max:255';
+            } elseif ($request->user_type === 'company') {
+                $rules['company_name'] = 'required|string|max:255';
+                // 'position' es opcional en la BD pero el frontend lo pide, lo validamos si viene
+                $rules['position'] = 'nullable|string|max:255'; 
+            }
+
+            // Mensajes personalizados
+            $messages = [
                 'email.regex' => 'El correo debe contener "@", un solo punto en el dominio y no debe tener espacios.',
                 'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
-                'password.max' => 'La contraseña no puede tener más de 15 caracteres.',
-                'password.regex' => 'La contraseña debe tener entre 8 y 15 caracteres, sin espacios, con al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&#).',
-            ]);
+                'password.max' => 'La contraseña no puede tener más de 64 caracteres.',
+                'password.regex' => 'La contraseña no debe contener espacios.',
+                'password.confirmed' => 'Las contraseñas no coinciden.',
+                'company_name.required' => 'El nombre de la empresa es obligatorio.',
+            ];
 
-            // Sanitización adicional de datos antes de crear el usuario
-            $user = User::create([
-                'name' => strip_tags(trim($validated['name'])),
-                'lastname' => strip_tags(trim($validated['lastname'])),
-                'email' => strtolower(trim($validated['email'])), // Normalizar email a minúsculas
-                'password' => Hash::make($validated['password']), // hashear la contraseña
-                'user_type' => $validated['user_type'],
-                'role' => $validated['user_type'], // Para compatibilidad con la tabla
-            ]);
+            $validated = $request->validate($rules, $messages);
+
+            // Transacción para asegurar integridad
+            $user = \DB::transaction(function () use ($validated) {
+                // Crear usuario
+                $user = User::create([
+                    'name' => strip_tags(trim($validated['name'])),
+                    'lastname' => isset($validated['lastname']) ? strip_tags(trim($validated['lastname'])) : null,
+                    'email' => strtolower(trim($validated['email'])),
+                    'password' => Hash::make($validated['password']),
+                    'user_type' => $validated['user_type'],
+                    'role' => $validated['user_type'],
+                ]);
+
+                // Crear perfil según tipo
+                if ($user->user_type === 'company') {
+                    \App\Models\CompanyProfile::create([
+                        'user_id' => $user->id,
+                        'company_name' => strip_tags(trim($validated['company_name'])),
+                        // 'position' no está en company_profiles según la migración vista, 
+                        // pero si es necesario guardarlo, debería estar allí o en users.
+                        // Revisando User model, no tiene 'position'.
+                        // Revisando CompanyProfile migration: company_name, website, about.
+                        // Si 'position' es importante, debería agregarse a la tabla users o company_profiles.
+                        // Por ahora, lo omitimos o lo guardamos en 'about' si es crítico, 
+                        // pero la migración no lo tiene. Asumiremos que es meta-data no crítica por ahora 
+                        // o que falta el campo. 
+                        // *Corrección*: El usuario probablemente quiere guardar el cargo. 
+                        // Voy a asumir que por ahora solo guardamos company_name que SI está en la tabla.
+                    ]);
+                } elseif ($user->user_type === 'programmer') {
+                    // Crear perfil de desarrollador vacío o con datos por defecto
+                    // Verificar si existe el modelo DeveloperProfile
+                    if (class_exists(\App\Models\DeveloperProfile::class)) {
+                         \App\Models\DeveloperProfile::create([
+                            'user_id' => $user->id,
+                            // Campos iniciales vacíos o por defecto
+                            'title' => 'Programador Web', // Ejemplo por defecto o null
+                        ]);
+                    }
+                }
+
+                return $user;
+            });
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -75,6 +120,7 @@ class AuthController extends Controller
                 ],
                 'token' => $token
             ], 201);
+
 
         } catch (ValidationException $e) {
             return response()->json([

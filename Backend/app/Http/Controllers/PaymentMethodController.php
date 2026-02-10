@@ -37,4 +37,24 @@ class PaymentMethodController extends Controller
         $paymentMethod->delete();
         return response()->noContent();
     }
+    public function update(Request $r, PaymentMethod $paymentMethod)
+    {
+        if ($paymentMethod->user_id !== $r->user()->id) {
+            abort(403);
+        }
+
+        $data = $r->validate([
+            'type' => 'string|in:credit_card,paypal,bank_transfer,crypto_wallet',
+            'details' => 'string',
+            'is_default' => 'boolean'
+        ]);
+
+        if (($data['is_default'] ?? false)) {
+            $r->user()->paymentMethods()->where('id', '!=', $paymentMethod->id)->update(['is_default' => false]);
+        }
+
+        $paymentMethod->update($data);
+
+        return response()->json(['message' => 'Método de pago actualizado.', 'data' => $paymentMethod]);
+    }
 }
