@@ -26,6 +26,7 @@ export type ProjectResponse = {
   applications_count?: number;
   applications?: Array<{ developer: { id: number; name: string } }>;
   has_applied?: boolean;
+  deleted_at?: string | null;
 };
 
 export type ApplicationResponse = {

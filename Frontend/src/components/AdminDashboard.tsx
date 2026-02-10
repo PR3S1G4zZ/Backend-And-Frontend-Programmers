@@ -5,13 +5,14 @@ import { ActivityDashboard } from './dashboard/components/admin/ActivityDashboar
 import { FinancialDashboard } from './dashboard/components/admin/FinancialDashboard';
 import { GrowthDashboard } from './dashboard/components/admin/GrowthDashboard';
 import { ProjectsDashboard } from './dashboard/components/admin/ProjectsDashboard';
+import { ProjectsManagement } from './dashboard/components/admin/ProjectsManagement';
 import { SatisfactionDashboard } from './dashboard/components/admin/SatisfactionDashboard';
 import { UserManagement } from './dashboard/components/UserManagement';
+import { AdminSettings } from './dashboard/components/admin/AdminSettings';
 import { Card, CardContent, CardHeader, CardTitle } from './dashboard/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './dashboard/components/ui/tabs';
 import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield, Menu } from 'lucide-react';
 import { fetchAdminMetrics, type AdminMetrics, type KPI } from '../services/adminMetricsService';
-import { fetchProjects, type ProjectResponse } from '../services/projectService';
 import { useAuth } from '../contexts/AuthContext';
 
 interface AdminDashboardProps {
@@ -27,10 +28,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
-
-  const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [projectsLoading, setProjectsLoading] = useState(false);
-  const [projectsError, setProjectsError] = useState<string | null>(null);
 
   const { user } = useAuth();
 
@@ -92,35 +89,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       isMounted = false;
     };
   }, [selectedPeriod]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProjects = async () => {
-      setProjectsLoading(true);
-      setProjectsError(null);
-
-      try {
-        const response = await fetchProjects();
-        if (!isMounted) return;
-        setProjects(response.data || []);
-      } catch {
-        if (!isMounted) return;
-        setProjects([]);
-        setProjectsError('No se pudieron cargar los proyectos.');
-      } finally {
-        if (isMounted) setProjectsLoading(false);
-      }
-    };
-
-    if (currentSection === 'projects') {
-      loadProjects();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentSection]);
 
   const handleLogout = () => {
     setIsLogoutDialogOpen(true);
@@ -238,44 +206,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         return <UserManagement />;
 
       case 'projects':
-        return (
-          <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
-            <div className="max-w-7xl mx-auto">
-              <h1 className="text-3xl font-bold text-[#00FF85] glow-text mb-6">Todos los Proyectos</h1>
-              <Card className="bg-[#1A1A1A] border-[#333333]">
-                <CardHeader>
-                  <CardTitle className="text-[#00FF85]">Panel de Proyectos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {projectsLoading ? (
-                    <p className="text-gray-300">Cargando proyectos...</p>
-                  ) : projectsError ? (
-                    <p className="text-red-300">{projectsError}</p>
-                  ) : projects.length === 0 ? (
-                    <p className="text-gray-300">No hay proyectos disponibles.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {projects.map((project) => (
-                        <div key={project.id} className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                            <div>
-                              <h3 className="text-lg font-semibold text-white">{project.title}</h3>
-                              <p className="text-sm text-gray-400">{project.company?.name || 'Empresa no disponible'}</p>
-                            </div>
-                            <div className="text-sm text-gray-300">
-                              Estado: <span className="text-white font-medium">{project.status}</span>
-                            </div>
-                          </div>
-                          <p className="text-gray-300 mt-2 line-clamp-2">{project.description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        );
+        return <ProjectsManagement />;
 
       case 'analytics':
         return (
@@ -314,26 +245,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         );
 
       case 'settings':
-        return (
-          <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
-            <div className="max-w-7xl mx-auto">
-              <h1 className="text-3xl font-bold text-[#00FF85] glow-text mb-6">Configuración del Sistema</h1>
-              <Card className="bg-[#1A1A1A] border-[#333333]">
-                <CardTitle className="text-[#00FF85] p-6">Configuraciones Avanzadas</CardTitle>
-                <CardContent>
-                  <div className="space-y-3">
-                    <p className="text-gray-300">Cuenta administradora activa:</p>
-                    <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
-                      <p className="text-white font-semibold">{user ? `${user.name} ${user.lastname}` : 'Usuario'}</p>
-                      <p className="text-gray-400 text-sm">{user?.email || 'Sin email'}</p>
-                      <p className="text-gray-500 text-xs mt-1">Tipo: {user?.user_type || 'admin'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        );
+        return <AdminSettings />;
 
       default:
         return (

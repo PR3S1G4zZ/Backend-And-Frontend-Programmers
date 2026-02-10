@@ -34,6 +34,7 @@ Route::prefix('auth')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me',      [AuthController::class, 'me']);
+        Route::post('/change-password', [AuthController::class, 'changePassword']);
     });
 });
 
@@ -98,6 +99,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/{id}', [AdminController::class, 'getUser']);
         Route::put('/users/{id}', [AdminController::class, 'updateUser']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+        
+        // Admin Projects
+        Route::get('/projects', [AdminController::class, 'getProjects']);
+        Route::put('/projects/{id}', [AdminController::class, 'updateProject']);
+        Route::delete('/projects/{id}', [AdminController::class, 'deleteProject']);
+        Route::post('/projects/{id}/restore', [AdminController::class, 'restoreProject']);
+
         Route::get('/metrics', [AdminController::class, 'metrics']);
     });
 

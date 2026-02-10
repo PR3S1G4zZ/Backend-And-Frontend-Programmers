@@ -326,4 +326,44 @@ public function resetPassword(Request $request)
         'message' => 'No se pudo restablecer la contraseña.'
     ], 400);
     }
+
+    /**
+     * Cambiar contraseña (usuario autenticado)
+     */
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => [
+                'required',
+                'string',
+                'min:8',
+                'max:15', // Consistent with other password validations
+                'confirmed',
+                'regex:/^\S+$/', // No spaces
+                'different:current_password'
+            ]
+        ], [
+            'new_password.regex' => 'La contraseña no debe contener espacios.',
+            'new_password.different' => 'La nueva contraseña debe ser diferente a la actual.'
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La contraseña actual es incorrecta.'
+            ], 400);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($request->new_password)
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contraseña actualizada correctamente.'
+        ], 200);
+    }
 }

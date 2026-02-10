@@ -13,6 +13,7 @@ use App\Models\Message;
 use App\Models\Review;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -236,6 +237,157 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'Error al eliminar usuario.'
             ], 500);
+        }
+    }
+
+    /**
+     * Obtener todos los proyectos (incluyendo eliminados)
+     */
+    public function getProjects(Request $request): JsonResponse
+    {
+        try {
+            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
+                return response()->json(['success' => false, 'message' => 'Acceso no autorizado.'], 403);
+            }
+
+            $perPage = $request->get('per_page', 20);
+            $query = Project::withTrashed()->with(['company:id,name,email', 'categories:id,name']);
+
+            if ($request->filled('status')) {
+                if ($request->status === 'deleted') {
+                    $query->onlyTrashed();
+                } else {
+                    $query->where('status', $request->status);
+                }
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
+
+            $projects = $query->latest()->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'projects' => $projects->items(),
+                'pagination' => [
+                    'current_page' => $projects->currentPage(),
+                    'last_page' => $projects->lastPage(),
+                    'per_page' => $projects->perPage(),
+                    'total' => $projects->total()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json(['success' => false, 'message' => 'Error al obtener proyectos.'], 500);
+        }
+    }
+
+    /**
+     * Actualizar un proyecto
+     */
+    public function updateProject(Request $request, $id): JsonResponse
+    {
+        try {
+            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
+                return response()->json(['success' => false, 'message' => 'Acceso no autorizado.'], 403);
+            }
+
+            $project = Project::withTrashed()->find($id);
+
+            if (!$project) {
+                return response()->json(['success' => false, 'message' => 'Proyecto no encontrado.'], 404);
+            }
+
+            $validated = $request->validate([
+                'title' => 'sometimes|string|max:150',
+                'description' => 'sometimes|string',
+                'status' => 'sometimes|in:open,in_progress,completed,cancelled,draft',
+                'budget_min' => 'nullable|numeric',
+                'budget_max' => 'nullable|numeric',
+                'deadline' => 'nullable|date',
+            ]);
+
+            $project->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proyecto actualizado exitosamente.',
+                'project' => $project
+            ]);
+
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json(['success' => false, 'message' => 'Error al actualizar proyecto.'], 500);
+        }
+    }
+
+    /**
+     * Eliminar (Soft Delete) un proyecto
+     */
+    public function deleteProject($id): JsonResponse
+    {
+        try {
+            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
+                return response()->json(['success' => false, 'message' => 'Acceso no autorizado.'], 403);
+            }
+
+            $project = Project::find($id);
+
+            if (!$project) {
+                return response()->json(['success' => false, 'message' => 'Proyecto no encontrado o ya eliminado.'], 404);
+            }
+
+            $project->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proyecto eliminado (soft delete) exitosamente.',
+                'deleted_at' => now()
+            ]);
+
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json(['success' => false, 'message' => 'Error al eliminar proyecto.'], 500);
+        }
+    }
+
+    /**
+     * Restaurar un proyecto eliminado
+     */
+    public function restoreProject($id): JsonResponse
+    {
+        try {
+            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
+                return response()->json(['success' => false, 'message' => 'Acceso no autorizado.'], 403);
+            }
+
+            $project = Project::withTrashed()->find($id);
+
+            if (!$project) {
+                return response()->json(['success' => false, 'message' => 'Proyecto no encontrado.'], 404);
+            }
+
+            if (!$project->trashed()) {
+                 return response()->json(['success' => false, 'message' => 'El proyecto no está eliminado.'], 400);
+            }
+
+            $project->restore();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proyecto restaurado exitosamente.',
+                'project' => $project
+            ]);
+
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json(['success' => false, 'message' => 'Error al restaurar proyecto.'], 500);
         }
     }
 
