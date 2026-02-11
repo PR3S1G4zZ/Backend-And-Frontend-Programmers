@@ -189,43 +189,43 @@ export function MarketplaceSection() {
         <div className="space-y-8">
             {/* Header */}
             <div>
-                <h2 className="text-xl font-bold text-white mb-1">Gestión del Marketplace</h2>
-                <p className="text-gray-400 text-sm">Configura comisiones y categorías de proyectos.</p>
+                <h2 className="text-xl font-bold text-foreground mb-1">Gestión del Marketplace</h2>
+                <p className="text-muted-foreground text-sm">Configura comisiones y categorías de proyectos.</p>
             </div>
 
             {/* General Settings */}
-            <div className="bg-[#0D0D0D] p-6 rounded-xl border border-[#333333] space-y-6">
-                <h3 className="text-lg font-semibold text-[#00FF85] flex items-center gap-2">
+            <div className="bg-card p-6 rounded-xl border border-border space-y-6">
+                <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
                     <Percent className="w-5 h-5" />
                     Comisiones y Reglas
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">Comisión de la Plataforma (%)</label>
+                        <label className="block text-sm text-muted-foreground mb-2">Comisión de la Plataforma (%)</label>
                         <div className="relative">
                             <input
                                 type="number"
                                 value={settings.commission_rate}
                                 onChange={(e) => setSettings({ ...settings, commission_rate: e.target.value })}
-                                className="w-full bg-[#1A1A1A] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none pl-10"
+                                className="w-full bg-background border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none pl-10"
                                 min="0"
                                 max="100"
                             />
-                            <Percent className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+                            <Percent className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Porcentaje retenido por cada proyecto completado.</p>
+                        <p className="text-xs text-muted-foreground mt-1">Porcentaje retenido por cada proyecto completado.</p>
                     </div>
 
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">Aprobación Manual de Proyectos</label>
+                        <label className="block text-sm text-muted-foreground mb-2">Aprobación Manual de Proyectos</label>
                         <button
                             onClick={() => setSettings({ ...settings, manual_approval: settings.manual_approval === 'true' ? 'false' : 'true' })}
                             className={cn(
                                 "w-full flex items-center justify-between p-3 rounded-lg border transition-all",
                                 settings.manual_approval === 'true'
-                                    ? "bg-[#00FF85]/10 border-[#00FF85] text-[#00FF85]"
-                                    : "bg-[#1A1A1A] border-[#333333] text-gray-400 hover:border-gray-500"
+                                    ? "bg-primary/10 border-primary text-primary"
+                                    : "bg-background border-border text-muted-foreground hover:border-muted-foreground"
                             )}
                         >
                             <span className="flex items-center gap-2">
@@ -234,15 +234,15 @@ export function MarketplaceSection() {
                             </span>
                             <div className={cn(
                                 "w-10 h-6 rounded-full p-1 transition-colors relative",
-                                settings.manual_approval === 'true' ? "bg-[#00FF85]" : "bg-gray-600"
+                                settings.manual_approval === 'true' ? "bg-primary" : "bg-muted-foreground"
                             )}>
                                 <div className={cn(
-                                    "w-4 h-4 bg-white rounded-full transition-transform",
+                                    "w-4 h-4 bg-background rounded-full transition-transform",
                                     settings.manual_approval === 'true' ? "translate-x-4" : "translate-x-0"
                                 )} />
                             </div>
                         </button>
-                        <p className="text-xs text-gray-500 mt-1">Si está activo, un administrador debe aprobar cada proyecto antes de ser publicado.</p>
+                        <p className="text-xs text-muted-foreground mt-1">Si está activo, un administrador debe aprobar cada proyecto antes de ser publicado.</p>
                     </div>
                 </div>
 
@@ -250,7 +250,7 @@ export function MarketplaceSection() {
                     <button
                         onClick={handleSaveSettings}
                         disabled={savingSettings}
-                        className="flex items-center gap-2 bg-[#00FF85] text-[#0D0D0D] px-6 py-2.5 rounded-lg font-bold hover:bg-[#00CC6A] transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-bold hover:bg-primary/80 transition-all disabled:opacity-50"
                     >
                         {savingSettings ? 'Guardando...' : (
                             <>
@@ -265,10 +265,10 @@ export function MarketplaceSection() {
             {/* Categories Management */}
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-white">Categorías de Proyectos</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Categorías de Proyectos</h3>
                     <button
                         onClick={() => openModal()}
-                        className="flex items-center gap-2 text-sm bg-[#1A1A1A] text-[#00FF85] px-4 py-2 rounded-lg border border-[#00FF85]/20 hover:bg-[#00FF85]/10 transition-all"
+                        className="flex items-center gap-2 text-sm bg-background text-primary px-4 py-2 rounded-lg border border-primary/20 hover:bg-primary/10 transition-all"
                     >
                         <Plus className="w-4 h-4" />
                         Nueva Categoría
@@ -277,7 +277,7 @@ export function MarketplaceSection() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {categories.map((category) => (
-                        <div key={category.id} className="bg-[#0D0D0D] p-4 rounded-xl border border-[#333333] group hover:border-gray-500 transition-all">
+                        <div key={category.id} className="bg-card p-4 rounded-xl border border-border group hover:border-muted-foreground transition-all">
                             <div className="flex justify-between items-start mb-2">
                                 <div className="flex items-center gap-3">
                                     <div
@@ -286,7 +286,7 @@ export function MarketplaceSection() {
                                     >
                                         {category.name.charAt(0)}
                                     </div>
-                                    <h4 className="font-semibold text-white">{category.name}</h4>
+                                    <h4 className="font-semibold text-foreground">{category.name}</h4>
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
@@ -297,13 +297,13 @@ export function MarketplaceSection() {
                                     </button>
                                     <button
                                         onClick={() => handleDeleteCategory(category.id)}
-                                        className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg"
+                                        className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
-                            <p className="text-sm text-gray-400 line-clamp-2">{category.description || 'Sin descripción'}</p>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{category.description || 'Sin descripción'}</p>
                         </div>
                     ))}
                 </div>
@@ -312,39 +312,39 @@ export function MarketplaceSection() {
             {/* Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#1A1A1A] rounded-xl border border-[#333333] w-full max-w-md p-6 relative">
+                    <div className="bg-popover rounded-xl border border-border w-full max-w-md p-6 relative">
                         <button
                             onClick={() => setIsModalOpen(false)}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                            className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <h3 className="text-xl font-bold text-white mb-6">
+                        <h3 className="text-xl font-bold text-foreground mb-6">
                             {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
                         </h3>
 
                         <form onSubmit={handleSaveCategory} className="space-y-4">
                             <div>
-                                <label className="block text-sm text-gray-400 mb-1">Nombre</label>
+                                <label className="block text-sm text-muted-foreground mb-1">Nombre</label>
                                 <input
                                     type="text"
                                     value={categoryForm.name}
                                     onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                                    className="w-full bg-[#0D0D0D] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none"
+                                    className="w-full bg-background border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm text-gray-400 mb-1">Descripción</label>
+                                <label className="block text-sm text-muted-foreground mb-1">Descripción</label>
                                 <textarea
                                     value={categoryForm.description}
                                     onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                                    className="w-full bg-[#0D0D0D] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none h-24 resize-none"
+                                    className="w-full bg-background border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none h-24 resize-none"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm text-gray-400 mb-1">Color (Hex)</label>
+                                <label className="block text-sm text-muted-foreground mb-1">Color (Hex)</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="color"
@@ -356,7 +356,7 @@ export function MarketplaceSection() {
                                         type="text"
                                         value={categoryForm.color}
                                         onChange={(e) => setCategoryForm({ ...categoryForm, color: e.target.value })}
-                                        className="flex-1 bg-[#0D0D0D] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none"
+                                        className="flex-1 bg-background border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none"
                                         pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
                                         placeholder="#00FF85"
                                     />
@@ -367,13 +367,13 @@ export function MarketplaceSection() {
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+                                    className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
-                                    className="bg-[#00FF85] text-[#0D0D0D] px-6 py-2 rounded-lg font-bold hover:bg-[#00CC6A] transition-all"
+                                    className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-bold hover:bg-primary/80 transition-all"
                                 >
                                     {editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}
                                 </button>

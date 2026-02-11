@@ -18,6 +18,8 @@ export type ChatMessage = {
   content: string;
   timestamp: string;
   type: 'text' | 'image' | 'file';
+  fileName?: string;
+  fileSize?: string;
   isRead: boolean;
 };
 

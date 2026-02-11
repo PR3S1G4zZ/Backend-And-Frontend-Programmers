@@ -32,10 +32,14 @@ type PageType =
 
 type UserType = 'guest' | 'programmer' | 'company' | 'admin';
 
+import { ThemeProvider } from './contexts/ThemeContext';
+
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   );
 }
@@ -170,7 +174,7 @@ function AppContent() {
     } catch (error) {
       console.error('Error rendering page:', error);
       return (
-        <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
           <div className="text-center">
             <motion.div
               animate={{
@@ -185,13 +189,13 @@ function AppContent() {
             >
               ⚠️
             </motion.div>
-            <h1 className="text-2xl font-bold text-white mb-4">Error de Aplicación</h1>
-            <p className="text-gray-300 mb-4">Ha ocurrido un error inesperado.</p>
+            <h1 className="text-2xl font-bold text-foreground mb-4">Error de Aplicación</h1>
+            <p className="text-muted-foreground mb-4">Ha ocurrido un error inesperado.</p>
             <motion.button
               onClick={() => window.location.reload()}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-[#00FF85] text-[#0D0D0D] px-6 py-3 rounded-lg hover:bg-[#00C46A] transition-colors font-medium"
+              className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors font-medium"
             >
               🔄 Recargar Página
             </motion.button>
@@ -209,14 +213,14 @@ function AppContent() {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingIndicator />
       </div>
     );
   }
 
   return (
-    <div className="dark min-h-screen bg-[#0D0D0D] flex flex-col relative">
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative">
 
       {!isDashboard && <CodeAnimations />}
 

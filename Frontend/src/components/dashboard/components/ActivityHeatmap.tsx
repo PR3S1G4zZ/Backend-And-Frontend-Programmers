@@ -51,7 +51,7 @@ export function ActivityHeatmap({
                         key={`${row.day}-${hourIndex}`}
                         className="h-6 w-full rounded-sm transition-colors"
                         style={{
-                          backgroundColor: `rgba(16, 185, 129, ${alpha * 0.9})`,
+                          backgroundColor: `rgba(var(--primary-rgb), ${alpha * 0.9})`,
                         }}
                         title={`${row.day} ${hourIndex}:00 - ${intensity} eventos`}
                       />

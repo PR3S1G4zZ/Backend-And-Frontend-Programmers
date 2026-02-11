@@ -397,7 +397,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                   />
                 </div>
                 {formData.budget && !isNaN(Number(formData.budget)) && (
-                  <div className="mt-2 text-sm text-[#00FF85] bg-[#00FF85]/10 p-2 rounded">
+                  <div className="mt-2 text-sm text-primary bg-primary/10 p-2 rounded">
                     <p>Depósito requerido hoy (50%): <strong>${(Number(formData.budget) * 0.5).toFixed(2)}</strong></p>
                     <p className="text-xs opacity-80">El 50% restante se paga al finalizar el proyecto.</p>
                   </div>
@@ -492,7 +492,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                   />
                   <Button
                     onClick={() => addSkill(newSkill)}
-                    className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -526,7 +526,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                         <div key={skill.id} className="flex items-center justify-between bg-[#0D0D0D] p-3 rounded-lg border border-[#333333]">
                           <div className="flex items-center space-x-3">
                             <Badge variant={skill.required ? "default" : "secondary"} className={
-                              skill.required ? "bg-[#00FF85] text-[#0D0D0D]" : "bg-[#333333] text-white"
+                              skill.required ? "bg-primary text-primary-foreground" : "bg-[#333333] text-white"
                             }>
                               {skill.name}
                             </Badge>
@@ -673,7 +673,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                 <div className="flex flex-wrap gap-2">
                   {skills.slice(0, 5).map((skill) => (
                     <Badge key={skill.id} variant={skill.required ? "default" : "secondary"} className={
-                      skill.required ? "bg-[#00FF85] text-[#0D0D0D]" : "bg-[#333333] text-white"
+                      skill.required ? "bg-primary text-primary-foreground" : "bg-[#333333] text-white"
                     }>
                       {skill.name}
                     </Badge>
@@ -730,9 +730,9 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
             {steps.map((step) => (
               <div key={step.id} className="flex items-center space-x-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep === step.id
-                  ? 'bg-[#00FF85] text-[#0D0D0D]'
+                  ? 'bg-primary text-primary-foreground'
                   : currentStep > step.id
-                    ? 'bg-green-600 text-white'
+                    ? 'bg-primary text-primary-foreground'
                     : 'bg-[#333333] text-gray-400'
                   }`}>
                   {currentStep > step.id ? '✓' : step.id}
@@ -742,7 +742,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                   <p className="text-xs text-gray-400">{step.description}</p>
                 </div>
                 {step.id < steps.length && (
-                  <div className={`hidden md:block w-12 h-px ${currentStep > step.id ? 'bg-green-600' : 'bg-[#333333]'
+                  <div className={`hidden md:block w-12 h-px ${currentStep > step.id ? 'bg-primary' : 'bg-[#333333]'
                     }`} />
                 )}
               </div>
@@ -804,7 +804,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
           {currentStep < steps.length ? (
             <Button
               onClick={() => setCurrentStep(Math.min(steps.length, currentStep + 1))}
-              className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Siguiente
             </Button>
@@ -812,7 +812,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
             <Button
               onClick={() => handleSubmit(false)}
               disabled={isSubmitting}
-              className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Send className="h-4 w-4 mr-2" />
               {isSubmitting ? 'Procesando...' : (isEditing ? 'Actualizar Proyecto' : 'Pagar 50% y Publicar')}

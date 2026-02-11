@@ -86,10 +86,10 @@ export function ResetPasswordPage({ onNavigate }: ResetPasswordProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center p-6">
-      <Card className="bg-[#1A1A1A] border-[#333333] w-full max-w-md">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <Card className="bg-card border-border w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-white text-xl text-center">
+          <CardTitle className="text-foreground text-xl text-center">
             Restablecer contraseña
           </CardTitle>
         </CardHeader>
@@ -98,12 +98,12 @@ export function ResetPasswordPage({ onNavigate }: ResetPasswordProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
 
             <div>
-              <label className="text-white mb-2 block">Nueva contraseña</label>
+              <label className="text-foreground mb-2 block">Nueva contraseña</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="password"
-                  className="pl-10 text-white bg-[#0D0D0D] border-[#333333]"
+                  className="pl-10 text-foreground bg-background border-border"
                   placeholder="********"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -113,12 +113,12 @@ export function ResetPasswordPage({ onNavigate }: ResetPasswordProps) {
             </div>
 
             <div>
-              <label className="text-white mb-2 block">Repetir contraseña</label>
+              <label className="text-foreground mb-2 block">Repetir contraseña</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="password"
-                  className="pl-10 text-white bg-[#0D0D0D] border-[#333333]"
+                  className="pl-10 text-foreground bg-background border-border"
                   placeholder="********"
                   value={password2}
                   onChange={(e) => setPassword2(e.target.value)}
@@ -129,7 +129,7 @@ export function ResetPasswordPage({ onNavigate }: ResetPasswordProps) {
 
             <Button
               type="submit"
-              className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={loading}
             >
               {loading ? "Actualizando..." : "Restablecer contraseña"}
@@ -138,7 +138,7 @@ export function ResetPasswordPage({ onNavigate }: ResetPasswordProps) {
             <button
               type="button"
               onClick={() => onNavigate && onNavigate("login")}
-              className="text-[#00FF85] hover:text-[#00C46A] block mx-auto mt-4"
+              className="text-primary hover:text-primary/90 block mx-auto mt-4"
             >
               ← Volver al inicio de sesión
             </button>

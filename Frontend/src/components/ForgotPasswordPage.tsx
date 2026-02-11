@@ -54,23 +54,23 @@ export function ForgotPasswordPage({ onNavigate }: ForgotPasswordProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D] p-6">
-      <Card className="bg-[#1A1A1A] border-[#333333] max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <Card className="bg-card border-border max-w-md w-full">
         <CardHeader>
-          <CardTitle className="text-white text-xl text-center">
+          <CardTitle className="text-foreground text-xl text-center">
             Recuperar contraseña
           </CardTitle>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSend} className="space-y-4">
-            
+
             <div>
-              <label className="text-white mb-2 block">Email</label>
+              <label className="text-foreground mb-2 block">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  className="pl-10 text-white bg-[#0D0D0D] border-[#333333]"
+                  className="pl-10 text-foreground bg-background border-border"
                   placeholder="correo@ejemplo.com"
                   type="email"
                   value={email}
@@ -83,7 +83,7 @@ export function ForgotPasswordPage({ onNavigate }: ForgotPasswordProps) {
             <Button
               type="submit"
               disabled={isSending}
-              className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {isSending ? "Enviando..." : "Enviar enlace"}
             </Button>
@@ -91,7 +91,7 @@ export function ForgotPasswordPage({ onNavigate }: ForgotPasswordProps) {
             <button
               type="button"
               onClick={() => onNavigate && onNavigate("login")}
-              className="text-[#00FF85] hover:text-[#00C46A] block mx-auto mt-4"
+              className="text-primary hover:text-primary/90 block mx-auto mt-4"
             >
               ← Volver al inicio de sesión
             </button>

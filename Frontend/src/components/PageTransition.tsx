@@ -32,7 +32,7 @@ export function usePageTransition() {
 
   const navigateWithLoading = useCallback((_page: string, onComplete: () => void) => {
     setIsLoading(true);
-    
+
     // Tiempo mínimo para la transición
     setTimeout(() => {
       onComplete();
@@ -50,25 +50,25 @@ export function LoadingIndicator() {
     <div className="flex flex-col items-center justify-center space-y-4">
       {/* Editor de código minimalista simulado */}
       <motion.div
-        className="bg-[#1A1A1A] border border-[#333333] rounded-lg p-4 font-mono text-sm w-80"
+        className="bg-card border border-border rounded-lg p-4 font-mono text-sm w-80"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
       >
         {/* Header del editor */}
-        <div className="flex items-center space-x-2 border-b border-[#333333] pb-2 mb-3">
+        <div className="flex items-center space-x-2 border-b border-border pb-2 mb-3">
           <div className="flex space-x-1">
             <div className="w-2 h-2 bg-red-500 rounded-full"></div>
             <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
           </div>
-          <span className="text-gray-400 text-xs">loading.js</span>
+          <span className="text-muted-foreground text-xs">loading.js</span>
         </div>
 
         {/* Líneas de código que aparecen */}
         <div className="space-y-1">
           <motion.div
-            className="text-gray-500"
+            className="text-muted-foreground"
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -76,9 +76,9 @@ export function LoadingIndicator() {
           >
             // Connecting to network...
           </motion.div>
-          
+
           <motion.div
-            className="text-[#00FF85]"
+            className="text-primary"
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
             transition={{ duration: 1, delay: 0.6 }}
@@ -86,9 +86,9 @@ export function LoadingIndicator() {
           >
             const connection = await connect();
           </motion.div>
-          
+
           <motion.div
-            className="text-[#00C46A]"
+            className="text-primary/80"
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
             transition={{ duration: 0.8, delay: 1.2 }}
@@ -105,17 +105,17 @@ export function LoadingIndicator() {
             transition={{ delay: 1.8 }}
           >
             <motion.div
-              className="w-0.5 h-4 bg-[#00FF85]"
+              className="w-0.5 h-4 bg-primary"
               animate={{ opacity: [1, 0, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
             />
           </motion.div>
         </div>
       </motion.div>
-      
+
       {/* Mensaje de estado */}
       <motion.p
-        className="text-[#00C46A] text-sm font-mono"
+        className="text-primary text-sm font-mono"
         animate={{ opacity: [0.6, 1, 0.6] }}
         transition={{
           duration: 2,
@@ -149,10 +149,10 @@ export function SmoothPageEntrance({ children }: { children: React.ReactNode }) 
 }
 
 // Animación de entrada escalonada para elementos
-export function StaggerChildren({ 
-  children, 
-  delay = 0.1 
-}: { 
+export function StaggerChildren({
+  children,
+  delay = 0.1
+}: {
   children: React.ReactNode;
   delay?: number;
 }) {
@@ -181,8 +181,8 @@ export function StaggerItem({ children }: { children: React.ReactNode }) {
     <motion.div
       variants={{
         hidden: { opacity: 0, y: 15 },
-        visible: { 
-          opacity: 1, 
+        visible: {
+          opacity: 1,
           y: 0,
           transition: {
             duration: 0.4,
@@ -200,7 +200,7 @@ export function StaggerItem({ children }: { children: React.ReactNode }) {
 export function TypingCursor() {
   return (
     <motion.span
-      className="inline-block w-0.5 h-4 bg-[#00FF85] ml-1"
+      className="inline-block w-0.5 h-4 bg-primary ml-1"
       animate={{ opacity: [1, 0, 1] }}
       transition={{
         duration: 1,
@@ -213,41 +213,41 @@ export function TypingCursor() {
 // Simulación de terminal
 export function TerminalEffect({ commands }: { commands: string[] }) {
   return (
-    <div className="bg-black/90 rounded border border-[#333333] p-4 font-mono text-sm max-w-md">
-      <div className="flex items-center space-x-2 border-b border-gray-600 pb-2 mb-3">
+    <div className="bg-card/90 rounded border border-border p-4 font-mono text-sm max-w-md">
+      <div className="flex items-center space-x-2 border-b border-muted pb-2 mb-3">
         <div className="flex space-x-1">
           <div className="w-2 h-2 bg-red-500 rounded-full"></div>
           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
         </div>
-        <span className="text-gray-400 text-xs">terminal</span>
+        <span className="text-muted-foreground text-xs">terminal</span>
       </div>
-      
+
       <div className="space-y-2">
         {commands.map((command, index) => (
           <motion.div
             key={index}
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: '100%', opacity: 1 }}
-            transition={{ 
-              duration: 0.8, 
+            transition={{
+              duration: 0.8,
               delay: index * 0.3,
               ease: "easeOut"
             }}
-            className="overflow-hidden whitespace-nowrap text-[#00FF85]"
+            className="overflow-hidden whitespace-nowrap text-primary"
           >
-            <span className="text-[#00C46A]">$ </span>
+            <span className="text-primary/70">$ </span>
             {command}
           </motion.div>
         ))}
-        
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: commands.length * 0.3 + 0.5 }}
           className="flex items-center"
         >
-          <span className="text-[#00C46A]">$ </span>
+          <span className="text-primary/70">$ </span>
           <TypingCursor />
         </motion.div>
       </div>

@@ -11,17 +11,17 @@ export function SocialAuthButtons({ onSocialAuth, isRegister = false }: SocialAu
 
   return (
     <div className="space-y-3">
-      <Button 
+      <Button
         variant="outline"
-        className="w-full border-[#333333] text-white hover:bg-[#333333] hover:text-white"
+        className="w-full border-border text-foreground hover:bg-accent hover:text-accent-foreground"
         onClick={() => onSocialAuth('Google')}
       >
         <Chrome className="h-5 w-5 mr-3" />
         {actionText} con Google
       </Button>
-      <Button 
+      <Button
         variant="outline"
-        className="w-full border-[#333333] text-white hover:bg-[#333333] hover:text-white"
+        className="w-full border-border text-foreground hover:bg-accent hover:text-accent-foreground"
         onClick={() => onSocialAuth('GitHub')}
       >
         <Github className="h-5 w-5 mr-3" />

@@ -104,8 +104,8 @@ export function UserManagement() {
   // Filtrar usuarios
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.lastname.toLowerCase().includes(searchTerm.toLowerCase());
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.lastname.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesFilter = filterType === 'all' || user.user_type === filterType;
 
@@ -301,23 +301,23 @@ export function UserManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
+    <div className="min-h-screen bg-background text-foreground p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#00FF85] glow-text flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-primary glow-text flex items-center gap-3">
               <Users className="w-8 h-8" />
               Gestión de Usuarios
             </h1>
-            <p className="text-gray-300 mt-2">Administra todos los usuarios del sistema</p>
+            <p className="text-muted-foreground mt-2">Administra todos los usuarios del sistema</p>
           </div>
 
           <div className="flex items-center gap-4">
             <Button
               onClick={fetchUsers}
               variant="outline"
-              className="bg-[#1A1A1A] border-[#333333] hover:bg-[#2A2A2A] text-white"
+              className="bg-card border-border hover:bg-accent text-foreground"
               disabled={loading}
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -325,7 +325,7 @@ export function UserManagement() {
             </Button>
 
             <Button
-              className="bg-[#00FF85] hover:bg-[#00C46A] text-[#0D0D0D] font-semibold"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
               onClick={handleOpenCreateDialog}
             >
               <UserPlus className="w-4 h-4 mr-2" />
@@ -336,20 +336,20 @@ export function UserManagement() {
 
         {/* Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="bg-[#1A1A1A] border-[#333333]">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-[#00FF85] flex items-center gap-2">
+              <CardTitle className="text-primary flex items-center gap-2">
                 <Users className="w-5 h-5" />
                 Total Usuarios
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">{userStats.total}</div>
-              <p className="text-gray-400 text-sm">Registrados en el sistema</p>
+              <div className="text-3xl font-bold text-foreground">{userStats.total}</div>
+              <p className="text-muted-foreground text-sm">Registrados en el sistema</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#1A1A1A] border-[#333333]">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-red-400 flex items-center gap-2">
                 <Shield className="w-5 h-5" />
@@ -357,12 +357,12 @@ export function UserManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">{userStats.admins}</div>
-              <p className="text-gray-400 text-sm">Usuarios con permisos admin</p>
+              <div className="text-3xl font-bold text-foreground">{userStats.admins}</div>
+              <p className="text-muted-foreground text-sm">Usuarios con permisos admin</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#1A1A1A] border-[#333333]">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-blue-400 flex items-center gap-2">
                 <Users className="w-5 h-5" />
@@ -370,12 +370,12 @@ export function UserManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">{userStats.companies}</div>
-              <p className="text-gray-400 text-sm">Cuentas de empresa</p>
+              <div className="text-3xl font-bold text-foreground">{userStats.companies}</div>
+              <p className="text-muted-foreground text-sm">Cuentas de empresa</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-[#1A1A1A] border-[#333333]">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-green-400 flex items-center gap-2">
                 <UserPlus className="w-5 h-5" />
@@ -383,37 +383,37 @@ export function UserManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">{userStats.programmers}</div>
-              <p className="text-gray-400 text-sm">Desarrolladores registrados</p>
+              <div className="text-3xl font-bold text-foreground">{userStats.programmers}</div>
+              <p className="text-muted-foreground text-sm">Desarrolladores registrados</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Filtros y búsqueda */}
-        <Card className="bg-[#1A1A1A] border-[#333333]">
+        <Card className="bg-card border-border">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Buscar por nombre, apellido o email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-[#2A2A2A] border-[#333333] text-white placeholder-gray-400 focus:border-[#00FF85]"
+                  className="pl-10 bg-background border-border text-foreground placeholder-muted-foreground focus:border-primary"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-400" />
+                <Filter className="w-4 h-4 text-muted-foreground" />
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-40 bg-[#2A2A2A] border-[#333333] text-white">
+                  <SelectTrigger className="w-40 bg-background border-border text-foreground">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#2A2A2A] border-[#333333]">
-                    <SelectItem value="all" className="text-white hover:bg-[#333333]">Todos</SelectItem>
-                    <SelectItem value="admin" className="text-white hover:bg-[#333333]">Administradores</SelectItem>
-                    <SelectItem value="company" className="text-white hover:bg-[#333333]">Empresas</SelectItem>
-                    <SelectItem value="programmer" className="text-white hover:bg-[#333333]">Programadores</SelectItem>
+                  <SelectContent className="bg-popover border-border">
+                    <SelectItem value="all" className="text-popover-foreground hover:bg-accent">Todos</SelectItem>
+                    <SelectItem value="admin" className="text-popover-foreground hover:bg-accent">Administradores</SelectItem>
+                    <SelectItem value="company" className="text-popover-foreground hover:bg-accent">Empresas</SelectItem>
+                    <SelectItem value="programmer" className="text-popover-foreground hover:bg-accent">Programadores</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -422,159 +422,158 @@ export function UserManagement() {
         </Card>
 
         {/* Tabla de usuarios */}
-        <Card className="bg-[#1A1A1A] border-[#333333]">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-[#00FF85]">Lista de Usuarios</CardTitle>
+            <CardTitle className="text-primary">Lista de Usuarios</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin text-[#00FF85]" />
-                <span className="ml-3 text-gray-300">Cargando usuarios...</span>
+                <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+                <span className="ml-3 text-muted-foreground">Cargando usuarios...</span>
               </div>
             ) : (
               <>
                 <Table>
-                    <TableHeader>
-                      <TableRow className="border-[#333333] hover:bg-[#2A2A2A]">
-                        <TableHead className="text-[#00FF85]">Usuario</TableHead>
-                        <TableHead className="text-[#00FF85]">Email</TableHead>
-                        <TableHead className="text-[#00FF85]">Tipo</TableHead>
-                        <TableHead className="text-[#00FF85]">Registro</TableHead>
-                        <TableHead className="text-[#00FF85]">Estado</TableHead>
-                        <TableHead className="text-[#00FF85] sticky right-0 bg-[#1A1A1A]">Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.map((user) => (
-                        <TableRow key={user.id} className="border-[#333333] hover:bg-[#2A2A2A]">
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-[#00FF85] rounded-full flex items-center justify-center text-[#0D0D0D] font-bold">
-                                {user.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="text-white font-semibold">{user.name} {user.lastname}</div>
-                                <div className="text-gray-400 text-sm">ID: {user.id}</div>
-                              </div>
+                  <TableHeader>
+                    <TableRow className="border-border hover:bg-accent/50">
+                      <TableHead className="text-primary">Usuario</TableHead>
+                      <TableHead className="text-primary">Email</TableHead>
+                      <TableHead className="text-primary">Tipo</TableHead>
+                      <TableHead className="text-primary">Registro</TableHead>
+                      <TableHead className="text-primary">Estado</TableHead>
+                      <TableHead className="text-primary sticky right-0 bg-card">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id} className="border-border hover:bg-accent/50">
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
+                              {user.name.charAt(0).toUpperCase()}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
-                              <Mail className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-300">{user.email}</span>
+                            <div>
+                              <div className="text-foreground font-semibold">{user.name} {user.lastname}</div>
+                              <div className="text-muted-foreground text-sm">ID: {user.id}</div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${getUserTypeColor(user.user_type)} border flex items-center gap-1 w-fit`}>
-                              {getUserTypeIcon(user.user_type)}
-                              {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
-                              <Calendar className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-300">{formatDate(user.created_at)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${
-                              user.email_verified_at
-                                ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                                : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">{user.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${getUserTypeColor(user.user_type)} border flex items-center gap-1 w-fit`}>
+                            {getUserTypeIcon(user.user_type)}
+                            {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">{formatDate(user.created_at)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${user.email_verified_at
+                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
                             } border`}>
-                              {user.email_verified_at ? 'Verificado' : 'Pendiente'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="sticky right-0 bg-[#1A1A1A] border-l border-[#333333]">
-                            <div className="flex items-center justify-end gap-2">
-                              {/* Botones para pantallas medianas y grandes */}
-                              <div className="hidden sm:flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleViewUser(user)}
-                                  className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white h-8 w-8 p-0"
-                                  title="Ver usuario"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEditUser(user)}
-                                  className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white h-8 w-8 p-0"
-                                  title="Editar usuario"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeleteUser(user)}
-                                  className="bg-[#2A2A2A] border-[#333333] hover:bg-red-500/20 text-red-400 hover:text-red-300 h-8 w-8 p-0"
-                                  title="Eliminar usuario"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
+                            {user.email_verified_at ? 'Verificado' : 'Pendiente'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="sticky right-0 bg-card border-l border-border">
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Botones para pantallas medianas y grandes */}
+                            <div className="hidden sm:flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewUser(user)}
+                                className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
+                                title="Ver usuario"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditUser(user)}
+                                className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
+                                title="Editar usuario"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteUser(user)}
+                                className="bg-secondary border-border hover:bg-red-500/20 text-red-400 hover:text-red-300 h-8 w-8 p-0"
+                                title="Eliminar usuario"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
 
-                              {/* Menú desplegable para pantallas pequeñas */}
-                              <div className="sm:hidden">
-                                <Popover>
-                                  <PopoverTrigger asChild>
+                            {/* Menú desplegable para pantallas pequeñas */}
+                            <div className="sm:hidden">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-40 bg-popover border-border p-0">
+                                  <div className="flex flex-col gap-1">
                                     <Button
                                       size="sm"
-                                      variant="outline"
-                                      className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white h-8 w-8 p-0"
+                                      variant="ghost"
+                                      onClick={() => handleViewUser(user)}
+                                      className="w-full justify-start text-foreground hover:bg-accent text-left"
                                     >
-                                      <MoreVertical className="w-4 h-4" />
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      Ver
                                     </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-40 bg-[#2A2A2A] border-[#333333] p-0">
-                                    <div className="flex flex-col gap-1">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleViewUser(user)}
-                                        className="w-full justify-start text-white hover:bg-[#333333] text-left"
-                                      >
-                                        <Eye className="w-4 h-4 mr-2" />
-                                        Ver
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleEditUser(user)}
-                                        className="w-full justify-start text-white hover:bg-[#333333] text-left"
-                                      >
-                                        <Edit className="w-4 h-4 mr-2" />
-                                        Editar
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleDeleteUser(user)}
-                                        className="w-full justify-start text-red-400 hover:bg-red-500/20 text-left"
-                                      >
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Eliminar
-                                      </Button>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                              </div>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleEditUser(user)}
+                                      className="w-full justify-start text-foreground hover:bg-accent text-left"
+                                    >
+                                      <Edit className="w-4 h-4 mr-2" />
+                                      Editar
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDeleteUser(user)}
+                                      className="w-full justify-start text-red-400 hover:bg-red-500/20 text-left"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Eliminar
+                                    </Button>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
                 {filteredUsers.length === 0 && (
                   <div className="text-center py-12">
-                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-400">No se encontraron usuarios</p>
+                    <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No se encontraron usuarios</p>
                   </div>
                 )}
               </>
@@ -584,232 +583,231 @@ export function UserManagement() {
       </div>
 
       {/* Diálogos fuera del contenedor max-w para que se rendericen correctamente */}
-      
+
       {/* Dialog crear usuario */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-xl">
-            <DialogHeader>
-              <DialogTitle className="text-[#00FF85] flex items-center gap-2">
-                <UserPlus className="w-5 h-5" />
-                Crear Usuario
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm text-gray-300">Nombre</label>
-                  <Input
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-300">Apellido</label>
-                  <Input
-                    value={createForm.lastname}
-                    onChange={(e) => setCreateForm({ ...createForm, lastname: e.target.value })}
-                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
-                  />
-                </div>
-              </div>
+        <DialogContent className="bg-card border-border text-foreground max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-primary flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              Crear Usuario
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-sm text-gray-300">Email</label>
+                <label className="text-sm text-muted-foreground">Nombre</label>
                 <Input
-                  type="email"
-                  value={createForm.email}
-                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                  className="bg-background border-border text-foreground text-sm focus:border-primary"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-300">Tipo de usuario</label>
-                <Select
-                  value={createForm.user_type}
-                  onValueChange={(value) => setCreateForm({ ...createForm, user_type: value })}
-                >
-                  <SelectTrigger className="bg-[#2A2A2A] border-[#333333] text-white text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#2A2A2A] border-[#333333]">
-                    <SelectItem value="programmer" className="text-white hover:bg-[#333333]">Programador</SelectItem>
-                    <SelectItem value="company" className="text-white hover:bg-[#333333]">Empresa</SelectItem>
-                    <SelectItem value="admin" className="text-white hover:bg-[#333333]">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm text-gray-300">Contraseña</label>
-                  <Input
-                    type="password"
-                    value={createForm.password}
-                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-300">Confirmar contraseña</label>
-                  <Input
-                    type="password"
-                    value={createForm.confirmPassword}
-                    onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
-                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="border-[#333333] text-white text-sm"
-                  onClick={() => setShowCreateDialog(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] text-sm"
-                  onClick={handleCreateUser}
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Guardando...' : 'Crear'}
-                </Button>
+                <label className="text-sm text-muted-foreground">Apellido</label>
+                <Input
+                  value={createForm.lastname}
+                  onChange={(e) => setCreateForm({ ...createForm, lastname: e.target.value })}
+                  className="bg-background border-border text-foreground text-sm focus:border-primary"
+                />
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Dialog editar usuario */}
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-xl">
-            <DialogHeader>
-              <DialogTitle className="text-[#00FF85] flex items-center gap-2">
-                <Edit className="w-5 h-5" />
-                Editar Usuario
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm text-gray-300">Nombre</label>
-                  <Input
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-300">Apellido</label>
-                  <Input
-                    value={editForm.lastname}
-                    onChange={(e) => setEditForm({ ...editForm, lastname: e.target.value })}
-                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
-                  />
-                </div>
-              </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Email</label>
+              <Input
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                className="bg-background border-border text-foreground text-sm focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Tipo de usuario</label>
+              <Select
+                value={createForm.user_type}
+                onValueChange={(value) => setCreateForm({ ...createForm, user_type: value })}
+              >
+                <SelectTrigger className="bg-background border-border text-foreground text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value="programmer" className="text-popover-foreground hover:bg-accent">Programador</SelectItem>
+                  <SelectItem value="company" className="text-popover-foreground hover:bg-accent">Empresa</SelectItem>
+                  <SelectItem value="admin" className="text-popover-foreground hover:bg-accent">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="text-sm text-gray-300">Email</label>
+                <label className="text-sm text-muted-foreground">Contraseña</label>
                 <Input
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                  type="password"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                  className="bg-background border-border text-foreground text-sm focus:border-primary"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-300">Tipo de usuario</label>
-                <Select
-                  value={editForm.user_type}
-                  onValueChange={(value) => setEditForm({ ...editForm, user_type: value })}
-                >
-                  <SelectTrigger className="bg-[#2A2A2A] border-[#333333] text-white text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#2A2A2A] border-[#333333]">
-                    <SelectItem value="programmer" className="text-white hover:bg-[#333333]">Programador</SelectItem>
-                    <SelectItem value="company" className="text-white hover:bg-[#333333]">Empresa</SelectItem>
-                    <SelectItem value="admin" className="text-white hover:bg-[#333333]">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="border-[#333333] text-white text-sm"
-                  onClick={() => setShowEditDialog(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] text-sm"
-                  onClick={handleUpdateUser}
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Guardando...' : 'Guardar cambios'}
-                </Button>
+                <label className="text-sm text-muted-foreground">Confirmar contraseña</label>
+                <Input
+                  type="password"
+                  value={createForm.confirmPassword}
+                  onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
+                  className="bg-background border-border text-foreground text-sm focus:border-primary"
+                />
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="border-border text-foreground text-sm hover:bg-accent"
+                onClick={() => setShowCreateDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+                onClick={handleCreateUser}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Guardando...' : 'Crear'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Dialog de detalles del usuario */}
-        <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="text-[#00FF85] flex items-center gap-1 text-base">
-                <Users className="w-4 h-4" />
-                Detalles
-              </DialogTitle>
-            </DialogHeader>
+      {/* Dialog editar usuario */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="bg-card border-border text-foreground max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-primary flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              Editar Usuario
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-muted-foreground">Nombre</label>
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="bg-background border-border text-foreground text-sm focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Apellido</label>
+                <Input
+                  value={editForm.lastname}
+                  onChange={(e) => setEditForm({ ...editForm, lastname: e.target.value })}
+                  className="bg-background border-border text-foreground text-sm focus:border-primary"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Email</label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                className="bg-background border-border text-foreground text-sm focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Tipo de usuario</label>
+              <Select
+                value={editForm.user_type}
+                onValueChange={(value) => setEditForm({ ...editForm, user_type: value })}
+              >
+                <SelectTrigger className="bg-background border-border text-foreground text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border">
+                  <SelectItem value="programmer" className="text-popover-foreground hover:bg-accent">Programador</SelectItem>
+                  <SelectItem value="company" className="text-popover-foreground hover:bg-accent">Empresa</SelectItem>
+                  <SelectItem value="admin" className="text-popover-foreground hover:bg-accent">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="border-border text-foreground text-sm hover:bg-accent"
+                onClick={() => setShowEditDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+                onClick={handleUpdateUser}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Guardando...' : 'Guardar cambios'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-            {selectedUser && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-[#00FF85] rounded-full flex items-center justify-center text-[#0D0D0D] font-bold text-sm flex-shrink-0">
-                    {selectedUser.name.charAt(0).toUpperCase()}
+      {/* Dialog de detalles del usuario */}
+      <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
+        <DialogContent className="bg-card border-border text-foreground max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-primary flex items-center gap-1 text-base">
+              <Users className="w-4 h-4" />
+              Detalles
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedUser && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm flex-shrink-0">
+                  {selectedUser.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-foreground truncate">{selectedUser.name} {selectedUser.lastname}</h3>
+                  <Badge className={`${getUserTypeColor(selectedUser.user_type)} border flex items-center gap-1 w-fit mt-0 text-xs py-0 px-1.5`}>
+                    {getUserTypeIcon(selectedUser.user_type)}
+                    {selectedUser.user_type.charAt(0).toUpperCase() + selectedUser.user_type.slice(1)}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Email</label>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Mail className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-foreground break-all">{selectedUser.email}</span>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-white truncate">{selectedUser.name} {selectedUser.lastname}</h3>
-                    <Badge className={`${getUserTypeColor(selectedUser.user_type)} border flex items-center gap-1 w-fit mt-0 text-xs py-0 px-1.5`}>
-                      {getUserTypeIcon(selectedUser.user_type)}
-                      {selectedUser.user_type.charAt(0).toUpperCase() + selectedUser.user_type.slice(1)}
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Fecha de Registro</label>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Calendar className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-foreground">{formatDate(selectedUser.created_at)}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Estado</label>
+                  <div className="mt-0.5">
+                    <Badge className={`${selectedUser.email_verified_at
+                      ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                      : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                      } border text-xs py-0 px-1.5`}>
+                      {selectedUser.email_verified_at ? 'Verificado' : 'Pendiente'}
                     </Badge>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 gap-2 text-xs">
-                  <div>
-                    <label className="text-xs font-medium text-gray-400">Email</label>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Mail className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                      <span className="text-white break-all">{selectedUser.email}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-gray-400">Fecha de Registro</label>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Calendar className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                      <span className="text-white">{formatDate(selectedUser.created_at)}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-gray-400">Estado</label>
-                    <div className="mt-0.5">
-                      <Badge className={`${
-                        selectedUser.email_verified_at
-                          ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                          : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                      } border text-xs py-0 px-1.5`}>
-                        {selectedUser.email_verified_at ? 'Verificado' : 'Pendiente'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Alert />
 

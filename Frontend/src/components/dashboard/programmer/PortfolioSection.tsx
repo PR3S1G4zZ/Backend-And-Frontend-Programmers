@@ -2,10 +2,10 @@ import { Card, CardContent } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { ImageWithFallback } from "../../figma/ImageWithFallback";
-import { 
-  Plus, 
-  ExternalLink, 
-  Github, 
+import {
+  Plus,
+  ExternalLink,
+  Github,
   Calendar,
   Eye,
   Heart,
@@ -113,7 +113,7 @@ export function PortfolioSection() {
             Showcases de mis mejores proyectos y trabajos realizados
           </p>
         </div>
-        <Button className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
           <Plus className="h-5 w-5 mr-2" />
           Agregar Proyecto
         </Button>
@@ -127,14 +127,14 @@ export function PortfolioSection() {
             <div className="text-gray-400 text-sm">Proyectos Totales</div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1A1A1A] border-[#333333]">
           <CardContent className="p-6 text-center">
             <div className="text-2xl font-bold text-white">{featuredProjects.length}</div>
             <div className="text-gray-400 text-sm">Proyectos Destacados</div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1A1A1A] border-[#333333]">
           <CardContent className="p-6 text-center">
             <div className="text-2xl font-bold text-white">
@@ -143,7 +143,7 @@ export function PortfolioSection() {
             <div className="text-gray-400 text-sm">Visualizaciones</div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-[#1A1A1A] border-[#333333]">
           <CardContent className="p-6 text-center">
             <div className="text-2xl font-bold text-white">
@@ -161,16 +161,16 @@ export function PortfolioSection() {
           {featuredProjects.slice(0, 2).map((project) => (
             <Card key={project.id} className="bg-[#1A1A1A] border-[#333333] hover-neon overflow-hidden">
               <div className="relative">
-                <ImageWithFallback 
+                <ImageWithFallback
                   src={project.image}
                   alt={project.title}
                   className="w-full h-48 object-cover"
                 />
                 <div className="absolute top-4 right-4">
-                  <Badge className="bg-[#00FF85] text-[#0D0D0D]">Destacado</Badge>
+                  <Badge className="bg-primary text-primary-foreground">Destacado</Badge>
                 </div>
               </div>
-              
+
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="text-lg font-bold text-white">{project.title}</h3>
@@ -183,15 +183,15 @@ export function PortfolioSection() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <p className="text-gray-300 text-sm mb-4 line-clamp-3">
                   {project.description}
                 </p>
-                
+
                 <div className="flex flex-wrap gap-2 mb-4">
                   {project.technologies.slice(0, 4).map((tech) => (
-                    <Badge 
-                      key={tech} 
+                    <Badge
+                      key={tech}
                       variant="secondary"
                       className="bg-[#0D0D0D] text-[#00C46A] text-xs"
                     >
@@ -199,7 +199,7 @@ export function PortfolioSection() {
                     </Badge>
                   ))}
                   {project.technologies.length > 4 && (
-                    <Badge 
+                    <Badge
                       variant="secondary"
                       className="bg-[#0D0D0D] text-gray-400 text-xs"
                     >
@@ -207,7 +207,7 @@ export function PortfolioSection() {
                     </Badge>
                   )}
                 </div>
-                
+
                 <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
                   <span className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
@@ -215,7 +215,7 @@ export function PortfolioSection() {
                   </span>
                   <span>Cliente: {project.client}</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 text-sm text-gray-400">
                     <span className="flex items-center">
@@ -227,13 +227,13 @@ export function PortfolioSection() {
                       {project.likes}
                     </span>
                   </div>
-                  
+
                   <div className="flex space-x-2">
                     <Button size="sm" variant="outline" className="border-[#333333] text-white hover:bg-[#333333]">
                       <Github className="h-4 w-4 mr-1" />
                       Código
                     </Button>
-                    <Button size="sm" className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
+                    <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                       <ExternalLink className="h-4 w-4 mr-1" />
                       Ver Demo
                     </Button>
@@ -252,18 +252,18 @@ export function PortfolioSection() {
           {portfolioProjects.map((project) => (
             <Card key={project.id} className="bg-[#1A1A1A] border-[#333333] hover-neon overflow-hidden">
               <div className="relative">
-                <ImageWithFallback 
+                <ImageWithFallback
                   src={project.image}
                   alt={project.title}
                   className="w-full h-40 object-cover"
                 />
                 {project.featured && (
                   <div className="absolute top-3 right-3">
-                    <Badge className="bg-[#00FF85] text-[#0D0D0D] text-xs">★</Badge>
+                    <Badge className="bg-primary text-primary-foreground text-xs">★</Badge>
                   </div>
                 )}
               </div>
-              
+
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-base font-bold text-white">{project.title}</h3>
@@ -276,15 +276,15 @@ export function PortfolioSection() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <p className="text-gray-300 text-sm mb-3 line-clamp-2">
                   {project.description}
                 </p>
-                
+
                 <div className="flex flex-wrap gap-1 mb-3">
                   {project.technologies.slice(0, 3).map((tech) => (
-                    <Badge 
-                      key={tech} 
+                    <Badge
+                      key={tech}
                       variant="secondary"
                       className="bg-[#0D0D0D] text-[#00C46A] text-xs"
                     >
@@ -292,7 +292,7 @@ export function PortfolioSection() {
                     </Badge>
                   ))}
                   {project.technologies.length > 3 && (
-                    <Badge 
+                    <Badge
                       variant="secondary"
                       className="bg-[#0D0D0D] text-gray-400 text-xs"
                     >
@@ -300,7 +300,7 @@ export function PortfolioSection() {
                     </Badge>
                   )}
                 </div>
-                
+
                 <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
                   <span>{project.completedDate}</span>
                   <div className="flex items-center space-x-3">
@@ -314,13 +314,13 @@ export function PortfolioSection() {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-2">
                   <Button size="sm" variant="outline" className="flex-1 border-[#333333] text-white hover:bg-[#333333] text-xs">
                     <Github className="h-3 w-3 mr-1" />
                     Código
                   </Button>
-                  <Button size="sm" className="flex-1 bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] text-xs">
+                  <Button size="sm" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 text-xs">
                     <ExternalLink className="h-3 w-3 mr-1" />
                     Demo
                   </Button>

@@ -194,7 +194,7 @@ export function ProjectsSection() {
 
   const getLevelColor = (level: Project['level']) => {
     switch (level) {
-      case 'junior': return 'bg-green-600';
+      case 'junior': return 'bg-primary';
       case 'mid': return 'bg-blue-600';
       case 'senior': return 'bg-purple-600';
       case 'lead': return 'bg-orange-600';
@@ -271,10 +271,10 @@ export function ProjectsSection() {
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2 glow-text">
+            <h1 className="text-3xl font-bold text-foreground mb-2 glow-text">
               Proyectos Publicados
             </h1>
-            <p className="text-gray-300">
+            <p className="text-muted-foreground">
               Descubre oportunidades perfectas para tu perfil profesional
             </p>
           </div>
@@ -284,11 +284,11 @@ export function ProjectsSection() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-              className="bg-[#1A1A1A] border border-[#333333] rounded-lg p-4"
+              className="bg-card border border-border rounded-lg p-4"
             >
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#00FF85]">{filteredProjects.length}</div>
-                <div className="text-xs text-gray-400">Proyectos activos</div>
+                <div className="text-2xl font-bold text-primary">{filteredProjects.length}</div>
+                <div className="text-xs text-muted-foreground">Proyectos activos</div>
               </div>
             </motion.div>
           </div>
@@ -312,29 +312,29 @@ export function ProjectsSection() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        <Card className="bg-[#1A1A1A] border-[#333333] hover-neon">
+        <Card className="bg-card border-border hover-neon">
           <CardContent className="p-6">
             <div className="space-y-4">
               {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                 <Input
                   placeholder="Buscar proyectos por tecnología, empresa o descripción..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 bg-[#0D0D0D] border-[#333333] text-white h-12 hover-neon"
+                  className="pl-12 bg-background border-border text-foreground h-12 hover-neon"
                 />
               </div>
 
               {/* Filters */}
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="bg-[#0D0D0D] border-[#333333] text-white">
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue placeholder="Categoría" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1A1A1A] border-[#333333]">
+                  <SelectContent className="bg-popover border-border">
                     {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id} className="text-white hover:bg-[#333333]">
+                      <SelectItem key={category.id} value={category.id} className="text-popover-foreground hover:bg-accent">
                         <div className="flex items-center space-x-2">
                           <category.icon className="h-4 w-4" />
                           <span>{category.name} ({category.count})</span>
@@ -345,41 +345,41 @@ export function ProjectsSection() {
                 </Select>
 
                 <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                  <SelectTrigger className="bg-[#0D0D0D] border-[#333333] text-white">
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue placeholder="Nivel" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1A1A1A] border-[#333333]">
-                    <SelectItem value="all" className="text-white">Todos los niveles</SelectItem>
-                    <SelectItem value="junior" className="text-white">Junior</SelectItem>
-                    <SelectItem value="mid" className="text-white">Mid-Level</SelectItem>
-                    <SelectItem value="senior" className="text-white">Senior</SelectItem>
-                    <SelectItem value="lead" className="text-white">Tech Lead</SelectItem>
+                  <SelectContent className="bg-popover border-border">
+                    <SelectItem value="all" className="text-popover-foreground">Todos los niveles</SelectItem>
+                    <SelectItem value="junior" className="text-popover-foreground">Junior</SelectItem>
+                    <SelectItem value="mid" className="text-popover-foreground">Mid-Level</SelectItem>
+                    <SelectItem value="senior" className="text-popover-foreground">Senior</SelectItem>
+                    <SelectItem value="lead" className="text-popover-foreground">Tech Lead</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                  <SelectTrigger className="bg-[#0D0D0D] border-[#333333] text-white">
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue placeholder="Ubicación" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1A1A1A] border-[#333333]">
-                    <SelectItem value="all" className="text-white">Todas las ubicaciones</SelectItem>
-                    <SelectItem value="remoto" className="text-white">Remoto</SelectItem>
-                    <SelectItem value="madrid" className="text-white">Madrid</SelectItem>
-                    <SelectItem value="barcelona" className="text-white">Barcelona</SelectItem>
-                    <SelectItem value="valencia" className="text-white">Valencia</SelectItem>
+                  <SelectContent className="bg-popover border-border">
+                    <SelectItem value="all" className="text-popover-foreground">Todas las ubicaciones</SelectItem>
+                    <SelectItem value="remoto" className="text-popover-foreground">Remoto</SelectItem>
+                    <SelectItem value="madrid" className="text-popover-foreground">Madrid</SelectItem>
+                    <SelectItem value="barcelona" className="text-popover-foreground">Barcelona</SelectItem>
+                    <SelectItem value="valencia" className="text-popover-foreground">Valencia</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="bg-[#0D0D0D] border-[#333333] text-white">
+                  <SelectTrigger className="bg-background border-border text-foreground">
                     <SelectValue placeholder="Ordenar por" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1A1A1A] border-[#333333]">
-                    <SelectItem value="newest" className="text-white">Más reciente</SelectItem>
-                    <SelectItem value="budget-high" className="text-white">Mayor presupuesto</SelectItem>
-                    <SelectItem value="budget-low" className="text-white">Menor presupuesto</SelectItem>
-                    <SelectItem value="deadline" className="text-white">Próximo deadline</SelectItem>
-                    <SelectItem value="applicants" className="text-white">Menos competencia</SelectItem>
+                  <SelectContent className="bg-popover border-border">
+                    <SelectItem value="newest" className="text-popover-foreground">Más reciente</SelectItem>
+                    <SelectItem value="budget-high" className="text-popover-foreground">Mayor presupuesto</SelectItem>
+                    <SelectItem value="budget-low" className="text-popover-foreground">Menor presupuesto</SelectItem>
+                    <SelectItem value="deadline" className="text-popover-foreground">Próximo deadline</SelectItem>
+                    <SelectItem value="applicants" className="text-popover-foreground">Menos competencia</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -410,7 +410,7 @@ export function ProjectsSection() {
                 variant={selectedCategory === category.id ? "default" : "outline"}
                 onClick={() => setSelectedCategory(category.id)}
                 className={`flex items-center space-x-2 whitespace-nowrap ${selectedCategory === category.id
-                  ? 'bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'border-[#333333] text-white hover:bg-[#333333]'
                   }`}
               >
@@ -443,7 +443,7 @@ export function ProjectsSection() {
               whileHover={{ scale: 1.02 }}
               className="relative group"
             >
-              <Card className={`bg-[#1A1A1A] border-[#333333] hover-neon overflow-hidden transition-all duration-300 ${project.featured ? 'ring-2 ring-[#00FF85]/30' : ''
+              <Card className={`bg-card border-border hover-neon overflow-hidden transition-all duration-300 ${project.featured ? 'ring-2 ring-primary/30' : ''
                 }`}>
                 {/* Featured Badge */}
                 {project.featured && (
@@ -452,7 +452,7 @@ export function ProjectsSection() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="absolute top-4 right-4 z-10"
                   >
-                    <Badge className="bg-gradient-to-r from-[#00FF85] to-[#00C46A] text-[#0D0D0D] pulse-neon">
+                    <Badge className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground pulse-neon">
                       <Star className="h-3 w-3 mr-1 fill-current" />
                       Destacado
                     </Badge>
@@ -477,7 +477,7 @@ export function ProjectsSection() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-lg font-semibold text-white group-hover:text-[#00FF85] transition-colors">
+                        <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                           {project.title}
                         </h3>
                       </div>
@@ -486,28 +486,28 @@ export function ProjectsSection() {
                         <div className="flex items-center space-x-2">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={project.company.logo} />
-                            <AvatarFallback className="bg-[#00FF85] text-[#0D0D0D] text-sm">
+                            <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                               {project.company.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
 
                           <div>
                             <div className="flex items-center space-x-1">
-                              <span className="text-sm text-white font-medium">{project.company.name}</span>
+                              <span className="text-sm text-foreground font-medium">{project.company.name}</span>
                               {project.company.verified && (
                                 <Award className="h-3 w-3 text-blue-400" />
                               )}
                             </div>
                             <div className="flex items-center space-x-1">
                               <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-muted-foreground">
                                 {project.company.rating} ({project.company.reviewsCount})
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-4 ml-auto text-xs text-gray-400">
+                        <div className="flex items-center space-x-4 ml-auto text-xs text-muted-foreground">
                           <span className="flex items-center">
                             <Clock className="h-3 w-3 mr-1" />
                             {getTimeAgo(project.postedDate)}
@@ -527,23 +527,23 @@ export function ProjectsSection() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4 text-[#00FF85]" />
-                        <span className="text-white font-medium">{getBudgetText(project.budget)}</span>
+                        <DollarSign className="h-4 w-4 text-primary" />
+                        <span className="text-foreground font-medium">{getBudgetText(project.budget)}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Calendar className="h-4 w-4 text-blue-400" />
-                        <span className="text-white">{getDurationText(project.duration)}</span>
+                        <span className="text-foreground">{getDurationText(project.duration)}</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <MapPin className="h-4 w-4 text-orange-400" />
-                        <span className="text-white">{project.remote ? 'Remoto' : project.location}</span>
+                        <span className="text-foreground">{project.remote ? 'Remoto' : project.location}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Users className="h-4 w-4 text-purple-400" />
-                        <span className="text-white">{project.applicants}/{project.maxApplicants} candidatos</span>
+                        <span className="text-foreground">{project.applicants}/{project.maxApplicants} candidatos</span>
                       </div>
                     </div>
                   </div>
@@ -554,7 +554,7 @@ export function ProjectsSection() {
                       {getLevelText(project.level)}
                     </Badge>
 
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-muted-foreground">
                       Deadline: {project.deadline ? new Date(project.deadline).toLocaleDateString() : 'Sin fecha'}
                     </div>
                   </div>
@@ -568,13 +568,13 @@ export function ProjectsSection() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.05 * skillIndex }}
                       >
-                        <Badge variant="secondary" className="bg-[#0D0D0D] text-[#00C46A] text-xs hover:bg-[#00C46A] hover:text-[#0D0D0D] transition-colors">
+                        <Badge variant="secondary" className="bg-secondary text-primary text-xs hover:bg-primary hover:text-primary-foreground transition-colors">
                           {skill}
                         </Badge>
                       </motion.div>
                     ))}
                     {project.skills.length > 4 && (
-                      <Badge variant="secondary" className="bg-[#0D0D0D] text-gray-400 text-xs">
+                      <Badge variant="secondary" className="bg-secondary text-muted-foreground text-xs">
                         +{project.skills.length - 4}
                       </Badge>
                     )}
@@ -582,9 +582,9 @@ export function ProjectsSection() {
 
                   {/* Tags */}
                   {project.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-2 border-t border-[#333333]">
+                    <div className="flex flex-wrap gap-1 pt-2 border-t border-border">
                       {project.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="border-[#333333] text-gray-400 text-xs">
+                        <Badge key={tag} variant="outline" className="border-border text-muted-foreground text-xs">
                           {tag}
                         </Badge>
                       ))}
@@ -592,7 +592,7 @@ export function ProjectsSection() {
                   )}
 
                   {/* Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t border-[#333333]">
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
                     <div className="flex space-x-2">
                       <motion.div
                         whileHover={{ scale: 1.05 }}
@@ -603,8 +603,8 @@ export function ProjectsSection() {
                           disabled={appliedProjects.includes(project.id)}
                           onClick={() => applyToProject(project.id)}
                           className={`${appliedProjects.includes(project.id)
-                            ? 'bg-green-600 text-white cursor-not-allowed'
-                            : 'bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]'
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
                             } transition-all duration-200`}
                         >
                           {appliedProjects.includes(project.id) ? (
@@ -621,7 +621,7 @@ export function ProjectsSection() {
                         </Button>
                       </motion.div>
 
-                      <Button size="sm" variant="outline" className="border-[#333333] text-white hover:bg-[#333333]">
+                      <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-accent">
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
@@ -661,47 +661,49 @@ export function ProjectsSection() {
       </div>
 
       {/* No Results */}
-      {filteredProjects.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="bg-[#1A1A1A] border-[#333333] p-12">
-            <div className="text-center">
-              <motion.div
-                animate={{
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatDelay: 3
-                }}
-                className="bg-[#333333] p-8 rounded-full mb-4 mx-auto w-24 h-24 flex items-center justify-center"
-              >
-                <Search className="h-12 w-12 text-gray-400" />
-              </motion.div>
-              <h3 className="text-xl font-semibold text-white mb-2">No se encontraron proyectos</h3>
-              <p className="text-gray-400 mb-4">
-                Ajusta tus filtros o términos de búsqueda para encontrar más oportunidades
-              </p>
-              <Button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('all');
-                  setSelectedLevel('all');
-                  setSelectedLocation('all');
-                }}
-                className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] btn-glow"
-              >
-                Limpiar Filtros
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
-      )}
-    </div>
+      {
+        filteredProjects.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="bg-card border-border p-12">
+              <div className="text-center">
+                <motion.div
+                  animate={{
+                    rotate: [0, 10, -10, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 3
+                  }}
+                  className="bg-accent p-8 rounded-full mb-4 mx-auto w-24 h-24 flex items-center justify-center"
+                >
+                  <Search className="h-12 w-12 text-muted-foreground" />
+                </motion.div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron proyectos</h3>
+                <p className="text-muted-foreground mb-4">
+                  Ajusta tus filtros o términos de búsqueda para encontrar más oportunidades
+                </p>
+                <Button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('all');
+                    setSelectedLevel('all');
+                    setSelectedLocation('all');
+                  }}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 btn-glow"
+                >
+                  Limpiar Filtros
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )
+      }
+    </div >
   );
 }

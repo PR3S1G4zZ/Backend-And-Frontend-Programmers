@@ -78,47 +78,47 @@ export function SecuritySection() {
     return (
         <div className="space-y-8">
             <div>
-                <h2 className="text-xl font-bold text-white mb-1">Seguridad</h2>
-                <p className="text-gray-400 text-sm">Gestiona tu contraseña y la seguridad de tu cuenta.</p>
+                <h2 className="text-xl font-bold text-foreground mb-1">Seguridad</h2>
+                <p className="text-muted-foreground text-sm">Gestiona tu contraseña y la seguridad de tu cuenta.</p>
             </div>
 
-            <div className="bg-[#0D0D0D] p-6 rounded-xl border border-[#333333]">
-                <h3 className="text-lg font-semibold text-[#00FF85] flex items-center gap-2 mb-4">
+            <div className="bg-card p-6 rounded-xl border border-border">
+                <h3 className="text-lg font-semibold text-primary flex items-center gap-2 mb-4">
                     <Key className="w-5 h-5" />
                     Cambiar Contraseña
                 </h3>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Contraseña Actual</label>
+                        <label className="block text-sm text-muted-foreground mb-1">Contraseña Actual</label>
                         <input
                             type="password"
                             value={passwords.current_password}
                             onChange={(e) => setPasswords({ ...passwords, current_password: e.target.value })}
-                            className="w-full bg-[#1A1A1A] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none"
+                            className="w-full bg-background border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none"
                             required
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm text-gray-400 mb-1">Nueva Contraseña</label>
+                            <label className="block text-sm text-muted-foreground mb-1">Nueva Contraseña</label>
                             <input
                                 type="password"
                                 value={passwords.new_password}
                                 onChange={(e) => setPasswords({ ...passwords, new_password: e.target.value })}
-                                className="w-full bg-[#1A1A1A] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none"
+                                className="w-full bg-background border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none"
                                 required
                                 minLength={8}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-400 mb-1">Confirmar Nueva Contraseña</label>
+                            <label className="block text-sm text-muted-foreground mb-1">Confirmar Nueva Contraseña</label>
                             <input
                                 type="password"
                                 value={passwords.new_password_confirmation}
                                 onChange={(e) => setPasswords({ ...passwords, new_password_confirmation: e.target.value })}
-                                className="w-full bg-[#1A1A1A] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none"
+                                className="w-full bg-background border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none"
                                 required
                                 minLength={8}
                             />
@@ -129,7 +129,7 @@ export function SecuritySection() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex items-center gap-2 bg-[#00FF85] text-[#0D0D0D] px-6 py-2.5 rounded-lg font-bold hover:bg-[#00CC6A] transition-all disabled:opacity-50"
+                            className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-bold hover:bg-primary/80 transition-all disabled:opacity-50"
                         >
                             {loading ? 'Actualizando...' : (
                                 <>
@@ -143,16 +143,16 @@ export function SecuritySection() {
             </div>
 
             {/* 2FA Placeholder */}
-            <div className="bg-[#0D0D0D] p-6 rounded-xl border border-[#333333] opacity-50 cursor-not-allowed">
+            <div className="bg-card p-6 rounded-xl border border-border opacity-50 cursor-not-allowed">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                            <Lock className="w-5 h-5 text-[#00FF85]" />
+                        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                            <Lock className="w-5 h-5 text-primary" />
                             Autenticación de Dos Factores (2FA)
                         </h3>
-                        <p className="text-sm text-gray-400">Aumenta la seguridad de tu cuenta.</p>
+                        <p className="text-sm text-muted-foreground">Aumenta la seguridad de tu cuenta.</p>
                     </div>
-                    <div className="bg-[#333333] text-gray-400 text-xs px-2 py-1 rounded">Próximamente</div>
+                    <div className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded">Próximamente</div>
                 </div>
             </div>
         </div>

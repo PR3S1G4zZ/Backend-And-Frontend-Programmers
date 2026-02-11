@@ -85,17 +85,17 @@ export function Sidebar({
         onClick={onClose}
       />
       <div
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-col border-r border-[#333333] bg-[#1A1A1A] transition-transform duration-200 md:static md:h-screen md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-64 flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-200 md:static md:h-screen md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-[#333333]">
+        <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="bg-[#00FF85] p-2 rounded-lg">
-                <Code className="h-5 w-5 text-[#0D0D0D]" />
+              <div className="bg-sidebar-primary p-2 rounded-lg">
+                <Code className="h-5 w-5 text-sidebar-primary-foreground" />
               </div>
-              <span className="text-lg font-bold text-[#00FF85] glow-text">Programmers</span>
+              <span className="text-lg font-bold text-sidebar-primary glow-text">Programmers</span>
             </div>
             <button
               type="button"
@@ -109,22 +109,22 @@ export function Sidebar({
         </div>
 
         {/* User Info */}
-        <div className="p-6 border-b border-[#333333]">
+        <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center space-x-3">
             {userType === 'programmer' ? (
               <>
-                <User className="h-8 w-8 text-[#00FF85]" />
+                <User className="h-8 w-8 text-sidebar-primary" />
                 <div>
-                  <div className="text-white font-semibold">{displayName}</div>
-                  <div className="text-gray-400 text-sm">{displaySubtitle}</div>
+                  <div className="text-sidebar-foreground font-semibold">{displayName}</div>
+                  <div className="text-sidebar-foreground/70 text-sm">{displaySubtitle}</div>
                 </div>
               </>
             ) : (
               <>
-                <Building2 className="h-8 w-8 text-[#00FF85]" />
+                <Building2 className="h-8 w-8 text-sidebar-primary" />
                 <div>
-                  <div className="text-white font-semibold">{displayName}</div>
-                  <div className="text-gray-400 text-sm">{displaySubtitle}</div>
+                  <div className="text-sidebar-foreground font-semibold">{displayName}</div>
+                  <div className="text-sidebar-foreground/70 text-sm">{displaySubtitle}</div>
                 </div>
               </>
             )}
@@ -141,8 +141,8 @@ export function Sidebar({
                   key={section.id}
                   variant={currentSection === section.id ? "default" : "ghost"}
                   className={`w-full justify-start ${currentSection === section.id
-                    ? 'bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]'
-                    : 'text-white hover:bg-[#333333] hover:text-white'
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     }`}
                   onClick={() => handleSectionChange(section.id)}
                 >
@@ -155,17 +155,17 @@ export function Sidebar({
         </nav>
 
         {/* Bottom Actions */}
-        <div className="p-4 border-t border-[#333333] space-y-2">
+        <div className="p-4 border-t border-sidebar-border space-y-2">
           <Button
             variant="ghost"
-            className="w-full justify-start text-gray-400 hover:bg-[#333333] hover:text-white"
+            className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             <Settings className="h-5 w-5 mr-3" />
             Configuración
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start text-gray-400 hover:bg-[#333333] hover:text-white"
+            className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={() => {
               if (onClose) onClose();
               if (onLogout) onLogout();

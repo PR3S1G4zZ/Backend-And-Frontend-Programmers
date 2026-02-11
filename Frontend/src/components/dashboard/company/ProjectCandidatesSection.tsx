@@ -139,7 +139,7 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
                                         <div className="flex-shrink-0">
                                             <Avatar className="h-16 w-16 border-2 border-[#333333]">
                                                 <AvatarImage src={candidate.developer.avatar} />
-                                                <AvatarFallback className="bg-[#00FF85] text-[#0D0D0D] text-xl">
+                                                <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                                                     {candidate.developer.name.substring(0, 2).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
@@ -170,7 +170,7 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
                                                     candidate.status === 'accepted' ? 'default' :
                                                         candidate.status === 'rejected' ? 'destructive' : 'secondary'
                                                 } className={
-                                                    candidate.status === 'accepted' ? 'bg-green-500/20 text-green-400' :
+                                                    candidate.status === 'accepted' ? 'bg-primary/20 text-primary' :
                                                         candidate.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
                                                             'bg-blue-500/20 text-blue-400'
                                                 }>
@@ -191,7 +191,7 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
                                         {candidate.status === 'pending' && (
                                             <div className="flex flex-row md:flex-col gap-2 pt-2 md:pt-0">
                                                 <Button
-                                                    className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] w-full md:w-auto"
+                                                    className="bg-primary text-primary-foreground hover:bg-primary/90 w-full md:w-auto"
                                                     onClick={() => handleAccept(candidate)}
                                                 >
                                                     <CheckCircle className="h-4 w-4 mr-2" />

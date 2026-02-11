@@ -1,5 +1,25 @@
 import { apiRequest } from './apiClient';
 
+export interface Profile {
+  location?: string;
+  headline?: string;
+  bio?: string;
+  hourly_rate?: number;
+  availability?: 'available' | 'busy' | 'unavailable';
+  website?: string;
+  github?: string;
+  linkedin?: string;
+  twitter?: string;
+  skills?: string[];
+  languages?: string[];
+  links?: {
+    website?: string;
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+  };
+}
+
 export type ProfileResponse = {
   success: boolean;
   data: {
@@ -10,7 +30,7 @@ export type ProfileResponse = {
       email: string;
       user_type: 'programmer' | 'company' | 'admin';
     };
-    profile: Record<string, unknown>;
+    profile: Profile;
   };
 };
 

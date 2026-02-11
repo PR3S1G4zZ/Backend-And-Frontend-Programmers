@@ -91,38 +91,38 @@ export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={projectActivityData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.3} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                 <XAxis
                   dataKey="month"
-                  stroke="var(--color-muted-foreground)"
+                  stroke="var(--muted-foreground)"
                   fontSize={12}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="var(--color-muted-foreground)"
+                  stroke="var(--muted-foreground)"
                   fontSize={12}
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--color-card)',
-                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--card)',
+                    border: '1px solid var(--border)',
                     borderRadius: '8px',
-                    color: 'var(--color-foreground)',
+                    color: 'var(--foreground)',
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
                 />
                 <Bar
                   dataKey="published"
-                  fill="var(--color-neon-green)"
+                  fill="var(--primary)"
                   name="Proyectos Publicados"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="proposals"
-                  fill="var(--color-emerald-green)"
+                  fill="var(--sidebar-accent)"
                   name="Propuestas Enviadas"
                   radius={[4, 4, 0, 0]}
                 />
@@ -138,7 +138,7 @@ export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }
           maxValue={100}
           unit="%"
           description="Puntuación general de engagement"
-          color="var(--color-primary)"
+          color="var(--primary)"
         />
       </div>
 

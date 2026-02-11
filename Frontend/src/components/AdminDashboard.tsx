@@ -98,25 +98,25 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     switch (currentSection) {
       case 'dashboard':
         return (
-          <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
+          <div className="min-h-screen bg-background text-foreground p-6">
             <div className="max-w-7xl mx-auto space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-[#00FF85] glow-text flex items-center gap-3">
+                  <h1 className="text-3xl font-bold text-primary glow-text flex items-center gap-3">
                     <Shield className="w-8 h-8" />
                     Dashboard Administrativo
                   </h1>
-                  <p className="text-gray-300 mt-2">Panel de control completo del sistema</p>
+                  <p className="text-muted-foreground mt-2">Panel de control completo del sistema</p>
                 </div>
 
-                <Card className="bg-[#1A1A1A] border-[#333333]">
+                <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-300">Período:</span>
+                      <span className="text-sm text-foreground">Período:</span>
                       <select
                         value={selectedPeriod}
                         onChange={(e) => setSelectedPeriod(e.target.value as typeof selectedPeriod)}
-                        className="bg-[#2A2A2A] border border-[#333333] rounded px-3 py-1 text-white text-sm focus:outline-none focus:border-[#00FF85]"
+                        className="bg-background border border-border rounded px-3 py-1 text-foreground text-sm focus:outline-none focus:border-primary"
                       >
                         {periodOptions.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -130,10 +130,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               </div>
 
               <Tabs defaultValue="activity" className="w-full">
-                <TabsList className="grid w-full grid-cols-5 bg-[#1A1A1A] border border-[#333333]">
+                <TabsList className="grid w-full grid-cols-5 bg-card border border-border">
                   <TabsTrigger
                     value="activity"
-                    className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
                     <BarChart3 className="w-4 h-4" />
                     Actividad
@@ -141,7 +141,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
                   <TabsTrigger
                     value="financial"
-                    className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
                     <DollarSign className="w-4 h-4" />
                     Financiero
@@ -149,7 +149,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
                   <TabsTrigger
                     value="growth"
-                    className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Crecimiento
@@ -157,7 +157,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
                   <TabsTrigger
                     value="projects"
-                    className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
                     <Users className="w-4 h-4" />
                     Proyectos
@@ -165,7 +165,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
                   <TabsTrigger
                     value="satisfaction"
-                    className="flex items-center gap-2 data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
                     <Star className="w-4 h-4" />
                     Satisfacción
@@ -210,31 +210,31 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       case 'analytics':
         return (
-          <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
+          <div className="min-h-screen bg-background text-foreground p-6">
             <div className="max-w-7xl mx-auto">
-              <h1 className="text-3xl font-bold text-[#00FF85] glow-text mb-6">Analíticas del Sistema</h1>
-              <Card className="bg-[#1A1A1A] border-[#333333]">
+              <h1 className="text-3xl font-bold text-primary glow-text mb-6">Analíticas del Sistema</h1>
+              <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-[#00FF85]">Estadísticas Avanzadas</CardTitle>
+                  <CardTitle className="text-primary">Estadísticas Avanzadas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {metricsLoading ? (
-                    <p className="text-gray-300">Cargando métricas...</p>
+                    <p className="text-muted-foreground">Cargando métricas...</p>
                   ) : metricsError ? (
-                    <p className="text-red-300">{metricsError}</p>
+                    <p className="text-red-500">{metricsError}</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
-                        <p className="text-gray-400 text-sm">Usuarios activos</p>
-                        <p className="text-2xl font-bold text-white">{getKpiValue(metrics?.activity?.kpis, 'Sesiones Promedio')}</p>
+                      <div className="rounded-lg border border-border bg-card p-4">
+                        <p className="text-muted-foreground text-sm">Usuarios activos</p>
+                        <p className="text-2xl font-bold text-foreground">{getKpiValue(metrics?.activity?.kpis, 'Sesiones Promedio')}</p>
                       </div>
-                      <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
-                        <p className="text-gray-400 text-sm">Proyectos activos</p>
-                        <p className="text-2xl font-bold text-white">{getKpiValue(metrics?.projects?.kpis, 'Proyectos Activos')}</p>
+                      <div className="rounded-lg border border-border bg-card p-4">
+                        <p className="text-muted-foreground text-sm">Proyectos activos</p>
+                        <p className="text-2xl font-bold text-foreground">{getKpiValue(metrics?.projects?.kpis, 'Proyectos Activos')}</p>
                       </div>
-                      <div className="rounded-lg border border-[#333333] bg-[#0D0D0D] p-4">
-                        <p className="text-gray-400 text-sm">Ingresos estimados</p>
-                        <p className="text-2xl font-bold text-white">{getKpiValue(metrics?.financial?.kpis, 'Ingresos Netos')}</p>
+                      <div className="rounded-lg border border-border bg-card p-4">
+                        <p className="text-muted-foreground text-sm">Ingresos estimados</p>
+                        <p className="text-2xl font-bold text-foreground">{getKpiValue(metrics?.financial?.kpis, 'Ingresos Netos')}</p>
                       </div>
                     </div>
                   )}
@@ -249,9 +249,9 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       default:
         return (
-          <div className="min-h-screen bg-[#0D0D0D] text-white p-6">
+          <div className="min-h-screen bg-background text-foreground p-6">
             <div className="max-w-7xl mx-auto">
-              <h1 className="text-3xl font-bold text-[#00FF85] glow-text">Dashboard Administrativo</h1>
+              <h1 className="text-3xl font-bold text-primary glow-text">Dashboard Administrativo</h1>
             </div>
           </div>
         );
@@ -259,7 +259,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white flex">
+    <div className="min-h-screen bg-background text-foreground flex">
       <Sidebar
         userType="admin"
         currentSection={currentSection}
@@ -272,18 +272,18 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       <div className="flex-1 overflow-auto">
         {/* Mobile header */}
-        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[#333333] bg-[#0D0D0D] px-4 py-3 md:hidden">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
           <button
             type="button"
             onClick={() => setIsSidebarOpen(true)}
-            className="rounded-md border border-[#333333] p-2 text-white hover:bg-[#1A1A1A]"
+            className="rounded-md border border-border p-2 text-foreground hover:bg-accent"
             aria-label="Abrir menú"
           >
             <Menu className="h-5 w-5" />
           </button>
           <div>
-            <p className="text-sm text-gray-400">Panel administrativo</p>
-            <p className="text-base font-semibold text-white">{sectionLabels[currentSection] || 'Dashboard Admin'}</p>
+            <p className="text-sm text-muted-foreground">Panel administrativo</p>
+            <p className="text-base font-semibold text-foreground">{sectionLabels[currentSection] || 'Dashboard Admin'}</p>
           </div>
         </div>
 

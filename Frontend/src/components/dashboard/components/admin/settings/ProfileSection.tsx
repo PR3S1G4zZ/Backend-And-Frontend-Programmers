@@ -59,8 +59,8 @@ export function ProfileSection() {
                 position: 'top-end',
                 showConfirmButton: false,
                 timer: 3000,
-                background: '#1A1A1A',
-                color: '#fff'
+                background: 'var(--card)',
+                color: 'var(--foreground)'
             });
         } catch (error) {
             console.error('Error updating profile:', error);
@@ -68,8 +68,8 @@ export function ProfileSection() {
                 icon: 'error',
                 title: 'Error',
                 text: 'No se pudo actualizar el perfil.',
-                background: '#1A1A1A',
-                color: '#fff'
+                background: 'var(--card)',
+                color: 'var(--foreground)'
             });
         } finally {
             setLoading(false);
@@ -79,50 +79,50 @@ export function ProfileSection() {
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-xl font-bold text-white mb-1">Información Personal</h2>
-                <p className="text-gray-400 text-sm">Actualiza tu información pública y privada.</p>
+                <h2 className="text-xl font-bold text-foreground mb-1">Información Personal</h2>
+                <p className="text-muted-foreground text-sm">Actualiza tu información pública y privada.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Nombre</label>
+                        <label className="block text-sm text-muted-foreground mb-1">Nombre</label>
                         <input
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full bg-[#0D0D0D] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none"
+                            className="w-full bg-card border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none"
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Apellido</label>
+                        <label className="block text-sm text-muted-foreground mb-1">Apellido</label>
                         <input
                             type="text"
                             value={formData.lastname}
                             onChange={(e) => setFormData({ ...formData, lastname: e.target.value })}
-                            className="w-full bg-[#0D0D0D] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none"
+                            className="w-full bg-card border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none"
                             required
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm text-gray-400 mb-1">Correo Electrónico</label>
+                    <label className="block text-sm text-muted-foreground mb-1">Correo Electrónico</label>
                     <input
                         type="email"
                         value={formData.email}
                         disabled
-                        className="w-full bg-[#0D0D0D]/50 border border-[#333333] rounded-lg p-3 text-gray-500 cursor-not-allowed"
+                        className="w-full bg-muted/50 border border-border rounded-lg p-3 text-muted-foreground cursor-not-allowed"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm text-gray-400 mb-1">Biografía</label>
+                    <label className="block text-sm text-muted-foreground mb-1">Biografía</label>
                     <textarea
                         value={formData.bio}
                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                        className="w-full bg-[#0D0D0D] border border-[#333333] rounded-lg p-3 text-white focus:border-[#00FF85] outline-none h-24 resize-none"
+                        className="w-full bg-card border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none h-24 resize-none"
                         placeholder="Cuéntanos sobre ti..."
                     />
                 </div>
@@ -131,7 +131,7 @@ export function ProfileSection() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex items-center gap-2 bg-[#00FF85] text-[#0D0D0D] px-6 py-2.5 rounded-lg font-bold hover:bg-[#00CC6A] transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-bold hover:bg-primary/80 transition-all disabled:opacity-50"
                     >
                         {loading ? 'Guardando...' : (
                             <>

@@ -9,12 +9,12 @@ import { Checkbox } from '../../ui/checkbox';
 import { Slider } from '../../ui/slider';
 import { ScrollArea } from '../../ui/scroll-area';
 import { Separator } from '../../ui/separator';
-import { 
-  Search, 
-  Filter, 
-  Star, 
-  MapPin, 
-  Clock, 
+import {
+  Search,
+  Filter,
+  Star,
+  MapPin,
+  Clock,
   Eye,
   Heart,
   MessageSquare,
@@ -75,32 +75,32 @@ export function SearchProgrammersSection() {
   }, []);
 
   const filteredDevelopers = developers.filter(dev => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       dev.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       dev.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       dev.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesSkills = filters.skills.length === 0 || 
+    const matchesSkills = filters.skills.length === 0 ||
       filters.skills.some(skill => dev.skills.includes(skill));
 
     const experience = dev.experience ?? 0;
     const hourlyRate = dev.hourlyRate ?? 0;
 
-    const matchesExperience = experience >= filters.experience[0] && 
+    const matchesExperience = experience >= filters.experience[0] &&
       experience <= filters.experience[1];
 
-    const matchesRate = hourlyRate >= filters.hourlyRate[0] && 
+    const matchesRate = hourlyRate >= filters.hourlyRate[0] &&
       hourlyRate <= filters.hourlyRate[1];
 
-    const matchesAvailability = !filters.availability || filters.availability === 'any' || 
+    const matchesAvailability = !filters.availability || filters.availability === 'any' ||
       dev.availability === filters.availability;
 
     const matchesRating = dev.rating >= filters.rating;
 
     const matchesVerified = !filters.verified || dev.isVerified;
 
-    return matchesSearch && matchesSkills && matchesExperience && 
-           matchesRate && matchesAvailability && matchesRating && matchesVerified;
+    return matchesSearch && matchesSkills && matchesExperience &&
+      matchesRate && matchesAvailability && matchesRating && matchesVerified;
   });
 
   const toggleFavorite = (developerId: string) => {
@@ -201,7 +201,7 @@ export function SearchProgrammersSection() {
             {(filters.skills.length > 0 || (filters.availability && filters.availability !== 'any')) && (
               <div className="flex flex-wrap gap-2">
                 {filters.skills.map(skill => (
-                  <Badge key={skill} variant="secondary" className="bg-[#00FF85] text-[#0D0D0D] pr-1">
+                  <Badge key={skill} variant="secondary" className="bg-primary text-primary-foreground pr-1">
                     {skill}
                     <Button
                       variant="ghost"
@@ -374,7 +374,7 @@ export function SearchProgrammersSection() {
               </p>
               {searchQuery && (
                 <p className="text-sm text-gray-400">
-                  Resultados para "<span className="text-[#00FF85]">{searchQuery}</span>"
+                  Resultados para "<span className="text-primary">{searchQuery}</span>"
                 </p>
               )}
             </div>
@@ -411,7 +411,7 @@ export function SearchProgrammersSection() {
                         <div className="relative">
                           <Avatar className="h-16 w-16">
                             <AvatarImage src={developer.avatar} />
-                            <AvatarFallback className="bg-[#00FF85] text-[#0D0D0D] text-lg">
+                            <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                               {developer.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
@@ -421,7 +421,7 @@ export function SearchProgrammersSection() {
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold text-white">{developer.name}</h3>
                           <p className="text-sm text-gray-400">{developer.title}</p>
@@ -444,7 +444,7 @@ export function SearchProgrammersSection() {
                           <span className="text-white font-medium">{developer.rating}</span>
                           <span className="text-xs text-gray-400">({developer.reviewsCount})</span>
                         </div>
-                        <p className="text-lg font-semibold text-[#00FF85]">
+                        <p className="text-lg font-semibold text-primary">
                           {developer.hourlyRate ? `€${developer.hourlyRate}/h` : 'Sin tarifa'}
                         </p>
                       </div>
@@ -498,20 +498,19 @@ export function SearchProgrammersSection() {
 
                     {/* Actions */}
                     <div className="flex space-x-2 pt-4">
-                      <Button size="sm" className="flex-1 bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
+                      <Button size="sm" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Contactar
                       </Button>
                       <Button size="sm" variant="outline" className="border-[#333333] text-white hover:bg-[#333333]">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => toggleFavorite(developer.id)}
-                        className={`border-[#333333] hover:bg-[#333333] ${
-                          favorites.includes(developer.id) ? 'text-red-400' : 'text-white'
-                        }`}
+                        className={`border-[#333333] hover:bg-[#333333] ${favorites.includes(developer.id) ? 'text-red-400' : 'text-white'
+                          }`}
                       >
                         <Heart className={`h-4 w-4 ${favorites.includes(developer.id) ? 'fill-current' : ''}`} />
                       </Button>
@@ -530,9 +529,9 @@ export function SearchProgrammersSection() {
                 <p className="text-gray-400 mb-4">
                   Intenta ajustar tus filtros o términos de búsqueda
                 </p>
-                <Button 
+                <Button
                   onClick={clearFilters}
-                  className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Limpiar filtros
                 </Button>

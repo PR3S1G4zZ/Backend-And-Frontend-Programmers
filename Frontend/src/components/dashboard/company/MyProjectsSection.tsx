@@ -210,7 +210,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
       case 'draft': return 'bg-gray-600';
       case 'published': return 'bg-blue-600';
       case 'in-progress': return 'bg-yellow-600';
-      case 'completed': return 'bg-green-600';
+      case 'completed': return 'bg-primary';
       case 'paused': return 'bg-orange-600';
       case 'cancelled': return 'bg-red-600';
       default: return 'bg-gray-600';
@@ -269,7 +269,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
         </div>
         <Button
           onClick={() => onSectionChange('publish-project')}
-          className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-5 w-5 mr-2" />
           Nuevo Proyecto
@@ -324,16 +324,16 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full lg:w-auto">
               <TabsList className="bg-[#0D0D0D] border border-[#333333]">
-                <TabsTrigger value="all" className="data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]">
+                <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Todos ({stats.total})
                 </TabsTrigger>
-                <TabsTrigger value="active" className="data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]">
+                <TabsTrigger value="active" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Activos ({stats.active})
                 </TabsTrigger>
-                <TabsTrigger value="completed" className="data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]">
+                <TabsTrigger value="completed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Completados ({stats.completed})
                 </TabsTrigger>
-                <TabsTrigger value="drafts" className="data-[state=active]:bg-[#00FF85] data-[state=active]:text-[#0D0D0D]">
+                <TabsTrigger value="drafts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Borradores ({stats.drafts})
                 </TabsTrigger>
               </TabsList>
@@ -448,7 +448,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                     {/* Project Info */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mt-4">
                       <div className="flex items-center space-x-2 overflow-hidden">
-                        <DollarSign className="h-4 w-4 text-[#00FF85] flex-shrink-0" />
+                        <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
                         <span className="text-white truncate">
                           €{project.budget.toLocaleString()}{project.budgetType === 'hourly' ? '/h' : ''}
                         </span>
@@ -489,7 +489,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                           <div className="flex items-center space-x-3">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={project.developer.avatar} />
-                              <AvatarFallback className="bg-[#00FF85] text-[#0D0D0D] text-sm">
+                              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                                 {project.developer.name.split(' ').map(n => n[0]).join('')}
                               </AvatarFallback>
                             </Avatar>
@@ -521,7 +521,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
 
                     {project.status === 'in-progress' && (
                       <>
-                        <Button size="sm" className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
+                        <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Progreso
                         </Button>
@@ -541,7 +541,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
 
                     {project.status === 'draft' && (
                       <>
-                        <Button size="sm" className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
+                        <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                           <Edit className="h-4 w-4 mr-2" />
                           Continuar
                         </Button>
@@ -553,7 +553,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                     )}
 
                     {project.status === 'completed' && (
-                      <Button size="sm" variant="outline" className="border-green-600 text-green-400 hover:bg-green-600 hover:text-white">
+                      <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Completado
                       </Button>
@@ -578,7 +578,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
             </p>
             <Button
               onClick={() => onSectionChange('publish-project')}
-              className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="h-4 w-4 mr-2" />
               Crear Proyecto

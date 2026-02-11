@@ -70,7 +70,7 @@ export function SystemSection() {
                 : "La plataforma volverá a estar accesible para todos.",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: newValue ? '#d33' : '#00FF85',
+            confirmButtonColor: newValue ? '#d33' : '#00FF85', // SweetAlert uses hex, cannot easily use class here without custom css
             cancelButtonColor: '#3085d6',
             confirmButtonText: newValue ? 'Sí, activar' : 'Sí, desactivar',
             background: '#1A1A1A',
@@ -110,12 +110,12 @@ export function SystemSection() {
     return (
         <div className="space-y-8">
             <div>
-                <h2 className="text-xl font-bold text-white mb-1">Sistema y Auditoría</h2>
-                <p className="text-gray-400 text-sm">Monitorea la actividad y gestiona el estado del sistema.</p>
+                <h2 className="text-xl font-bold text-foreground mb-1">Sistema y Auditoría</h2>
+                <p className="text-muted-foreground text-sm">Monitorea la actividad y gestiona el estado del sistema.</p>
             </div>
 
             {/* Maintenance Mode */}
-            <div className="bg-[#0D0D0D] p-6 rounded-xl border border-[#333333]">
+            <div className="bg-card p-6 rounded-xl border border-border">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className={cn(
@@ -125,8 +125,8 @@ export function SystemSection() {
                             <Power className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold text-white">Modo Mantenimiento</h3>
-                            <p className="text-sm text-gray-400">
+                            <h3 className="text-lg font-semibold text-foreground">Modo Mantenimiento</h3>
+                            <p className="text-sm text-muted-foreground">
                                 {maintenanceMode
                                     ? "El sitio está actualmente inaccesible para los usuarios."
                                     : "El sitio está funcionando normalmente."}
@@ -151,8 +151,8 @@ export function SystemSection() {
             {/* Activity Logs */}
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-[#00FF85]" />
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-primary" />
                         Registro de Actividad
                     </h3>
                     {/* Placeholder for filters */}
@@ -161,20 +161,20 @@ export function SystemSection() {
                             <input
                                 type="text"
                                 placeholder="Buscar en logs..."
-                                className="bg-[#0D0D0D] border border-[#333333] rounded-lg pl-9 pr-3 py-1.5 text-sm text-white w-64 focus:border-[#00FF85] outline-none"
+                                className="bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-foreground w-64 focus:border-primary outline-none"
                             />
-                            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-2" />
+                            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2" />
                         </div>
-                        <button className="p-1.5 bg-[#0D0D0D] border border-[#333333] rounded-lg text-gray-400 hover:text-white">
+                        <button className="p-1.5 bg-background border border-border rounded-lg text-muted-foreground hover:text-foreground">
                             <Filter className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
 
-                <div className="bg-[#0D0D0D] rounded-xl border border-[#333333] overflow-hidden">
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-[#1A1A1A] text-gray-400 font-medium">
+                            <thead className="bg-muted text-muted-foreground font-medium">
                                 <tr>
                                     <th className="px-4 py-3">Usuario</th>
                                     <th className="px-4 py-3">Acción</th>
@@ -183,7 +183,7 @@ export function SystemSection() {
                                     <th className="px-4 py-3">Fecha</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[#333333]">
+                            <tbody className="divide-y divide-border">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
@@ -198,30 +198,30 @@ export function SystemSection() {
                                     </tr>
                                 ) : (
                                     logs.map((log) => (
-                                        <tr key={log.id} className="hover:bg-[#1A1A1A]/50 transition-colors">
+                                        <tr key={log.id} className="hover:bg-muted/50 transition-colors">
                                             <td className="px-4 py-3">
                                                 {log.user ? (
                                                     <div>
-                                                        <p className="font-medium text-white">{log.user.name}</p>
-                                                        <p className="text-xs text-gray-500">{log.user.email}</p>
+                                                        <p className="font-medium text-foreground">{log.user.name}</p>
+                                                        <p className="text-xs text-muted-foreground">{log.user.email}</p>
                                                     </div>
                                                 ) : (
                                                     <span className="text-gray-500 italic">Sistema / Anónimo</span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 text-[#00FF85] font-mono text-xs">
+                                            <td className="px-4 py-3 text-primary font-mono text-xs">
                                                 {log.action}
                                             </td>
-                                            <td className="px-4 py-3 text-gray-300 max-w-xs truncate" title={log.details}>
+                                            <td className="px-4 py-3 text-muted-foreground max-w-xs truncate" title={log.details}>
                                                 {log.details || '-'}
                                             </td>
-                                            <td className="px-4 py-3 text-gray-500 text-xs">
+                                            <td className="px-4 py-3 text-muted-foreground text-xs">
                                                 <p>{log.ip_address}</p>
                                                 <p className="truncate w-32" title={log.user_agent}>
                                                     {log.user_agent || '-'}
                                                 </p>
                                             </td>
-                                            <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
+                                            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                                                 {new Date(log.created_at).toLocaleString()}
                                             </td>
                                         </tr>
@@ -233,20 +233,20 @@ export function SystemSection() {
                 </div>
 
                 {/* Pagination */}
-                <div className="flex justify-between items-center text-sm text-gray-500">
+                <div className="flex justify-between items-center text-sm text-muted-foreground">
                     <p>Página {page} de {totalPages}</p>
                     <div className="flex gap-2">
                         <button
                             onClick={() => setPage(p => Math.max(1, p - 1))}
                             disabled={page === 1}
-                            className="px-3 py-1 bg-[#0D0D0D] border border-[#333333] rounded hover:bg-[#1A1A1A] disabled:opacity-50"
+                            className="px-3 py-1 bg-card border border-border rounded hover:bg-accent disabled:opacity-50"
                         >
                             Anterior
                         </button>
                         <button
                             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                             disabled={page === totalPages}
-                            className="px-3 py-1 bg-[#0D0D0D] border border-[#333333] rounded hover:bg-[#1A1A1A] disabled:opacity-50"
+                            className="px-3 py-1 bg-card border border-border rounded hover:bg-accent disabled:opacity-50"
                         >
                             Siguiente
                         </button>

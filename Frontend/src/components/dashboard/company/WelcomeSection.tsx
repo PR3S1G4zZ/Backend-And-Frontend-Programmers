@@ -85,14 +85,14 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
       value: '5',
       change: '+2 vs mes anterior',
       icon: Users,
-      color: 'bg-[#00FF85]'
+      color: 'bg-primary'
     },
     {
       title: 'Presupuesto Invertido',
       value: '€72,000',
       change: '+€18K este mes',
       icon: DollarSign,
-      color: 'bg-green-600'
+      color: 'bg-primary'
     },
     {
       title: 'Tasa de Finalización',
@@ -131,7 +131,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                   <div>
                     <p className="text-gray-400 text-sm">{metric.title}</p>
                     <p className="text-2xl font-bold text-white">{metric.value}</p>
-                    <p className="text-[#00FF85] text-sm flex items-center mt-1">
+                    <p className="text-primary text-sm flex items-center mt-1">
                       <TrendingUp className="h-4 w-4 mr-1" />
                       {metric.change}
                     </p>
@@ -157,21 +157,21 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => onSectionChange('my-projects')}
-                className="border-[#00FF85] text-[#00FF85] hover:bg-[#00FF85] hover:text-[#0D0D0D]"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
               >
                 Ver todos
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {activeProjects.map((project, index) => (
-                <div key={index} className="border border-[#333333] rounded-lg p-4 hover:border-[#00FF85] transition-colors">
+                <div key={index} className="border border-[#333333] rounded-lg p-4 hover:border-primary transition-colors">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="text-white font-semibold">{project.title}</h3>
                       <p className="text-gray-400 text-sm">Desarrollador: {project.developer}</p>
                     </div>
                     <div className="text-right">
-                      <Badge variant="secondary" className="bg-[#00FF85] text-[#0D0D0D] mb-1">
+                      <Badge variant="secondary" className="bg-primary text-primary-foreground mb-1">
                         {project.budget}
                       </Badge>
                       <div className="text-xs text-gray-400">{project.status}</div>
@@ -185,7 +185,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                     </div>
                     <div className="w-full bg-[#333333] rounded-full h-2">
                       <div
-                        className="bg-[#00FF85] h-2 rounded-full transition-all duration-300"
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${project.progress}%` }}
                       ></div>
                     </div>
@@ -194,7 +194,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-400">Deadline: {project.deadline}</span>
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="ghost" className="text-[#00FF85] hover:bg-[#333333]">
+                      <Button size="sm" variant="ghost" className="text-primary hover:bg-[#333333]">
                         Detalles <ArrowRight className="h-4 w-4 ml-1" />
                       </Button>
                       <Button size="sm" variant="ghost" className="text-blue-400 hover:bg-[#333333]">
@@ -224,7 +224,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                       </div>
                     )}
                     {activity.type === 'project_completed' && (
-                      <div className="bg-green-600 p-2 rounded-full">
+                      <div className="bg-primary p-2 rounded-full">
                         <CheckCircle className="h-4 w-4 text-white" />
                       </div>
                     )}
@@ -242,7 +242,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                   </div>
 
                   {activity.unread && (
-                    <div className="w-2 h-2 bg-[#00FF85] rounded-full"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                   )}
                   {activity.count && (
                     <Badge className="bg-blue-600 text-white text-xs">{activity.count}</Badge>
@@ -253,7 +253,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-[#00FF85] hover:bg-[#333333]"
+                className="w-full text-primary hover:bg-[#333333]"
               >
                 Ver toda la actividad
               </Button>
@@ -271,7 +271,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Button
               onClick={() => onSectionChange('publish-project')}
-              className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] p-6 h-auto flex-col space-y-2"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 p-6 h-auto flex-col space-y-2"
             >
               <Plus className="h-6 w-6" />
               <span>Publicar Proyecto</span>
@@ -319,14 +319,14 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
               { name: 'David López', specialty: 'Backend Node.js', rating: 4.8, price: '€80/hr' },
               { name: 'Laura Martín', specialty: 'Full Stack', rating: 5.0, price: '€90/hr' }
             ].map((dev, index) => (
-              <div key={index} className="border border-[#333333] rounded-lg p-4 hover:border-[#00FF85] transition-colors">
+              <div key={index} className="border border-[#333333] rounded-lg p-4 hover:border-primary transition-colors">
                 <h3 className="text-white font-semibold">{dev.name}</h3>
                 <p className="text-gray-400 text-sm">{dev.specialty}</p>
                 <div className="flex justify-between items-center mt-2">
-                  <span className="text-[#00FF85] text-sm">★ {dev.rating}</span>
+                  <span className="text-primary text-sm">★ {dev.rating}</span>
                   <span className="text-white text-sm">{dev.price}</span>
                 </div>
-                <Button size="sm" className="w-full mt-2 bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]">
+                <Button size="sm" className="w-full mt-2 bg-primary text-primary-foreground hover:bg-primary/90">
                   Ver Perfil
                 </Button>
               </div>

@@ -38,16 +38,16 @@ export function SettingsLayout({ children, activeSection, onSectionChange }: Set
                                 className={cn(
                                     "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                                     isActive
-                                        ? "bg-[#00FF85]/10 text-[#00FF85] border border-[#00FF85]/20"
-                                        : "text-gray-400 hover:text-white hover:bg-[#1A1A1A]"
+                                        ? "bg-primary/10 text-primary border border-primary/20"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
                                 )}
                             >
-                                <Icon className={cn("w-5 h-5", isActive ? "text-[#00FF85]" : "text-gray-500")} />
+                                <Icon className={cn("w-5 h-5", isActive ? "text-primary" : "text-muted-foreground")} />
                                 {item.label}
                                 {isActive && (
                                     <motion.div
                                         layoutId="activeTab"
-                                        className="absolute left-0 w-1 h-8 bg-[#00FF85] rounded-r-lg"
+                                        className="absolute left-0 w-1 h-8 bg-primary rounded-r-lg"
                                         initial={false}
                                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     />
@@ -65,7 +65,7 @@ export function SettingsLayout({ children, activeSection, onSectionChange }: Set
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-[#1A1A1A] rounded-2xl border border-[#333333] p-6 shadow-xl"
+                    className="bg-card rounded-2xl border border-border p-6 shadow-xl"
                 >
                     {children}
                 </motion.div>

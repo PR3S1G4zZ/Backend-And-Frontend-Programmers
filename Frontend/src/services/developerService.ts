@@ -16,6 +16,7 @@ export type DeveloperProfile = {
   bio: string;
   lastActive: string | undefined;
   isVerified: boolean;
+  avatar?: string;
 };
 
 export async function fetchDevelopers(search?: string) {

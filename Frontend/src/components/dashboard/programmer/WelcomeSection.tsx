@@ -89,12 +89,12 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
               <div>
                 <p className="text-gray-400 text-sm">Ganado este mes</p>
                 <p className="text-2xl font-bold text-white">€15,400</p>
-                <p className="text-[#00FF85] text-sm flex items-center mt-1">
+                <p className="text-primary text-sm flex items-center mt-1">
                   <TrendingUp className="h-4 w-4 mr-1" />
                   +23% vs mes anterior
                 </p>
               </div>
-              <div className="bg-[#00FF85] p-3 rounded-full">
+              <div className="bg-primary p-3 rounded-full">
                 <DollarSign className="h-6 w-6 text-[#0D0D0D]" />
               </div>
             </div>
@@ -123,11 +123,11 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                 <p className="text-gray-400 text-sm">Rating promedio</p>
                 <p className="text-2xl font-bold text-white">4.9</p>
                 <div className="flex items-center mt-1">
-                  <Star className="h-4 w-4 text-[#00FF85] fill-current" />
+                  <Star className="h-4 w-4 text-primary fill-current" />
                   <span className="text-gray-400 text-sm ml-1">127 reviews</span>
                 </div>
               </div>
-              <div className="bg-[#00FF85] p-3 rounded-full">
+              <div className="bg-primary p-3 rounded-full">
                 <Star className="h-6 w-6 text-[#0D0D0D]" />
               </div>
             </div>
@@ -161,20 +161,20 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => onSectionChange('projects')}
-                className="border-[#00FF85] text-[#00FF85] hover:bg-[#00FF85] hover:text-[#0D0D0D]"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
               >
                 Ver todos
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {activeProjects.map((project, index) => (
-                <div key={index} className="border border-[#333333] rounded-lg p-4 hover:border-[#00FF85] transition-colors">
+                <div key={index} className="border border-[#333333] rounded-lg p-4 hover:border-primary transition-colors">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="text-white font-semibold">{project.title}</h3>
                       <p className="text-gray-400 text-sm">{project.client}</p>
                     </div>
-                    <Badge variant="secondary" className="bg-[#00FF85] text-[#0D0D0D]">
+                    <Badge variant="secondary" className="bg-primary text-primary-foreground">
                       {project.value}
                     </Badge>
                   </div>
@@ -186,7 +186,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                     </div>
                     <div className="w-full bg-[#333333] rounded-full h-2">
                       <div
-                        className="bg-[#00FF85] h-2 rounded-full transition-all duration-300"
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${project.progress}%` }}
                       ></div>
                     </div>
@@ -194,7 +194,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
 
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-400">Deadline: {project.deadline}</span>
-                    <Button size="sm" variant="ghost" className="text-[#00FF85] hover:bg-[#333333]">
+                    <Button size="sm" variant="ghost" className="text-primary hover:bg-[#333333]">
                       Ver detalles <ArrowRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
@@ -215,7 +215,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                 <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-[#0D0D0D] transition-colors">
                   <div className="flex-shrink-0">
                     {activity.type === 'project_completed' && (
-                      <div className="bg-green-600 p-2 rounded-full">
+                      <div className="bg-primary p-2 rounded-full">
                         <CheckCircle className="h-4 w-4 text-white" />
                       </div>
                     )}
@@ -238,7 +238,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                   </div>
 
                   {activity.unread && (
-                    <div className="w-2 h-2 bg-[#00FF85] rounded-full"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                   )}
                 </div>
               ))}
@@ -246,7 +246,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-[#00FF85] hover:bg-[#333333]"
+                className="w-full text-primary hover:bg-[#333333]"
               >
                 Ver toda la actividad
               </Button>
@@ -264,7 +264,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Button
               onClick={() => onSectionChange('profile')}
-              className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] p-6 h-auto flex-col space-y-2"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 p-6 h-auto flex-col space-y-2"
             >
               <User className="h-6 w-6" />
               <span>Actualizar Perfil</span>

@@ -315,19 +315,19 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="absolute inset-0 code-pattern opacity-5"></div>
 
       <div className="relative max-w-lg w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="bg-[#00FF85] p-3 rounded-xl">
-              <Code className="h-8 w-8 text-[#0D0D0D]" />
+            <div className="bg-primary p-3 rounded-xl">
+              <Code className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Únete a Programmers</h1>
-          <p className="text-gray-300">Crea tu cuenta y empieza a construir tu futuro</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Únete a Programmers</h1>
+          <p className="text-muted-foreground">Crea tu cuenta y empieza a construir tu futuro</p>
         </div>
 
         {/* User Type Selection */}
@@ -335,9 +335,9 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
 
         {/* Registration Form */}
         {userType && (
-          <Card className="bg-[#1A1A1A] border-[#333333] hover-neon">
+          <Card className="bg-card border-border hover-neon">
             <CardHeader>
-              <CardTitle className="text-xl text-white text-center">
+              <CardTitle className="text-xl text-foreground text-center">
                 Crear Cuenta {userType === USER_TYPES.PROGRAMMER ? 'de Programador' : 'de Empresa'}
               </CardTitle>
             </CardHeader>
@@ -345,9 +345,9 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
               <SocialAuthButtons onSocialAuth={handleSocialRegister} isRegister />
 
               <div className="relative">
-                <Separator className="bg-[#333333]" />
+                <Separator className="bg-border" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-[#1A1A1A] px-3 text-gray-400 text-sm">o</span>
+                  <span className="bg-card px-3 text-muted-foreground text-sm">o</span>
                 </div>
               </div>
 
@@ -355,7 +355,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                 {userType === USER_TYPES.PROGRAMMER ? (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-white mb-2">Nombre</label>
+                      <label className="block text-foreground mb-2">Nombre</label>
                       <Input
                         type="text"
                         placeholder="Carlos"
@@ -373,14 +373,14 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                         }}
                         required
                         aria-invalid={!!firstNameError}
-                        className={`bg-[#0D0D0D] ${firstNameError ? 'border-red-500 focus:border-red-500' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
+                        className={`bg-background ${firstNameError ? 'border-destructive focus:border-destructive' : 'border-border focus:border-primary'} text-foreground placeholder:text-muted-foreground`}
                       />
                       {firstNameError && (
                         <p className="mt-2 text-xs text-red-400">{firstNameError}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-white mb-2">Apellido</label>
+                      <label className="block text-foreground mb-2">Apellido</label>
                       <Input
                         type="text"
                         placeholder="Mendoza"
@@ -398,7 +398,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                         }}
                         required
                         aria-invalid={!!lastNameError}
-                        className={`bg-[#0D0D0D] ${lastNameError ? 'border-red-500 focus:border-red-500' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
+                        className={`bg-background ${lastNameError ? 'border-destructive focus:border-destructive' : 'border-border focus:border-primary'} text-foreground placeholder:text-muted-foreground`}
                       />
                       {lastNameError && (
                         <p className="mt-2 text-xs text-red-400">{lastNameError}</p>
@@ -408,7 +408,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-white mb-2">Nombre de la Empresa</label>
+                      <label className="block text-foreground mb-2">Nombre de la Empresa</label>
                       <Input
                         type="text"
                         placeholder="TechCorp SA"
@@ -426,7 +426,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                         }}
                         required
                         aria-invalid={!!companyNameError}
-                        className={`bg-[#0D0D0D] ${companyNameError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
+                        className={`bg-background ${companyNameError ? 'border-destructive focus:border-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' : 'border-border focus:border-primary'} text-foreground placeholder:text-muted-foreground`}
                       />
                       {companyNameError && (
                         <p className="mt-2 text-xs text-red-400">{companyNameError}</p>
@@ -434,7 +434,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-white mb-2">Tu Nombre</label>
+                        <label className="block text-foreground mb-2">Tu Nombre</label>
                         <Input
                           type="text"
                           placeholder="Ana"
@@ -452,14 +452,14 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                           }}
                           required
                           aria-invalid={!!firstNameError}
-                          className={`bg-[#0D0D0D] ${firstNameError ? 'border-red-500 focus:border-red-500' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
+                          className={`bg-background ${firstNameError ? 'border-destructive focus:border-destructive' : 'border-border focus:border-primary'} text-foreground placeholder:text-muted-foreground`}
                         />
                         {firstNameError && (
                           <p className="mt-2 text-xs text-red-400">{firstNameError}</p>
                         )}
                       </div>
                       <div>
-                        <label className="block text-white mb-2">Cargo</label>
+                        <label className="block text-foreground mb-2">Cargo</label>
                         <Input
                           type="text"
                           placeholder="CTO"
@@ -477,7 +477,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                           }}
                           required
                           aria-invalid={!!positionError}
-                          className={`bg-[#0D0D0D] ${positionError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
+                          className={`bg-background ${positionError ? 'border-destructive focus:border-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' : 'border-border focus:border-primary'} text-foreground placeholder:text-muted-foreground`}
                         />
                         {positionError && (
                           <p className="mt-2 text-xs text-red-400">{positionError}</p>
@@ -488,9 +488,9 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                 )}
 
                 <div>
-                  <label className="block text-white mb-2">Email</label>
+                  <label className="block text-foreground mb-2">Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                       type="email"
                       placeholder="tu@email.com"
@@ -516,7 +516,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                       onKeyDown={(e) => { if (e.key === ' ') { e.preventDefault(); } }}
                       required
                       aria-invalid={!!emailError}
-                      className={`pl-10 bg-[#0D0D0D] ${emailError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
+                      className={`pl-10 bg-background ${emailError ? 'border-destructive focus:border-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' : 'border-border focus:border-primary'} text-foreground placeholder:text-muted-foreground`}
                     />
                   </div>
                   {emailError && (
@@ -525,9 +525,9 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                 </div>
 
                 <div>
-                  <label className="block text-white mb-2">Contraseña</label>
+                  <label className="block text-foreground mb-2">Contraseña</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Mínimo 8 caracteres"
@@ -547,12 +547,12 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                       minLength={8}
                       maxLength={64}
                       aria-invalid={!!passwordError}
-                      className={`pl-10 pr-10 bg-[#0D0D0D] ${passwordError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
+                      className={`pl-10 pr-10 bg-background ${passwordError ? 'border-destructive focus:border-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' : 'border-border focus:border-primary'} text-foreground placeholder:text-muted-foreground`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
@@ -563,9 +563,9 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                 )}
 
                 <div>
-                  <label className="block text-white mb-2">Confirmar Contraseña</label>
+                  <label className="block text-foreground mb-2">Confirmar Contraseña</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Repite tu contraseña"
@@ -586,12 +586,12 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                       required
                       maxLength={64}
                       aria-invalid={!!confirmPasswordError}
-                      className={`pl-10 pr-10 bg-[#0D0D0D] ${confirmPasswordError ? 'border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5' : 'border-[#333333] focus:border-[#00FF85]'} text-white placeholder-gray-400`}
+                      className={`pl-10 pr-10 bg-background ${confirmPasswordError ? 'border-destructive focus:border-destructive bg-gradient-to-r from-destructive/10 to-destructive/5' : 'border-border focus:border-primary'} text-foreground placeholder:text-muted-foreground`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
@@ -609,11 +609,11 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                     onChange={(e) => { setAcceptedTerms(e.target.checked); setTermsTouched(true); }}
                     onBlur={() => setTermsTouched(true)}
                     aria-invalid={!acceptedTerms && termsTouched}
-                    className={`mt-1 rounded bg-[#0D0D0D] text-[#00FF85] focus:ring-[#00FF85] ${(!acceptedTerms && termsTouched) ? 'border-red-500 focus:border-red-500 ring-red-500/30' : 'border-[#333333] focus:border-[#00FF85]'}`}
+                    className={`mt-1 rounded bg-background text-primary focus:ring-primary ${(!acceptedTerms && termsTouched) ? 'border-destructive focus:border-destructive ring-destructive/30' : 'border-border focus:border-primary'}`}
                   />
-                  <label className={`text-sm ${(!acceptedTerms && termsTouched) ? 'text-red-300' : 'text-gray-300'}`}
+                  <label className={`text-sm ${(!acceptedTerms && termsTouched) ? 'text-destructive/80' : 'text-muted-foreground'}`}
                   >
-                    Acepto los <a href="#" className="text-[#00FF85] hover:text-[#00C46A]">términos y condiciones</a> y la <a href="#" className="text-[#00FF85] hover:text-[#00C46A]">política de privacidad</a>
+                    Acepto los <a href="#" className="text-primary hover:text-primary/90">términos y condiciones</a> y la <a href="#" className="text-primary hover:text-primary/90">política de privacidad</a>
                   </label>
                 </div>
                 {(!acceptedTerms && termsTouched) && (
@@ -638,7 +638,7 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
                     (userType === USER_TYPES.COMPANY && (!!companyNameError || !!positionError)) ||
                     !acceptedTerms
                   }
-                  className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] hover-neon disabled:opacity-50"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 hover-neon disabled:opacity-50"
                 >
                   {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
                   {!isLoading && <ArrowRight className="h-5 w-5 ml-2" />}
@@ -650,11 +650,11 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
 
         {/* Login Link */}
         <div className="text-center">
-          <p className="text-gray-300">
+          <p className="text-muted-foreground">
             ¿Ya tienes cuenta?{" "}
             <button
               onClick={() => onNavigate && onNavigate('login')}
-              className="text-[#00FF85] hover:text-[#00C46A] font-semibold transition-colors"
+              className="text-primary hover:text-primary/90 font-semibold transition-colors"
             >
               Inicia sesión
             </button>
@@ -662,14 +662,14 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
         </div>
 
         {/* Demo Accounts Info */}
-        <Card className="bg-[#1A1A1A] border-[#333333] border-dashed">
+        <Card className="bg-card border-border border-dashed">
           <CardContent className="p-4">
-            <h3 className="text-white font-semibold mb-3 text-center">Cuentas Demo</h3>
+            <h3 className="text-foreground font-semibold mb-3 text-center">Cuentas Demo</h3>
             <div className="space-y-2 text-sm">
               {DEMO_ACCOUNTS.map((account, index) => (
                 <div key={index} className="flex justify-between items-center">
-                  <span className="text-gray-300">{account.label}:</span>
-                  <code className="text-[#00FF85] bg-[#0D0D0D] px-2 py-1 rounded">
+                  <span className="text-muted-foreground">{account.label}:</span>
+                  <code className="text-primary bg-background px-2 py-1 rounded">
                     {account.email || account.password}
                   </code>
                 </div>

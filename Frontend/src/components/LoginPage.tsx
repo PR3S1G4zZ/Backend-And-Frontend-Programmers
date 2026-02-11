@@ -2,11 +2,11 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
-import { 
-  Code, 
-  Mail, 
-  Lock, 
-  Github, 
+import {
+  Code,
+  Mail,
+  Lock,
+  Github,
   Chrome,
   ArrowRight,
   Eye,
@@ -122,32 +122,32 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="absolute inset-0 code-pattern opacity-5"></div>
 
       <div className="relative max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="bg-[#00FF85] p-3 rounded-xl">
-              <Code className="h-8 w-8 text-[#0D0D0D]" />
+            <div className="bg-primary p-3 rounded-xl">
+              <Code className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Bienvenido de vuelta</h1>
-          <p className="text-gray-300">Inicia sesión en tu cuenta de Programmers</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Bienvenido de vuelta</h1>
+          <p className="text-muted-foreground">Inicia sesión en tu cuenta de Programmers</p>
         </div>
 
         {/* Login Form */}
-        <Card className="bg-[#1A1A1A] border-[#333333] hover-neon">
+        <Card className="bg-card border-border hover-neon">
           <CardHeader>
-            <CardTitle className="text-xl text-white text-center">Iniciar Sesión</CardTitle>
+            <CardTitle className="text-xl text-foreground text-center">Iniciar Sesión</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Social Login Buttons */}
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full border-[#333333] text-white hover:bg-[#333333] hover:text-white"
+                className="w-full border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                 onClick={() => handleSocialLogin("Google")}
               >
                 <Chrome className="h-5 w-5 mr-3" />
@@ -155,7 +155,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-[#333333] text-white hover:bg-[#333333] hover:text-white"
+                className="w-full border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                 onClick={() => handleSocialLogin("GitHub")}
               >
                 <Github className="h-5 w-5 mr-3" />
@@ -164,18 +164,18 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             </div>
 
             <div className="relative">
-              <Separator className="bg-[#333333]" />
+              <Separator className="bg-border" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="bg-[#1A1A1A] px-3 text-gray-400 text-sm">o</span>
+                <span className="bg-card px-3 text-muted-foreground text-sm">o</span>
               </div>
             </div>
 
             {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-white mb-2">Email</label>
+                <label className="block text-foreground mb-2">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     type="email"
                     placeholder="tu@email.com"
@@ -207,22 +207,21 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                     }}
                     required
                     aria-invalid={!!emailError}
-                    className={`pl-10 bg-[#0D0D0D] ${
-                      emailError
-                        ? "border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5"
-                        : "border-[#333333] focus:border-[#00FF85]"
-                    } text-white placeholder-gray-400`}
+                    className={`pl-10 bg-background ${emailError
+                      ? "border-destructive focus:border-destructive bg-gradient-to-r from-destructive/10 to-destructive/5"
+                      : "border-border focus:border-primary"
+                      } text-foreground placeholder:text-muted-foreground`}
                   />
                 </div>
                 {emailError && (
-                  <p className="mt-2 text-xs text-red-400">{emailError}</p>
+                  <p className="mt-2 text-xs text-destructive">{emailError}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-white mb-2">Contraseña</label>
+                <label className="block text-foreground mb-2">Contraseña</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     type={showPassword ? "text" : "password"}
                     placeholder="Tu contraseña"
@@ -242,19 +241,18 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                     }}
                     required
                     aria-invalid={!!passwordError}
-                    className={`pl-10 pr-10 bg-[#0D0D0D] ${
-                      passwordError
-                        ? "border-red-500 focus:border-red-500 bg-gradient-to-r from-red-500/10 to-red-500/5"
-                        : "border-[#333333] focus:border-[#00FF85]"
-                    } text-white placeholder-gray-400`}
+                    className={`pl-10 pr-10 bg-background ${passwordError
+                      ? "border-destructive focus:border-destructive bg-gradient-to-r from-destructive/10 to-destructive/5"
+                      : "border-border focus:border-primary"
+                      } text-foreground placeholder:text-muted-foreground`}
                   />
                   {passwordError && (
-                    <p className="mt-2 text-xs text-red-400">{passwordError}</p>
+                    <p className="mt-2 text-xs text-destructive">{passwordError}</p>
                   )}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -269,16 +267,16 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    className="mr-2 rounded border-[#333333] bg-[#0D0D0D] text-[#00FF85] focus:ring-[#00FF85]"
+                    className="mr-2 rounded border-border bg-background text-primary focus:ring-primary"
                   />
-                  <span className="text-sm text-gray-300">Recordarme</span>
+                  <span className="text-sm text-muted-foreground">Recordarme</span>
                 </label>
 
                 {/* solo se muestra después de 3 intentos fallidos */}
                 {failedAttempts >= 3 && (
                   <button
                     type="button"
-                    className="text-sm text-[#00FF85] hover:text-[#00C46A] transition-colors animate-pulse"
+                    className="text-sm text-primary hover:text-primary/90 transition-colors animate-pulse"
                     onClick={() => onNavigate && onNavigate("forgot-password")}
                   >
                     ¿Olvidaste tu contraseña?
@@ -295,7 +293,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                   !EMAIL_SINGLE_DOT_REGEX.test(email) ||
                   !PASSWORD_NO_SPACE_REGEX.test(password)
                 }
-                className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] hover-neon disabled:opacity-50"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 hover-neon disabled:opacity-50"
               >
                 {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
                 {!isLoading && <ArrowRight className="h-5 w-5 ml-2" />}
@@ -306,11 +304,11 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
 
         {/* Register Link */}
         <div className="text-center">
-          <p className="text-gray-300">
+          <p className="text-muted-foreground">
             ¿No tienes cuenta?{" "}
             <button
               onClick={() => onNavigate && onNavigate("register")}
-              className="text-[#00FF85] hover:text-[#00C46A] font-semibold transition-colors"
+              className="text-primary hover:text-primary/90 font-semibold transition-colors"
             >
               Regístrate gratis
             </button>
@@ -318,27 +316,27 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         </div>
 
         {/* Demo Accounts */}
-        <Card className="bg-[#1A1A1A] border-[#333333] border-dashed">
+        <Card className="bg-card border-border border-dashed">
           <CardContent className="p-4">
-            <h3 className="text-white font-semibold mb-3 text-center">
+            <h3 className="text-foreground font-semibold mb-3 text-center">
               Cuentas Demo
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Programador:</span>
-                <code className="text-[#00FF85] bg-[#0D0D0D] px-2 py-1 rounded">
+                <span className="text-muted-foreground">Programador:</span>
+                <code className="text-primary bg-background px-2 py-1 rounded">
                   demo@dev.com
                 </code>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Empresa:</span>
-                <code className="text-[#00FF85] bg-[#0D0D0D] px-2 py-1 rounded">
+                <span className="text-muted-foreground">Empresa:</span>
+                <code className="text-primary bg-background px-2 py-1 rounded">
                   demo@company.com
                 </code>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-300">Contraseña:</span>
-                <code className="text-[#00FF85] bg-[#0D0D0D] px-2 py-1 rounded">
+                <span className="text-muted-foreground">Contraseña:</span>
+                <code className="text-primary bg-background px-2 py-1 rounded">
                   demo123
                 </code>
               </div>

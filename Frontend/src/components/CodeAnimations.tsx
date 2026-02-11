@@ -73,12 +73,12 @@ export function CodeAnimations() {
 
   const getColorForType = (type: string) => {
     switch (type) {
-      case 'comment': return 'text-gray-500';
-      case 'function': return 'text-[#00FF85]';
-      case 'variable': return 'text-[#00C46A]';
-      case 'keyword': return 'text-blue-400';
-      case 'string': return 'text-yellow-400';
-      default: return 'text-white';
+      case 'comment': return 'text-muted-foreground';
+      case 'function': return 'text-primary';
+      case 'variable': return 'text-primary/80';
+      case 'keyword': return 'text-blue-500';
+      case 'string': return 'text-yellow-500';
+      default: return 'text-foreground';
     }
   };
 
@@ -108,7 +108,7 @@ export function CodeAnimations() {
       setCurrentLines(lines);
 
       // Calcular duración total de la secuencia
-      const totalDuration = lines.reduce((acc, line) => 
+      const totalDuration = lines.reduce((acc, line) =>
         Math.max(acc, line.delay + line.duration), 0
       );
 
@@ -116,7 +116,7 @@ export function CodeAnimations() {
       setTimeout(() => {
         if (!isActive) return;
         setCurrentLines([]);
-        
+
         setTimeout(() => {
           if (!isActive) return;
           sequenceIndex = (sequenceIndex + 1) % codeSequences.length;
@@ -137,24 +137,25 @@ export function CodeAnimations() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {/* Área principal de escritura de código */}
+      {/* Área principal de escritura de código */}
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl px-8">
         <motion.div
-          className="bg-[#0D0D0D]/80 border border-[#333333]/50 rounded-lg p-6 font-mono text-sm"
+          className="bg-card/80 border border-border/50 rounded-lg p-6 font-mono text-sm"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
           {/* Header del editor de código */}
-          <div className="flex items-center space-x-2 border-b border-[#333333]/50 pb-3 mb-4">
+          <div className="flex items-center space-x-2 border-b border-border/50 pb-3 mb-4">
             <div className="flex space-x-1">
               <div className="w-3 h-3 bg-red-500/60 rounded-full"></div>
               <div className="w-3 h-3 bg-yellow-500/60 rounded-full"></div>
               <div className="w-3 h-3 bg-green-500/60 rounded-full"></div>
             </div>
-            <span className="text-gray-400 text-xs ml-4">programmers-network.js</span>
+            <span className="text-muted-foreground text-xs ml-4">programmers-network.js</span>
             <div className="flex-1"></div>
             <motion.div
-              className="text-[#00FF85] text-xs"
+              className="text-primary text-xs"
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
@@ -175,10 +176,10 @@ export function CodeAnimations() {
                   transition={{ delay: line.delay }}
                 >
                   {/* Número de línea */}
-                  <span className="text-gray-600 text-xs w-8 text-right mr-4 select-none">
+                  <span className="text-muted-foreground text-xs w-8 text-right mr-4 select-none">
                     {index + 1}
                   </span>
-                  
+
                   {/* Contenido de la línea con efecto typing */}
                   <div className="flex-1 relative">
                     <motion.div
@@ -192,10 +193,10 @@ export function CodeAnimations() {
                       }}
                     >
                       {line.text || ' '}
-                      
+
                       {/* Cursor parpadeante al final de cada línea */}
                       <motion.span
-                        className="inline-block w-0.5 h-4 bg-[#00FF85] ml-0.5"
+                        className="inline-block w-0.5 h-4 bg-primary ml-0.5"
                         animate={{ opacity: [1, 0, 1] }}
                         transition={{
                           duration: 0.8,
@@ -216,9 +217,9 @@ export function CodeAnimations() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                <span className="text-gray-600 text-xs w-8 text-right mr-4">1</span>
+                <span className="text-muted-foreground text-xs w-8 text-right mr-4">1</span>
                 <motion.div
-                  className="w-0.5 h-4 bg-[#00FF85]"
+                  className="w-0.5 h-4 bg-primary"
                   animate={{ opacity: [1, 0, 1] }}
                   transition={{ duration: 1, repeat: Infinity }}
                 />
@@ -249,12 +250,12 @@ export function CodeAnimations() {
       {/* Efectos sutiles de fondo */}
       <div className="absolute inset-0 opacity-5">
         {/* Grid de código minimalista */}
-        <div 
+        <div
           className="w-full h-full"
           style={{
             backgroundImage: `
-              radial-gradient(circle at 20px 20px, #00FF85 1px, transparent 1px),
-              radial-gradient(circle at 60px 60px, #00C46A 0.5px, transparent 0.5px)
+              radial-gradient(circle at 20px 20px, var(--primary-color) 1px, transparent 1px),
+              radial-gradient(circle at 60px 60px, var(--primary-color) 0.5px, transparent 0.5px)
             `,
             backgroundSize: '40px 40px, 80px 80px'
           }}
@@ -266,7 +267,7 @@ export function CodeAnimations() {
         {['{', '}', '<', '>', '/', '*'].map((symbol, i) => (
           <motion.div
             key={`symbol-${i}`}
-            className="absolute font-mono text-[#00FF85] opacity-10 pointer-events-none"
+            className="absolute font-mono text-primary opacity-10 pointer-events-none"
             style={{
               left: `${10 + i * 15}%`,
               top: `${20 + Math.sin(i) * 30}%`,
@@ -290,7 +291,7 @@ export function CodeAnimations() {
 
       {/* Control minimalista */}
       <motion.button
-        className="fixed bottom-4 right-4 z-50 bg-[#1A1A1A]/90 border border-[#333333] text-[#00FF85] p-3 rounded font-mono text-xs hover:bg-[#333333]/50 transition-colors pointer-events-auto"
+        className="fixed bottom-4 right-4 z-50 bg-card/90 border border-border text-primary p-3 rounded font-mono text-xs hover:bg-muted transition-colors pointer-events-auto"
         onClick={() => setShowEffects(!showEffects)}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
@@ -310,21 +311,21 @@ export function CodeAnimations() {
 }
 
 // Componente simple para efectos de código en secciones específicas
-export function SimpleCodeEffect({ 
-  children 
-}: { 
+export function SimpleCodeEffect({
+  children
+}: {
   children: React.ReactNode;
 }) {
   return (
     <div className="relative">
       {children}
-      
+
       {/* Solo algunos símbolos muy sutiles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {['<>', '{}', '//'].map((symbol, i) => (
           <motion.div
             key={`simple-${i}`}
-            className="absolute font-mono text-[#00FF85]/10 text-xs"
+            className="absolute font-mono text-primary/10 text-xs"
             style={{
               left: `${30 + i * 20}%`,
               top: `${40 + i * 15}%`,
