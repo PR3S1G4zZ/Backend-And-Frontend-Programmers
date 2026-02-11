@@ -175,6 +175,29 @@ class AuthController extends Controller
             }
 
             $user = Auth::user();
+            
+            // Cargar preferencias
+            $user->load('preferences');
+            
+            // Si no tiene preferencias, crear por defecto
+            if (!$user->preferences) {
+                $user->preferences()->create([
+                    'theme' => 'dark',
+                    'accent_color' => '#00FF85',
+                    'language' => 'es'
+                ]);
+                $user->load('preferences');
+            }
+
+            // Registrar actividad de login
+            \App\Models\ActivityLog::create([
+                'user_id' => $user->id,
+                'action' => 'login',
+                'details' => 'Inicio de sesión exitoso',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
             $token = $user->createToken('auth_token')->plainTextToken; // crear token de autenticación
 
             return response()->json([
@@ -186,6 +209,7 @@ class AuthController extends Controller
                     'lastname' => $user->lastname,
                     'email' => $user->email,
                     'user_type' => $user->user_type,
+                    'preferences' => $user->preferences
                 ],
                 'token' => $token
             ], 200);

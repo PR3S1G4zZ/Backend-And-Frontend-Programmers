@@ -5,6 +5,17 @@ export interface User {
   lastname: string;
   email: string;
   user_type: 'programmer' | 'company' | 'admin';
+  preferences?: {
+    theme?: 'dark' | 'light' | 'terminal';
+    accent_color?: string;
+    language?: 'es' | 'en';
+    two_factor_enabled?: boolean;
+  };
+  profile?: {
+    bio?: string;
+    github_url?: string;
+    linkedin_url?: string;
+  };
 }
 
 export interface AuthResponse {

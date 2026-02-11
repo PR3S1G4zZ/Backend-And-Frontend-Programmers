@@ -107,6 +107,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/projects/{id}/restore', [AdminController::class, 'restoreProject']);
 
         Route::get('/metrics', [AdminController::class, 'metrics']);
+
+        // Categories Management
+        Route::apiResource('categories', \App\Http\Controllers\CategoryController::class)->except(['index', 'show']);
     });
 
     // Payment Methods
@@ -114,5 +117,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payment-methods', [PaymentMethodController::class, 'store']);
     Route::put('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update']);
     Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy']);
+
+    // --- Settings & Preferences ---
+    Route::get('/preferences', [\App\Http\Controllers\SettingsController::class, 'getPreferences']);
+    Route::put('/preferences', [\App\Http\Controllers\SettingsController::class, 'updatePreferences']);
+
+    // Admin System Settings
+    Route::get('/system/settings', [\App\Http\Controllers\SettingsController::class, 'getSystemSettings']);
+    Route::put('/system/settings', [\App\Http\Controllers\SettingsController::class, 'updateSystemSettings']);
+    Route::get('/system/logs', [\App\Http\Controllers\SettingsController::class, 'getActivityLogs']);
     
 });

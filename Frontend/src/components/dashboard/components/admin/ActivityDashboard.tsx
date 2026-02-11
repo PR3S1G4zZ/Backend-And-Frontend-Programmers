@@ -1,13 +1,14 @@
+import React from 'react';
 import { KPICard } from "../KPICard";
 import { ActivityHeatmap } from "../ActivityHeatmap";
 import { CircularGauge } from "../CircularGauge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import type { ActivityMetrics, TimeSeriesPoint } from "../../../../services/adminMetricsService";
-import { 
-  MessageSquare, 
-  FileText, 
-  Clock, 
+import {
+  MessageSquare,
+  FileText,
+  Clock,
   Activity,
   Users,
   Zap,
@@ -20,7 +21,7 @@ interface ActivityDashboardProps {
   isLoading?: boolean;
 }
 
-const kpiIcons: Record<string, JSX.Element> = {
+const kpiIcons: Record<string, React.ReactNode> = {
   "Sesiones Promedio": <Clock className="w-5 h-5" />,
   "Mensajes Enviados": <MessageSquare className="w-5 h-5" />,
   "Archivos Compartidos": <FileText className="w-5 h-5" />,
@@ -34,7 +35,7 @@ export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }
   const peakHours = metrics?.peakHours ?? [];
   const userEngagement = metrics?.userEngagement ?? [];
   const activityTrends = metrics?.activityTrends ?? [];
-  
+
   // Transform time series data for project activity
   const projectActivityData = timeSeriesData.map((item: TimeSeriesPoint) => ({
     month: item.period,
@@ -91,36 +92,36 @@ export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={projectActivityData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.3} />
-                <XAxis 
-                  dataKey="month" 
+                <XAxis
+                  dataKey="month"
                   stroke="var(--color-muted-foreground)"
                   fontSize={12}
                   axisLine={false}
                   tickLine={false}
                 />
-                <YAxis 
+                <YAxis
                   stroke="var(--color-muted-foreground)"
                   fontSize={12}
                   axisLine={false}
                   tickLine={false}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'var(--color-card)', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'var(--color-card)',
                     border: '1px solid var(--color-border)',
                     borderRadius: '8px',
                     color: 'var(--color-foreground)',
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
                 />
-                <Bar 
-                  dataKey="published" 
+                <Bar
+                  dataKey="published"
                   fill="var(--color-neon-green)"
                   name="Proyectos Publicados"
                   radius={[4, 4, 0, 0]}
                 />
-                <Bar 
-                  dataKey="proposals" 
+                <Bar
+                  dataKey="proposals"
                   fill="var(--color-emerald-green)"
                   name="Propuestas Enviadas"
                   radius={[4, 4, 0, 0]}
@@ -196,11 +197,11 @@ export function ActivityDashboard({ selectedPeriod, metrics, isLoading = false }
                     <span className="text-sm text-primary">{type.percentage}%</span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
-                    <div 
-                      className="h-2 rounded-full" 
-                      style={{ 
+                    <div
+                      className="h-2 rounded-full"
+                      style={{
                         width: `${type.percentage}%`,
-                        backgroundColor: type.color 
+                        backgroundColor: type.color
                       }}
                     />
                   </div>
