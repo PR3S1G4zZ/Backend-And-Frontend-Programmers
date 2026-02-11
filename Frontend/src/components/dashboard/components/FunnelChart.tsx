@@ -14,7 +14,7 @@ type FunnelChartProps = {
 };
 
 export function FunnelChart({ title, description, steps }: FunnelChartProps) {
-  const maxValue = Math.max(...steps.map((step) => step.value));
+  const maxValue = Math.max(1, ...steps.map((step) => step.value));
 
   return (
     <Card className="bg-card border-border/50">
@@ -58,4 +58,3 @@ export function FunnelChart({ title, description, steps }: FunnelChartProps) {
     </Card>
   );
 }
-

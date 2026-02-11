@@ -63,19 +63,17 @@ export function CircularGauge({
               fontSize="48"
               fontWeight="600"
               fill="var(--foreground)"
+              opacity="0"
             >
-              {Math.round(percentage)}%
             </text>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-            <span className="text-muted-foreground text-xs">Actual</span>
+            <span className="text-muted-foreground text-xs">Progreso</span>
             <span className="text-3xl font-semibold text-foreground">
-              {value}
-              {unit}
+              {Math.round(percentage)}%
             </span>
             <span className="text-muted-foreground text-xs">
-              de {safeMax}
-              {unit}
+              {value} de {safeMax}{unit}
             </span>
           </div>
         </div>

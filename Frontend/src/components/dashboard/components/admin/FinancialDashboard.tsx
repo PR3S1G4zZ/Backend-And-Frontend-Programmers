@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { generateTimeSeriesData } from "../../utils/mockDataGenerator";
-import type { TimeSeriesData } from "../../utils/mockDataGenerator";
+import type { FinancialMetrics, TimeSeriesPoint } from "../../../../services/adminMetricsService";
 import { 
   DollarSign, 
   CreditCard, 
@@ -15,6 +14,8 @@ import {
 
 interface FinancialDashboardProps {
   selectedPeriod: string;
+  metrics?: FinancialMetrics;
+  isLoading?: boolean;
 }
 
 // Revenue sources data - remains relatively stable
@@ -23,6 +24,13 @@ const revenueSourcesData = [
   { name: "Suscripciones Premium", value: 25, amount: 23000, color: "var(--color-emerald-green)" },
   { name: "Publicidad", value: 7, amount: 6440, color: "var(--color-chart-3)" },
   { name: "Servicios Adicionales", value: 3, amount: 2760, color: "var(--color-chart-4)" }
+];
+
+const chartColors = [
+  "var(--color-neon-green)",
+  "var(--color-emerald-green)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
 ];
 
 const recentTransactions = [
@@ -99,69 +107,15 @@ const getTypeIcon = (type: string) => {
   }
 };
 
-function generateFinancialKPIs(period: string) {
-  const multipliers = {
-    day: { revenue: 0.03, transactions: 0.05, gmv: 0.03 },
-    week: { revenue: 0.25, transactions: 0.2, gmv: 0.25 },
-    month: { revenue: 1, transactions: 1, gmv: 1 },
-    year: { revenue: 12, transactions: 12, gmv: 12 }
-  };
 
-  const mult = multipliers[period as keyof typeof multipliers] || multipliers.month;
-  
-  const revenue = Math.floor(92000 * mult.revenue);
-  const transactions = Math.floor(1847 * mult.transactions);
-  const gmv = Math.floor(1200000 * mult.gmv);
-  const avgTicket = Math.floor(650 * (mult.revenue / mult.transactions));
-
-  return [
-    {
-      title: "Ingresos Netos",
-      value: `$${revenue.toLocaleString()}`,
-      icon: <DollarSign className="w-5 h-5" />,
-      change: { value: 18.4 + (Math.random() - 0.5) * 15, isPositive: true, period: getPeriodLabel(period) },
-      description: `Ingresos este ${period === 'day' ? 'día' : period === 'week' ? 'semana' : period === 'year' ? 'año' : 'mes'}`
-    },
-    {
-      title: "GMV Total",
-      value: gmv >= 1000000 ? `$${(gmv / 1000000).toFixed(1)}M` : `$${(gmv / 1000).toFixed(0)}K`,
-      icon: <TrendingUp className="w-5 h-5" />,
-      change: { value: 22.1 + (Math.random() - 0.5) * 18, isPositive: true, period: getPeriodLabel(period) },
-      description: "Valor bruto de mercancías"
-    },
-    {
-      title: "Transacciones",
-      value: transactions.toLocaleString(),
-      icon: <Receipt className="w-5 h-5" />,
-      change: { value: 15.7 + (Math.random() - 0.5) * 12, isPositive: true, period: getPeriodLabel(period) },
-      description: `Total este ${period === 'day' ? 'día' : period === 'week' ? 'semana' : period === 'year' ? 'año' : 'mes'}`
-    },
-    {
-      title: "Ticket Promedio",
-      value: `$${avgTicket.toLocaleString()}`,
-      icon: <CreditCard className="w-5 h-5" />,
-      change: { value: 8.3 + (Math.random() - 0.5) * 10, isPositive: true, period: getPeriodLabel(period) },
-      description: "Por transacción"
-    }
-  ];
-}
-
-function getPeriodLabel(period: string): string {
-  switch (period) {
-    case 'day': return 'día anterior';
-    case 'week': return 'semana anterior';
-    case 'month': return 'mes anterior';
-    case 'year': return 'año anterior';
-    default: return 'período anterior';
-  }
-}
-
-export function FinancialDashboard({ selectedPeriod }: FinancialDashboardProps) {
-  const timeSeriesData = generateTimeSeriesData(selectedPeriod);
-  const kpiData = generateFinancialKPIs(selectedPeriod);
+export function FinancialDashboard({ selectedPeriod, metrics, isLoading = false }: FinancialDashboardProps) {
+  const timeSeriesData = metrics?.timeSeries ?? [];
+  const kpiData = metrics?.kpis ?? [];
+  const revenueSources = metrics?.revenueSources ?? revenueSourcesData;
+  const transactions = metrics?.recentTransactions ?? recentTransactions;
   
   // Transform time series data for revenue chart
-  const revenueData = timeSeriesData.map((item: TimeSeriesData) => ({
+  const revenueData = timeSeriesData.map((item: TimeSeriesPoint) => ({
     month: item.period,
     revenue: item.revenue || 0
   }));
@@ -170,12 +124,22 @@ export function FinancialDashboard({ selectedPeriod }: FinancialDashboardProps) 
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {kpiData.map((kpi, index) => (
+        {isLoading && kpiData.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Cargando métricas...</div>
+        ) : kpiData.map((kpi, index) => (
           <KPICard
             key={index}
             title={kpi.title}
             value={kpi.value}
-            icon={kpi.icon}
+            icon={
+              kpi.title === "Ingresos Netos"
+                ? <DollarSign className="w-5 h-5" />
+                : kpi.title === "GMV Total"
+                ? <TrendingUp className="w-5 h-5" />
+                : kpi.title === "Transacciones"
+                ? <Receipt className="w-5 h-5" />
+                : <CreditCard className="w-5 h-5" />
+            }
             change={kpi.change}
             description={kpi.description}
           />
@@ -202,7 +166,7 @@ export function FinancialDashboard({ selectedPeriod }: FinancialDashboardProps) 
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={revenueSourcesData}
+                  data={revenueSources}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -211,8 +175,8 @@ export function FinancialDashboard({ selectedPeriod }: FinancialDashboardProps) 
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {revenueSourcesData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {revenueSources.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color || chartColors[index % chartColors.length]} />
                   ))}
                 </Pie>
                 <Tooltip 
@@ -258,7 +222,7 @@ export function FinancialDashboard({ selectedPeriod }: FinancialDashboardProps) 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentTransactions.map((transaction) => (
+              {transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
                   <TableCell className="font-medium">{transaction.id}</TableCell>
                   <TableCell>
@@ -270,7 +234,7 @@ export function FinancialDashboard({ selectedPeriod }: FinancialDashboardProps) 
                   <TableCell>{transaction.description}</TableCell>
                   <TableCell>{transaction.client}</TableCell>
                   <TableCell className="font-medium text-primary">
-                    ${transaction.amount}
+                    ${Number(transaction.amount).toLocaleString()}
                   </TableCell>
                   <TableCell>{transaction.date}</TableCell>
                   <TableCell>{getTransactionBadge(transaction.status)}</TableCell>

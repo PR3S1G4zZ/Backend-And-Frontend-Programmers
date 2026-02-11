@@ -6,7 +6,10 @@ import { Badge } from './ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { useSweetAlert } from './ui/sweet-alert';
+import { apiRequest } from '../../../services/apiClient';
+import { ConfirmDialog } from '../../ui/ConfirmDialog';
 import {
   Search,
   UserPlus,
@@ -18,7 +21,8 @@ import {
   Shield,
   Users,
   Filter,
-  RefreshCw
+  RefreshCw,
+  MoreVertical
 } from 'lucide-react';
 
 interface User {
@@ -31,6 +35,23 @@ interface User {
   email_verified_at?: string;
 }
 
+interface UsersResponse {
+  success: boolean;
+  users: User[];
+  pagination?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+interface UserResponse {
+  success: boolean;
+  message?: string;
+  user: User;
+}
+
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,44 +59,32 @@ export function UserManagement() {
   const [filterType, setFilterType] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDialog, setShowUserDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    lastname: '',
+    email: '',
+    user_type: 'programmer'
+  });
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    lastname: '',
+    email: '',
+    user_type: 'programmer',
+    password: '',
+    confirmPassword: ''
+  });
   const { showAlert, Alert } = useSweetAlert();
 
   // Obtener usuarios de la API
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth_token');
-
-      if (!token) {
-        showAlert({
-          title: 'Error de autenticación',
-          text: 'No se encontró el token de autenticación',
-          type: 'error'
-        });
-        return;
-      }
-
-      const response = await fetch('http://127.0.0.1:8000/api/admin/users', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || data);
-      } else if (response.status === 401) {
-        showAlert({
-          title: 'Sesión expirada',
-          text: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
-          type: 'error'
-        });
-      } else {
-        throw new Error('Error al obtener usuarios');
-      }
+      const data = await apiRequest<UsersResponse>('/admin/users');
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
       showAlert({
@@ -146,53 +155,141 @@ export function UserManagement() {
     setShowUserDialog(true);
   };
 
-  const handleEditUser = () => {
-    // TODO: Implementar edición de usuario
-    showAlert({
-      title: 'Funcionalidad próximamente',
-      text: 'La edición de usuarios estará disponible próximamente',
-      type: 'info'
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setEditForm({
+      name: user.name,
+      lastname: user.lastname,
+      email: user.email,
+      user_type: user.user_type
     });
+    setShowEditDialog(true);
   };
 
   const handleDeleteUser = (user: User) => {
-    showAlert({
-      title: '¿Eliminar usuario?',
-      text: `¿Estás seguro de que quieres eliminar al usuario ${user.name} ${user.lastname}?`,
-      type: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      onConfirm: async () => {
-        try {
-          const token = localStorage.getItem('auth_token');
-          const response = await fetch(`http://127.0.0.1:8000/api/admin/users/${user.id}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
+    setUserToDelete(user);
+  };
 
-          if (response.ok) {
-            setUsers(users.filter(u => u.id !== user.id));
-            showAlert({
-              title: 'Usuario eliminado',
-              text: 'El usuario ha sido eliminado exitosamente',
-              type: 'success'
-            });
-          } else {
-            throw new Error('Error al eliminar usuario');
-          }
-        } catch (error) {
-          showAlert({
-            title: 'Error',
-            text: 'No se pudo eliminar el usuario',
-            type: 'error'
-          });
-        }
-      }
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await apiRequest(`/admin/users/${userToDelete.id}`, { method: 'DELETE' });
+      setUsers(users.filter(u => u.id !== userToDelete.id));
+      showAlert({
+        title: 'Usuario eliminado',
+        text: 'El usuario ha sido eliminado exitosamente',
+        type: 'success'
+      });
+    } catch (error) {
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo eliminar el usuario',
+        type: 'error'
+      });
+    } finally {
+      setUserToDelete(null);
+    }
+  };
+
+  const handleOpenCreateDialog = () => {
+    setCreateForm({
+      name: '',
+      lastname: '',
+      email: '',
+      user_type: 'programmer',
+      password: '',
+      confirmPassword: ''
     });
+    setShowCreateDialog(true);
+  };
+
+  const handleCreateUser = async () => {
+    if (!createForm.name || !createForm.lastname || !createForm.email || !createForm.password) {
+      showAlert({
+        title: 'Campos requeridos',
+        text: 'Completa todos los campos obligatorios.',
+        type: 'warning'
+      });
+      return;
+    }
+    if (createForm.password !== createForm.confirmPassword) {
+      showAlert({
+        title: 'Contraseñas no coinciden',
+        text: 'Verifica la confirmación de contraseña.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await apiRequest<UserResponse>('/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: createForm.name,
+          lastname: createForm.lastname,
+          email: createForm.email,
+          user_type: createForm.user_type,
+          password: createForm.password
+        })
+      });
+      setUsers([response.user, ...users]);
+      setShowCreateDialog(false);
+      showAlert({
+        title: 'Usuario creado',
+        text: 'El usuario se creó correctamente.',
+        type: 'success'
+      });
+    } catch (error) {
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo crear el usuario.',
+        type: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+    if (!editForm.name || !editForm.lastname || !editForm.email) {
+      showAlert({
+        title: 'Campos requeridos',
+        text: 'Completa todos los campos obligatorios.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await apiRequest<UserResponse>(`/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: editForm.name,
+          lastname: editForm.lastname,
+          email: editForm.email,
+          user_type: editForm.user_type
+        })
+      });
+      setUsers(users.map(user => user.id === selectedUser.id ? response.user : user));
+      setShowEditDialog(false);
+      showAlert({
+        title: 'Usuario actualizado',
+        text: 'Los cambios se guardaron correctamente.',
+        type: 'success'
+      });
+    } catch (error) {
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo actualizar el usuario.',
+        type: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Estadísticas de usuarios
@@ -227,7 +324,10 @@ export function UserManagement() {
               Actualizar
             </Button>
 
-            <Button className="bg-[#00FF85] hover:bg-[#00C46A] text-[#0D0D0D] font-semibold">
+            <Button
+              className="bg-[#00FF85] hover:bg-[#00C46A] text-[#0D0D0D] font-semibold"
+              onClick={handleOpenCreateDialog}
+            >
               <UserPlus className="w-4 h-4 mr-2" />
               Nuevo Usuario
             </Button>
@@ -333,91 +433,147 @@ export function UserManagement() {
                 <span className="ml-3 text-gray-300">Cargando usuarios...</span>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-[#333333] hover:bg-[#2A2A2A]">
-                      <TableHead className="text-[#00FF85]">Usuario</TableHead>
-                      <TableHead className="text-[#00FF85]">Email</TableHead>
-                      <TableHead className="text-[#00FF85]">Tipo</TableHead>
-                      <TableHead className="text-[#00FF85]">Registro</TableHead>
-                      <TableHead className="text-[#00FF85]">Estado</TableHead>
-                      <TableHead className="text-[#00FF85]">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id} className="border-[#333333] hover:bg-[#2A2A2A]">
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-[#00FF85] rounded-full flex items-center justify-center text-[#0D0D0D] font-bold">
-                              {user.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="text-white font-semibold">{user.name} {user.lastname}</div>
-                              <div className="text-gray-400 text-sm">ID: {user.id}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-300">{user.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${getUserTypeColor(user.user_type)} border flex items-center gap-1 w-fit`}>
-                            {getUserTypeIcon(user.user_type)}
-                            {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-300">{formatDate(user.created_at)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${
-                            user.email_verified_at
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                              : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                          } border`}>
-                            {user.email_verified_at ? 'Verificado' : 'Pendiente'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleViewUser(user)}
-                              className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={handleEditUser}
-                              className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeleteUser(user)}
-                              className="bg-[#2A2A2A] border-[#333333] hover:bg-red-500/20 text-red-400 hover:text-red-300"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+              <>
+                <div className="w-full overflow-x-auto -mx-6 px-6">
+                  <div className="inline-block min-w-full">
+                    <Table>
+                    <TableHeader>
+                      <TableRow className="border-[#333333] hover:bg-[#2A2A2A]">
+                        <TableHead className="text-[#00FF85]">Usuario</TableHead>
+                        <TableHead className="text-[#00FF85]">Email</TableHead>
+                        <TableHead className="text-[#00FF85]">Tipo</TableHead>
+                        <TableHead className="text-[#00FF85]">Registro</TableHead>
+                        <TableHead className="text-[#00FF85]">Estado</TableHead>
+                        <TableHead className="text-[#00FF85]">Acciones</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user.id} className="border-[#333333] hover:bg-[#2A2A2A]">
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-[#00FF85] rounded-full flex items-center justify-center text-[#0D0D0D] font-bold">
+                                {user.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="text-white font-semibold">{user.name} {user.lastname}</div>
+                                <div className="text-gray-400 text-sm">ID: {user.id}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                              <Mail className="w-4 h-4 text-gray-400" />
+                              <span className="text-gray-300">{user.email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${getUserTypeColor(user.user_type)} border flex items-center gap-1 w-fit`}>
+                              {getUserTypeIcon(user.user_type)}
+                              {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                              <Calendar className="w-4 h-4 text-gray-400" />
+                              <span className="text-gray-300">{formatDate(user.created_at)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${
+                              user.email_verified_at
+                                ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                            } border`}>
+                              {user.email_verified_at ? 'Verificado' : 'Pendiente'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-2">
+                              {/* Botones para pantallas medianas y grandes */}
+                              <div className="hidden sm:flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleViewUser(user)}
+                                  className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white h-8 w-8 p-0"
+                                  title="Ver usuario"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditUser(user)}
+                                  className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white h-8 w-8 p-0"
+                                  title="Editar usuario"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteUser(user)}
+                                  className="bg-[#2A2A2A] border-[#333333] hover:bg-red-500/20 text-red-400 hover:text-red-300 h-8 w-8 p-0"
+                                  title="Eliminar usuario"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+
+                              {/* Menú desplegable para pantallas pequeñas */}
+                              <div className="sm:hidden">
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="bg-[#2A2A2A] border-[#333333] hover:bg-[#333333] text-white h-8 w-8 p-0"
+                                    >
+                                      <MoreVertical className="w-4 h-4" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-40 bg-[#2A2A2A] border-[#333333] p-0">
+                                    <div className="flex flex-col gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleViewUser(user)}
+                                        className="w-full justify-start text-white hover:bg-[#333333] text-left"
+                                      >
+                                        <Eye className="w-4 h-4 mr-2" />
+                                        Ver
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleEditUser(user)}
+                                        className="w-full justify-start text-white hover:bg-[#333333] text-left"
+                                      >
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Editar
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleDeleteUser(user)}
+                                        className="w-full justify-start text-red-400 hover:bg-red-500/20 text-left"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Eliminar
+                                      </Button>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  </div>
+                </div>
 
                 {filteredUsers.length === 0 && (
                   <div className="text-center py-12">
@@ -425,76 +581,232 @@ export function UserManagement() {
                     <p className="text-gray-400">No se encontraron usuarios</p>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Diálogos fuera del contenedor max-w para que se rendericen correctamente */}
+      
+      {/* Dialog crear usuario */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-[#00FF85] flex items-center gap-2">
+                <UserPlus className="w-5 h-5" />
+                Crear Usuario
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm text-gray-300">Nombre</label>
+                  <Input
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300">Apellido</label>
+                  <Input
+                    value={createForm.lastname}
+                    onChange={(e) => setCreateForm({ ...createForm, lastname: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-300">Email</label>
+                <Input
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-300">Tipo de usuario</label>
+                <Select
+                  value={createForm.user_type}
+                  onValueChange={(value) => setCreateForm({ ...createForm, user_type: value })}
+                >
+                  <SelectTrigger className="bg-[#2A2A2A] border-[#333333] text-white text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#2A2A2A] border-[#333333]">
+                    <SelectItem value="programmer" className="text-white hover:bg-[#333333]">Programador</SelectItem>
+                    <SelectItem value="company" className="text-white hover:bg-[#333333]">Empresa</SelectItem>
+                    <SelectItem value="admin" className="text-white hover:bg-[#333333]">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm text-gray-300">Contraseña</label>
+                  <Input
+                    type="password"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300">Confirmar contraseña</label>
+                  <Input
+                    type="password"
+                    value={createForm.confirmPassword}
+                    onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="border-[#333333] text-white text-sm"
+                  onClick={() => setShowCreateDialog(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] text-sm"
+                  onClick={handleCreateUser}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Guardando...' : 'Crear'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog editar usuario */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-[#00FF85] flex items-center gap-2">
+                <Edit className="w-5 h-5" />
+                Editar Usuario
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm text-gray-300">Nombre</label>
+                  <Input
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300">Apellido</label>
+                  <Input
+                    value={editForm.lastname}
+                    onChange={(e) => setEditForm({ ...editForm, lastname: e.target.value })}
+                    className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-300">Email</label>
+                <Input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="bg-[#2A2A2A] border-[#333333] text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-300">Tipo de usuario</label>
+                <Select
+                  value={editForm.user_type}
+                  onValueChange={(value) => setEditForm({ ...editForm, user_type: value })}
+                >
+                  <SelectTrigger className="bg-[#2A2A2A] border-[#333333] text-white text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#2A2A2A] border-[#333333]">
+                    <SelectItem value="programmer" className="text-white hover:bg-[#333333]">Programador</SelectItem>
+                    <SelectItem value="company" className="text-white hover:bg-[#333333]">Empresa</SelectItem>
+                    <SelectItem value="admin" className="text-white hover:bg-[#333333]">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="border-[#333333] text-white text-sm"
+                  onClick={() => setShowEditDialog(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] text-sm"
+                  onClick={handleUpdateUser}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Dialog de detalles del usuario */}
         <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-2xl">
+          <DialogContent className="bg-[#1A1A1A] border-[#333333] text-white max-w-sm">
             <DialogHeader>
-              <DialogTitle className="text-[#00FF85] flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Detalles del Usuario
+              <DialogTitle className="text-[#00FF85] flex items-center gap-1 text-base">
+                <Users className="w-4 h-4" />
+                Detalles
               </DialogTitle>
             </DialogHeader>
 
             {selectedUser && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-[#00FF85] rounded-full flex items-center justify-center text-[#0D0D0D] font-bold text-xl">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 bg-[#00FF85] rounded-full flex items-center justify-center text-[#0D0D0D] font-bold text-sm flex-shrink-0">
                     {selectedUser.name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">{selectedUser.name} {selectedUser.lastname}</h3>
-                    <Badge className={`${getUserTypeColor(selectedUser.user_type)} border flex items-center gap-1 w-fit mt-1`}>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-white truncate">{selectedUser.name} {selectedUser.lastname}</h3>
+                    <Badge className={`${getUserTypeColor(selectedUser.user_type)} border flex items-center gap-1 w-fit mt-0 text-xs py-0 px-1.5`}>
                       {getUserTypeIcon(selectedUser.user_type)}
                       {selectedUser.user_type.charAt(0).toUpperCase() + selectedUser.user_type.slice(1)}
                     </Badge>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-400">Email</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span className="text-white">{selectedUser.email}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-400">Tipo de Usuario</label>
-                      <div className="mt-1">
-                        <Badge className={`${getUserTypeColor(selectedUser.user_type)} border`}>
-                          {selectedUser.user_type.charAt(0).toUpperCase() + selectedUser.user_type.slice(1)}
-                        </Badge>
-                      </div>
+                <div className="grid grid-cols-1 gap-2 text-xs">
+                  <div>
+                    <label className="text-xs font-medium text-gray-400">Email</label>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Mail className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <span className="text-white break-all">{selectedUser.email}</span>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-400">Fecha de Registro</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-white">{formatDate(selectedUser.created_at)}</span>
-                      </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-400">Fecha de Registro</label>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Calendar className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <span className="text-white">{formatDate(selectedUser.created_at)}</span>
                     </div>
+                  </div>
 
-                    <div>
-                      <label className="text-sm font-medium text-gray-400">Estado de Verificación</label>
-                      <div className="mt-1">
-                        <Badge className={`${
-                          selectedUser.email_verified_at
-                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                        } border`}>
-                          {selectedUser.email_verified_at ? 'Email Verificado' : 'Email Pendiente'}
-                        </Badge>
-                      </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-400">Estado</label>
+                    <div className="mt-0.5">
+                      <Badge className={`${
+                        selectedUser.email_verified_at
+                          ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                          : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                      } border text-xs py-0 px-1.5`}>
+                        {selectedUser.email_verified_at ? 'Verificado' : 'Pendiente'}
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -502,9 +814,28 @@ export function UserManagement() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
 
       <Alert />
+<<<<<<< develop
+
+      <ConfirmDialog
+        cancelText="Cancelar"
+        confirmText="Sí, eliminar"
+        description={
+          userToDelete
+            ? `¿Estás seguro de que quieres eliminar al usuario ${userToDelete.name} ${userToDelete.lastname}?`
+            : '¿Estás seguro de que quieres eliminar este usuario?'
+        }
+        isOpen={Boolean(userToDelete)}
+        onCancel={() => setUserToDelete(null)}
+        onConfirm={confirmDeleteUser}
+        title="¿Eliminar usuario?"
+        variant="danger"
+      />
     </div>
   );
 }
+=======
+    </div>  );
+}
+>>>>>>> main
