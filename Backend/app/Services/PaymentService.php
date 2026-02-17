@@ -43,7 +43,7 @@ class PaymentService
      * Release funds for a Milestone (or Project Completion).
      * Moves funds from Company Held Balance to Developer Wallet (minus commission).
      */
-    public function releaseMilestone(User $company, User $developer, float $amount, $project)
+    public function releaseMilestone(User $company, float $amount, $project)
     {
         $companyWallet = $this->getWallet($company);
         
@@ -51,31 +51,47 @@ class PaymentService
             throw new Exception("Fondos en garantía insuficientes. Requerido: \${$amount}, En garantía: \${$companyWallet->held_balance}");
         }
 
-        $rate = $this->getCommissionRate($amount);
-        $commission = $amount * $rate;
-        $netAmount = $amount - $commission;
+        // 1. Identify all accepted developers
+        $acceptedApps = $project->applications()->where('status', 'accepted')->with('developer')->get();
+        $developerCount = $acceptedApps->count();
 
-        DB::transaction(function () use ($companyWallet, $developer, $amount, $netAmount, $commission, $project) {
-            // 1. Deduct from Held Balance
+        if ($developerCount === 0) {
+           throw new Exception("No hay desarrolladores aceptados para liberar fondos.");
+        }
+
+        // 2. Calculate split amount
+        $splitAmount = $amount / $developerCount;
+
+        DB::transaction(function () use ($companyWallet, $acceptedApps, $amount, $splitAmount, $project) {
+            // Deduct total from Held Balance
             $companyWallet->decrement('held_balance', $amount);
 
-            // 2. Add to Developer
-            $devWallet = $this->getWallet($developer);
-            $devWallet->increment('balance', $netAmount);
-
-            // 3. Add Commission to Admin
-            $adminWallet = $this->getAdminWallet();
-            if ($adminWallet) {
-                $adminWallet->increment('balance', $commission);
-                $this->createTransaction($adminWallet, $commission, 'commission', "Comisión Proyecto #{$project->id}", $project);
-            }
-
-            // Record Transactions
-            // Log release from Company perspective (already deducted from held, but log the event)
+            // Log release from Company (one transaction for the total)
             $this->createTransaction($companyWallet, 0, 'escrow_release', "Liberación de fondos Proyecto #{$project->id}", $project);
 
-            // Log deposit to Developer
-            $this->createTransaction($devWallet, $netAmount, 'payment_received', "Pago recibido Proyecto #{$project->id}", $project);
+            foreach ($acceptedApps as $app) {
+                $developer = $app->developer;
+                if (!$developer) continue;
+
+                // Calculate Commission per developer share
+                $rate = $this->getCommissionRate($splitAmount);
+                $commission = $splitAmount * $rate;
+                $netAmount = $splitAmount - $commission;
+
+                // Add to Developer
+                $devWallet = $this->getWallet($developer);
+                $devWallet->increment('balance', $netAmount);
+
+                // Add Commission to Admin
+                $adminWallet = $this->getAdminWallet();
+                if ($adminWallet) {
+                    $adminWallet->increment('balance', $commission);
+                    $this->createTransaction($adminWallet, $commission, 'commission', "Comisión Proyecto #{$project->id} (Dev: {$developer->name})", $project);
+                }
+
+                // Log deposit to Developer
+                $this->createTransaction($devWallet, $netAmount, 'payment_received', "Pago recibido Proyecto #{$project->id}", $project);
+            }
         });
     }
 
@@ -86,9 +102,9 @@ class PaymentService
         $this->fundProject($company, $amount, $reference);
     }
 
-    public function releaseFunds(User $company, User $developer, float $amount, $reference)
+    public function releaseFunds(User $company, float $amount, $reference)
     {
-        $this->releaseMilestone($company, $developer, $amount, $reference);
+        $this->releaseMilestone($company, $amount, $reference);
     }
 
     public function processProjectPayment(User $company, User $developer, float $amount, $reference)

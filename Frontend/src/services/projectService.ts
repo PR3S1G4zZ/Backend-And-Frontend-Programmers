@@ -104,3 +104,8 @@ export async function fundProject(id: number) {
     method: 'POST',
   });
 }
+
+export async function fetchDeveloperProfile(id: string) {
+  return apiRequest<{ data: any }>(`/developers/${id}`);
+}
+

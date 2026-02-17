@@ -16,6 +16,7 @@ import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
 import type { ProjectResponse } from '../services/projectService';
 import { WalletPaymentMethods } from './dashboard/wallet/WalletPaymentMethods';
+import { Workspace } from './dashboard/shared/Workspace';
 
 interface CompanyDashboardProps {
   onLogout?: () => void;
@@ -25,22 +26,25 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
   const [currentSection, setCurrentSection] = useState(() => {
     return localStorage.getItem('company_dashboard_section') || 'overview';
   });
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectResponse | null>(null);
   const [viewingCandidates, setViewingCandidates] = useState<ProjectResponse | null>(null);
+  const [viewingWorkspace, setViewingWorkspace] = useState<ProjectResponse | null>(null);
+  const [viewingChatId, setViewingChatId] = useState<string | undefined>(undefined);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
 
   // Persist storage and handle missing data on refresh
   useEffect(() => {
     localStorage.setItem('company_dashboard_section', currentSection);
 
-    // Fallback logic: If on a section that needs data but data is null (refresh), go back to relevant list
+    // Fallback logic
     if ((currentSection === 'edit-project' && !editingProject) ||
-      (currentSection === 'view-candidates' && !viewingCandidates)) {
+      (currentSection === 'view-candidates' && !viewingCandidates) ||
+      (currentSection === 'workspace' && !viewingWorkspace)) {
       setCurrentSection('my-projects');
     }
-  }, [currentSection, editingProject, viewingCandidates]);
+  }, [currentSection, editingProject, viewingCandidates, viewingWorkspace]);
 
   const sectionLabels: Record<string, string> = {
     overview: 'Dashboard',
@@ -54,6 +58,7 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
     notifications: 'Notificaciones',
     settings: 'Configuración',
     wallet: 'Billetera & Pagos',
+    workspace: 'Espacio de Trabajo',
   };
 
   const handleLogout = () => {
@@ -65,12 +70,26 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
     if (section === 'edit-project' && data) {
       setEditingProject(data);
       setViewingCandidates(null);
+      setViewingWorkspace(null);
     } else if (section === 'view-candidates' && data) {
       setViewingCandidates(data);
       setEditingProject(null);
+      setViewingWorkspace(null);
+    } else if (section === 'workspace' && data) {
+      setViewingWorkspace(data);
+      setEditingProject(null);
+      setViewingCandidates(null);
+      setViewingChatId(undefined);
+    } else if ((section === 'chat' || section === 'messages') && data?.chatId) {
+      setViewingChatId(String(data.chatId));
+      setEditingProject(null);
+      setViewingCandidates(null);
+      setViewingWorkspace(null);
     } else {
       setEditingProject(null);
       setViewingCandidates(null);
+      setViewingWorkspace(null);
+      setViewingChatId(undefined);
     }
   };
 
@@ -101,10 +120,10 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
           />
         ) : <MyProjectsSection onSectionChange={handleSectionChange} />;
       case 'search-programmers':
-        return <SearchProgrammersSection />;
+        return <SearchProgrammersSection onSectionChange={handleSectionChange} />;
       case 'chat':
       case 'messages':
-        return <ChatSection userType="company" />;
+        return <ChatSection userType="company" initialChatId={viewingChatId} />;
       case 'wallet':
         return (
           <div className="p-8">
@@ -134,6 +153,17 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
             </div>
           </div>
         );
+      case 'workspace':
+        return viewingWorkspace ? (
+          <Workspace
+            projectId={Number(viewingWorkspace.id)}
+            userType="company"
+            onBack={() => {
+              setViewingWorkspace(null);
+              setCurrentSection('my-projects');
+            }}
+          />
+        ) : <MyProjectsSection onSectionChange={handleSectionChange} />;
       default:
         return <WelcomeSection onSectionChange={handleSectionChange} />;
     }

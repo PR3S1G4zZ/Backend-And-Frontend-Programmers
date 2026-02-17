@@ -35,6 +35,7 @@ import { useSweetAlert } from '../../ui/sweet-alert';
 import { useAuth } from '../../../contexts/AuthContext';
 import { fetchProfile, updateProfile } from '../../../services/profileService';
 import { AppearanceSection } from '../settings/AppearanceSection';
+import { PaymentSettings } from './PaymentSettings';
 
 export function ProfileSection() {
   const [activeTab, setActiveTab] = useState('profile-tab');
@@ -727,6 +728,9 @@ export function ProfileSection() {
                   <AppearanceSection />
                 </CardContent>
               </Card>
+
+              {/* Payment Settings */}
+              <PaymentSettings />
 
               {/* Privacy Settings */}
               <Card className="bg-card border-border hover:border-primary/20 transition-colors">

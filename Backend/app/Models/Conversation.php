@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Conversation extends Model
 {
     protected $fillable = [
+        'type',
+        'initiator_id',
+        'participant_id',
         'project_id',
-        'created_by',
-        'subject',
     ];
 
     public function messages()
@@ -17,14 +18,20 @@ class Conversation extends Model
         return $this->hasMany(Message::class);
     }
 
-    public function latestMessage()
+    public function lastMessage()
     {
-        return $this->hasOne(Message::class)->latestOfMany();
+        // return $this->hasOne(Message::class)->latestOfMany();
+        return $this->hasOne(Message::class)->latest();
     }
 
-    public function participants()
+    public function initiator()
     {
-        return $this->belongsToMany(User::class, 'conversation_participants');
+        return $this->belongsTo(User::class, 'initiator_id');
+    }
+
+    public function participant()
+    {
+        return $this->belongsTo(User::class, 'participant_id');
     }
 
     public function project()

@@ -33,19 +33,7 @@ interface PublishProjectSectionProps {
 }
 
 export function PublishProjectSection({ onSectionChange, initialData, isEditing = false }: PublishProjectSectionProps) {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    budget: '',
-    budgetType: 'fixed', // 'fixed' | 'hourly'
-    duration: '',
-    durationType: 'weeks', // 'days' | 'weeks' | 'months'
-    experienceLevel: '',
-    teamSize: '1',
-    startDate: '',
-    priority: 'medium'
-  });
+
 
   const [skills, setSkills] = useState<Skill[]>([]);
   const [newSkill, setNewSkill] = useState('');
@@ -75,8 +63,9 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
         durationType: initialData.duration_unit || 'weeks',
         experienceLevel: initialData.level || '',
         teamSize: String(initialData.max_applicants || '1'),
-        startDate: '', // Start date needed from API if available
-        priority: initialData.priority || 'medium'
+        priority: initialData.priority || 'medium',
+        hoursPerDay: '8',
+        skills: []
       });
 
       if (initialData.skills) {
@@ -116,6 +105,37 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
       isMounted = false;
     };
   }, []);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    budgetType: 'fixed',
+    budget: '',
+    hoursPerDay: '8',
+    duration: '',
+    durationType: 'months',
+    experienceLevel: 'mid',
+    priority: 'medium',
+    teamSize: '1',
+    skills: [] as string[]
+  });
+
+  const getEstimatedTotal = () => {
+    if (formData.budgetType !== 'hourly' || !formData.budget || !formData.duration) return 0;
+    const rate = Number(formData.budget);
+    const hours = Number(formData.hoursPerDay) || 8;
+    const duration = Number(formData.duration);
+    let days = duration;
+    if (formData.durationType === 'weeks') days = duration * 5;
+    if (formData.durationType === 'months') days = duration * 20;
+    return rate * hours * days;
+  };
+
+  const estimatedTotal = getEstimatedTotal();
+  const depositAmount = formData.budgetType === 'hourly'
+    ? (estimatedTotal * 0.5).toFixed(2)
+    : (Number(formData.budget || 0) * 0.5).toFixed(2);
 
   const addSkill = (skillName: string, required: boolean = false) => {
     if (skillName && !skills.find(s => s.name.toLowerCase() === skillName.toLowerCase())) {
@@ -187,14 +207,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
       return;
     }
 
-    // Simple single value parsing for budget to make 50% calc easier for now
-    // If user enters range "5000-8000", we take the first part? Or force single value for simplicity as per request "X.XX (50%)"
-    // Let's assume single value for this "Escrow" flow or take the min.
-
-    // ... (keep existing BudgetMin/Max logic if compatible, or simplify)
-    const budgetParts = formData.budget.split('-').map((value) => Number(value.trim()));
-    const budgetMin = Number.isFinite(budgetParts[0]) ? budgetParts[0] : null;
-    const budgetMax = Number.isFinite(budgetParts[1]) ? budgetParts[1] : budgetMin;
+    // Budget parsing handled below based on type
 
 
     // Parse team size range to max applicants number
@@ -214,9 +227,20 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
       })
       .filter((id): id is number => id !== null);
 
+    const budgetMin = formData.budgetType === 'hourly'
+      ? estimatedTotal
+      : Number(formData.budget);
+
+    const budgetMax = budgetMin;
+
+    let description = formData.description;
+    if (formData.budgetType === 'hourly') {
+      description += `\n\n[Detalles de Tarifa: $${formData.budget}/hora, ${formData.hoursPerDay} horas/día]`;
+    }
+
     const payload = {
       title: formData.title,
-      description: formData.description,
+      description: description,
       budget_min: budgetMin,
       budget_max: budgetMax,
       budget_type: formData.budgetType,
@@ -405,6 +429,46 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
               </div>
             </div>
 
+            {
+              formData.budgetType === 'hourly' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="hoursPerDay" className="text-white">Horas por Día</Label>
+                    <Input
+                      id="hoursPerDay"
+                      value={formData.hoursPerDay}
+                      onChange={(e) => setFormData({ ...formData, hoursPerDay: e.target.value })}
+                      placeholder="8"
+                      className="mt-2 bg-[#0D0D0D] border-[#333333] text-white"
+                    />
+                  </div>
+                </div>
+              )
+            }
+
+            {
+              formData.budgetType === 'hourly' && estimatedTotal > 0 && (
+                <div className="bg-[#1A1A1A] p-4 rounded-lg border border-[#333333]">
+                  <h4 className="text-sm font-semibold text-gray-300">Estimación de Costo del Proyecto</h4>
+                  <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Tarifa:</span> <span className="text-white">${formData.budget}/hr</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Jornada:</span> <span className="text-white">{formData.hoursPerDay} hrs/día</span>
+                    </div>
+                    <div className="col-span-2 pt-2 border-t border-[#333333] flex justify-between items-center">
+                      <span className="text-gray-400">Total Estimado ({formData.duration} {formData.durationType}):</span>
+                      <span className="text-xl font-bold text-green-400">${estimatedTotal.toLocaleString()}</span>
+                    </div>
+                    <div className="col-span-2 text-xs text-gray-500">
+                      * El depósito inicial será del 50% (${depositAmount})
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="duration" className="text-white">Duración Estimada *</Label>
@@ -429,16 +493,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="startDate" className="text-white">Fecha de Inicio Preferida</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="mt-2 bg-[#0D0D0D] border-[#333333] text-white"
-                />
-              </div>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -472,7 +527,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                 </Select>
               </div>
             </div>
-          </div>
+          </div >
         );
 
       case 3:

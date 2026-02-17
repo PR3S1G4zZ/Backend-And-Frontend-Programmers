@@ -4,20 +4,24 @@ import { Button } from '../../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { Badge } from '../../ui/badge';
 import { useSweetAlert } from '../../ui/sweet-alert';
-import { fetchProjectApplications, acceptApplication, rejectApplication, type ProjectResponse } from '../../../services/projectService';
-import { ArrowLeft, CheckCircle, XCircle, User, Star, MapPin, Briefcase } from 'lucide-react';
+import { fetchProjectApplications, acceptApplication, rejectApplication, fetchDeveloperProfile, type ProjectResponse } from '../../../services/projectService';
+import { ArrowLeft, CheckCircle, XCircle, User, Star, MapPin, Briefcase, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { DeveloperProfileModal } from './DeveloperProfileModal';
 
 interface ProjectCandidatesSectionProps {
     project: ProjectResponse;
     onBack: () => void;
-    onSectionChange: (section: string) => void;
+    onSectionChange?: (section: string, data?: any) => void;
 }
 
 export function ProjectCandidatesSection({ project, onBack, onSectionChange }: ProjectCandidatesSectionProps) {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const { showAlert, Alert } = useSweetAlert();
+    const [selectedDeveloper, setSelectedDeveloper] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
 
     useEffect(() => {
         loadCandidates();
@@ -39,10 +43,28 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
         }
     };
 
+    const handleViewProfile = async (developerId: number) => {
+        setModalLoading(true);
+        try {
+            const response = await fetchDeveloperProfile(String(developerId));
+            setSelectedDeveloper(response.data);
+            setIsModalOpen(true);
+        } catch (error) {
+            console.error('Error fetching profile', error);
+            showAlert({
+                title: 'Error',
+                text: 'No se pudo cargar el perfil del desarrollador.',
+                type: 'error'
+            });
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
     const handleAccept = (candidate: any) => {
         showAlert({
             title: '¿Aceptar candidato?',
-            text: `Al aceptar a ${candidate.developer.name}, se iniciará un chat y el proyecto pasará a "En Progreso".`,
+            text: `Al aceptar a ${candidate.developer.name}, se iniciará un chat y el proyecto pasará a "En Progreso". Puedes aceptar a múltiples candidatos.`,
             type: 'question',
             showCancelButton: true,
             confirmButtonText: 'Sí, aceptar',
@@ -50,17 +72,17 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
             onConfirm: async () => {
                 try {
                     await acceptApplication(String(candidate.id));
+                    setCandidates(candidates.map(c => c.id === candidate.id ? { ...c, status: 'accepted' } : c));
+
                     showAlert({
                         title: '¡Candidato aceptado!',
-                        text: 'Has aceptado la propuesta. Redirigiendo al chat...',
+                        text: 'Has aceptado la propuesta. Puedes iniciar el chat desde la sección de Mensajes.',
                         type: 'success',
-                        timer: 2000
+                        timer: 3000
                     });
 
-                    // Redirect to chat after a brief delay
-                    setTimeout(() => {
-                        onSectionChange('messages');
-                    }, 2000);
+                    // We no longer redirect automatically to allow accepting multiple candidates
+                    // But we might want to offer the option? For now, just stay on the list.
                 } catch (error) {
                     console.error('Error accepting candidate', error);
                     showAlert({
@@ -136,8 +158,8 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
                                 <CardContent className="p-6">
                                     <div className="flex flex-col md:flex-row md:items-start gap-6">
                                         {/* Developer Info */}
-                                        <div className="flex-shrink-0">
-                                            <Avatar className="h-16 w-16 border-2 border-[#333333]">
+                                        <div className="flex-shrink-0 cursor-pointer" onClick={() => handleViewProfile(candidate.developer.id)}>
+                                            <Avatar className="h-16 w-16 border-2 border-[#333333] hover:border-primary transition-colors">
                                                 <AvatarImage src={candidate.developer.avatar} />
                                                 <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                                                     {candidate.developer.name.substring(0, 2).toUpperCase()}
@@ -148,7 +170,8 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
                                         <div className="flex-1 space-y-3">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-white flex items-center">
+                                                    <h3 className="text-lg font-semibold text-white flex items-center cursor-pointer hover:text-primary transition-colors"
+                                                        onClick={() => handleViewProfile(candidate.developer.id)}>
                                                         {candidate.developer.name} {candidate.developer.lastname}
                                                         <div className="flex items-center ml-3 text-yellow-400 text-sm">
                                                             <Star className="h-4 w-4 fill-current mr-1" />
@@ -188,25 +211,37 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
                                         </div>
 
                                         {/* Actions */}
-                                        {candidate.status === 'pending' && (
-                                            <div className="flex flex-row md:flex-col gap-2 pt-2 md:pt-0">
-                                                <Button
-                                                    className="bg-primary text-primary-foreground hover:bg-primary/90 w-full md:w-auto"
-                                                    onClick={() => handleAccept(candidate)}
-                                                >
-                                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                                    Aceptar
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    className="border-red-500/50 text-red-400 hover:bg-red-950 hover:text-red-300 w-full md:w-auto"
-                                                    onClick={() => handleReject(candidate)}
-                                                >
-                                                    <XCircle className="h-4 w-4 mr-2" />
-                                                    Rechazar
-                                                </Button>
-                                            </div>
-                                        )}
+                                        <div className="flex flex-row md:flex-col gap-2 pt-2 md:pt-0">
+                                            <Button
+                                                variant="outline"
+                                                className="border-[#444] text-gray-300 hover:bg-[#333] w-full md:w-auto"
+                                                onClick={() => handleViewProfile(candidate.developer.id)}
+                                                disabled={modalLoading}
+                                            >
+                                                <Eye className="h-4 w-4 mr-2" />
+                                                Ver Perfil
+                                            </Button>
+
+                                            {candidate.status === 'pending' && (
+                                                <>
+                                                    <Button
+                                                        className="bg-primary text-primary-foreground hover:bg-primary/90 w-full md:w-auto"
+                                                        onClick={() => handleAccept(candidate)}
+                                                    >
+                                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                                        Aceptar
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="border-red-500/50 text-red-400 hover:bg-red-950 hover:text-red-300 w-full md:w-auto"
+                                                        onClick={() => handleReject(candidate)}
+                                                    >
+                                                        <XCircle className="h-4 w-4 mr-2" />
+                                                        Rechazar
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -214,6 +249,14 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
                     ))}
                 </div>
             )}
+
+            <DeveloperProfileModal
+                developer={selectedDeveloper}
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                isLoading={modalLoading}
+            />
+
             <Alert />
         </div>
     );

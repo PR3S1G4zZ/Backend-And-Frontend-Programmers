@@ -62,6 +62,11 @@ class Project extends Model
         return $this->hasMany(Application::class);
     }
 
+    public function milestones()
+    {
+        return $this->hasMany(Milestone::class);
+    }
+
     public function categories()
     {
         return $this->belongsToMany(ProjectCategory::class, 'project_category_project');

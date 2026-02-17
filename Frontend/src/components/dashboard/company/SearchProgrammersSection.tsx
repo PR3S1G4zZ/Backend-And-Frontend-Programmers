@@ -25,8 +25,16 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchDevelopers, type DeveloperProfile } from '../../../services/developerService';
+import { DeveloperProfileModal } from './DeveloperProfileModal';
+import { fetchFavorites, toggleFavorite as toggleFavoriteApi } from '../../../services/favoriteService';
+import { createConversation } from '../../../services/conversationService';
+import { useSweetAlert } from '../../ui/sweet-alert';
 
-export function SearchProgrammersSection() {
+interface SearchProgrammersSectionProps {
+  onSectionChange?: (section: string, data?: any) => void;
+}
+
+export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersSectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     skills: [] as string[],
@@ -39,26 +47,33 @@ export function SearchProgrammersSection() {
   });
   const [showFilters, setShowFilters] = useState(true);
   const [sortBy, setSortBy] = useState('relevance');
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<number[]>([]);
   const [developers, setDevelopers] = useState<DeveloperProfile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDeveloper, setSelectedDeveloper] = useState<DeveloperProfile | null>(null);
+  const { showAlert } = useSweetAlert();
 
   const allSkills = Array.from(new Set(developers.flatMap(d => d.skills))).sort();
 
   useEffect(() => {
     let isMounted = true;
-    const loadDevelopers = async () => {
+    const loadData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetchDevelopers();
+        const [devsResponse, favsResponse] = await Promise.all([
+          fetchDevelopers(),
+          fetchFavorites()
+        ]);
         if (!isMounted) return;
-        setDevelopers(response.data || []);
+        setDevelopers(devsResponse.data || []);
+        // Assuming fetchFavorites returns array of IDs
+        setFavorites(favsResponse || []);
       } catch (error) {
-        console.error('Error cargando desarrolladores', error);
+        console.error('Error cargando datos', error);
         if (isMounted) {
-          setError('No se pudieron cargar los desarrolladores.');
+          setError('No se pudieron cargar los datos.');
         }
       } finally {
         if (isMounted) {
@@ -67,7 +82,7 @@ export function SearchProgrammersSection() {
       }
     };
 
-    loadDevelopers();
+    loadData();
 
     return () => {
       isMounted = false;
@@ -103,12 +118,63 @@ export function SearchProgrammersSection() {
       matchesRate && matchesAvailability && matchesRating && matchesVerified;
   });
 
-  const toggleFavorite = (developerId: string) => {
+  const toggleFavorite = async (developerId: string) => {
+    const id = Number(developerId);
+    // Optimistic Update
     setFavorites((prev) =>
-      prev.includes(developerId)
-        ? prev.filter((id) => id !== developerId)
-        : [...prev, developerId]
+      prev.includes(id)
+        ? prev.filter((pid) => pid !== id)
+        : [...prev, id]
     );
+
+    try {
+      const response = await toggleFavoriteApi(id);
+      // Show toast
+      showAlert({
+        title: response.status === 'added' ? 'Añadido a Favoritos' : 'Eliminado de Favoritos',
+        text: response.message,
+        type: 'success',
+        timer: 1500
+      });
+    } catch (error) {
+      console.error("Error toggling favorite", error);
+      // Revert on error
+      setFavorites((prev) =>
+        prev.includes(id)
+          ? prev.filter((pid) => pid !== id)
+          : [...prev, id]
+      );
+    }
+  };
+
+  const handleContact = async (developerId: string) => {
+    try {
+      const response = await createConversation({
+        participant_id: Number(developerId),
+        type: 'direct'
+      });
+
+      if (response.conversation_id || response.conversation?.id) {
+        const chatId = response.conversation_id || response.conversation.id;
+        showAlert({
+          title: 'Conversación Iniciada',
+          text: 'Redirigiendo al chat...',
+          type: 'success',
+          timer: 1500
+        });
+
+        if (onSectionChange) {
+          setTimeout(() => onSectionChange('messages', { chatId }), 1000);
+        }
+      }
+    } catch (error) {
+      console.error("Error creating conversation", error);
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo iniciar la conversación.',
+        type: 'error'
+      });
+    }
   };
 
   const toggleSkillFilter = (skill: string) => {
@@ -498,21 +564,30 @@ export function SearchProgrammersSection() {
 
                     {/* Actions */}
                     <div className="flex space-x-2 pt-4">
-                      <Button size="sm" className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                        onClick={() => handleContact(developer.id)}
+                      >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Contactar
                       </Button>
-                      <Button size="sm" variant="outline" className="border-[#333333] text-white hover:bg-[#333333]">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-[#333333] text-white hover:bg-[#333333]"
+                        onClick={() => setSelectedDeveloper(developer)}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => toggleFavorite(developer.id)}
-                        className={`border-[#333333] hover:bg-[#333333] ${favorites.includes(developer.id) ? 'text-red-400' : 'text-white'
+                        className={`border-[#333333] hover:bg-[#333333] transition-colors ${favorites.includes(Number(developer.id)) ? 'text-red-500 hover:text-red-600' : 'text-white'
                           }`}
                       >
-                        <Heart className={`h-4 w-4 ${favorites.includes(developer.id) ? 'fill-current' : ''}`} />
+                        <Heart className={`h-4 w-4 ${favorites.includes(Number(developer.id)) ? 'fill-current animate-pulse-once' : ''}`} />
                       </Button>
                     </div>
                   </CardContent>
@@ -540,6 +615,14 @@ export function SearchProgrammersSection() {
           )}
         </div>
       </div>
-    </div>
+      {/* Developer Profile Modal */}
+      <DeveloperProfileModal
+        isOpen={!!selectedDeveloper}
+        onClose={() => setSelectedDeveloper(null)}
+        developer={selectedDeveloper}
+        isLoading={false} // Data is already loaded in list for now, or fetch detail if needed
+      />
+    </div >
   );
 }
+

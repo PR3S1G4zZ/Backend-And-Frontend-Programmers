@@ -16,6 +16,7 @@ use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class UserSeeder extends Seeder
 {
@@ -287,11 +288,14 @@ class UserSeeder extends Seeder
         foreach ($projects as $project) {
             $applicants = $developerUsers->random(rand(1, min(5, $developerUsers->count())));
             foreach ($applicants as $developer) {
+                $createdAt = $faker->dateTimeBetween('-30 days', 'now');
                 Application::create([
                     'project_id' => $project->id,
                     'developer_id' => $developer->id,
                     'cover_letter' => $faker->sentence(20),
                     'status' => $faker->randomElement(['sent', 'reviewed', 'accepted', 'rejected']),
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]);
             }
         }
@@ -308,13 +312,20 @@ class UserSeeder extends Seeder
                 continue;
             }
 
+            // Conversation created around the time of application acceptance (using app created_at as base)
+            $baseTime = Carbon::parse($application->created_at);
+            $conversationCreatedAt = $faker->dateTimeBetween($baseTime, 'now');
+
             $conversation = Conversation::create([
                 'project_id' => $project->id,
-                'created_by' => $project->company_id,
-                'subject' => 'Proyecto: ' . $project->title,
+                'type' => 'project',
+                'initiator_id' => $project->company_id,
+                'participant_id' => $application->developer_id,
+                'created_at' => $conversationCreatedAt,
+                'updated_at' => $conversationCreatedAt,
             ]);
 
-            $conversation->participants()->sync([$project->company_id, $application->developer_id]);
+            // $conversation->participants()->sync([$project->company_id, $application->developer_id]);
 
             $messages = [
                 [
@@ -331,11 +342,24 @@ class UserSeeder extends Seeder
                 ],
             ];
 
+            $msgTime = Carbon::parse($conversationCreatedAt);
             foreach ($messages as $messageData) {
+                // Determine random delay for next message (e.g., 2 minutes to 2 hours)
+                $msgTime = $msgTime->copy()->addMinutes(rand(2, 120));
+                
+                // Keep it before "now"
+                if ($msgTime->isFuture()) {
+                    $msgTime = Carbon::now()->subMinutes(rand(1, 60));
+                }
+
                 Message::create([
                     'conversation_id' => $conversation->id,
                     'sender_id' => $messageData['sender_id'],
-                    'body' => $messageData['body'],
+                    'content' => $messageData['body'],
+                    'type' => 'text',
+                    'is_read' => true,
+                    'created_at' => $msgTime,
+                    'updated_at' => $msgTime,
                 ]);
             }
         }

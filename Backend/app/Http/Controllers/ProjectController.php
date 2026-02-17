@@ -75,6 +75,11 @@ class ProjectController extends Controller
         if ($r->filled('remote')) {
             $q->where('remote', filter_var($r->remote, FILTER_VALIDATE_BOOLEAN));
         }
+        if ($r->filled('my_projects')) {
+             $q->whereHas('applications', function ($query) use ($r) {
+                 $query->where('developer_id', $r->user()->id)->where('status', 'accepted');
+             });
+        }
         return \App\Http\Resources\ProjectResource::collection($q->latest()->paginate(12));
     }
 
@@ -119,7 +124,7 @@ class ProjectController extends Controller
           'deadline'=>'nullable|date',
           'max_applicants'=>'nullable|integer|min:1',
           'tags'=>'nullable|array',
-          'status'=>'nullable|in:open,in_progress,completed,cancelled,draft',
+          'status'=>'nullable|in:open,in_progress,completed,cancelled,draft,pending_payment',
           'category_ids'=>'nullable|array',
           'category_ids.*'=>'integer|exists:project_categories,id',
           'skill_ids'=>'nullable|array',
@@ -168,16 +173,34 @@ class ProjectController extends Controller
         if (($data['status'] ?? '') === 'completed' && $project->status !== 'completed') {
              // Find accepted application
              $acceptedApp = $project->applications()->where('status', 'accepted')->first();
+             
              if ($acceptedApp) {
-                 // Release Funds
-                 $amount = $project->budget_min ?? 0; // consistent with accept logic
-                 if ($amount > 0) {
-                     $paymentService = app(\App\Services\PaymentService::class);
-                     try {
-                        $paymentService->releaseFunds($r->user(), $acceptedApp->developer, $amount, $project);
-                     } catch (\Exception $e) {
-                         return response()->json(['message' => 'Error liberando fondos: ' . $e->getMessage()], 400);
-                     }
+                 // 1. Calculate remaining 50% to fund
+                 $totalBudget = $project->budget_min ?? 0;
+                 $remainingToFund = $totalBudget * 0.5;
+                 
+                 // 2. Wrap in transaction: Fund remaining 50% -> Release 100%
+                 try {
+                     \Illuminate\Support\Facades\DB::transaction(function () use ($r, $project, $acceptedApp, $totalBudget, $remainingToFund) {
+                         $paymentService = app(\App\Services\PaymentService::class);
+                         
+                         // Fund the remaining 50%
+                         if ($remainingToFund > 0) {
+                             $paymentService->fundProject($r->user(), $remainingToFund, $project);
+                         }
+
+                         // Release the full amount (100%)
+                         if ($totalBudget > 0) {
+                             // Note: make sure releaseFunds (releaseMilestone) handles the logic of distributing to the developer
+                             // The original logic passed $acceptedApp->developer, but releaseMilestone finds developers from usages. 
+                             // Let's check PaymentService::releaseMilestone signature.
+                             // It is: public function releaseMilestone(User $company, float $amount, $project)
+                             
+                             $paymentService->releaseFunds($r->user(), $totalBudget, $project);
+                         }
+                     });
+                 } catch (\Exception $e) {
+                     return response()->json(['message' => 'Error en el proceso de pago final: ' . $e->getMessage()], 400);
                  }
              }
         }

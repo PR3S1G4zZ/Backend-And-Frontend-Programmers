@@ -2,118 +2,139 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Conversation;
 use App\Models\Message;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ConversationController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function store(Request $request)
     {
-        $user = $request->user();
-
-        $conversations = Conversation::with([
-                'participants:id,name,lastname,user_type',
-                'project:id,title',
-                'latestMessage',
-            ])
-            ->withCount([
-                'messages as unread_count' => function ($query) use ($user) {
-                    $query->whereNull('read_at')->where('sender_id', '!=', $user->id);
-                },
-            ])
-            ->whereHas('participants', function ($query) use ($user) {
-                $query->where('users.id', $user->id);
-            })
-            ->latest('updated_at')
-            ->get();
-
-        $data = $conversations->map(function ($conversation) use ($user) {
-            $otherParticipant = $conversation->participants->firstWhere('id', '!=', $user->id);
-            $latestMessage = $conversation->latestMessage;
-
-            return [
-                'id' => $conversation->id,
-                'name' => $otherParticipant
-                    ? $otherParticipant->name . ' ' . $otherParticipant->lastname
-                    : 'Participante',
-                'role' => $conversation->project
-                    ? 'Proyecto • ' . $conversation->project->title
-                    : ($otherParticipant?->user_type === 'company' ? 'Empresa' : 'Desarrollador'),
-                'lastMessage' => $latestMessage?->body ?? '',
-                'timestamp' => $latestMessage?->created_at?->toDateTimeString(),
-                'unreadCount' => $conversation->unread_count,
-                'isOnline' => false,
-                'conversationId' => $conversation->id,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => $data,
+        $request->validate([
+            'participant_id' => 'required|exists:users,id',
+            'type' => 'required|in:direct,project',
+            'project_id' => 'required_if:type,project|exists:projects,id|nullable'
         ]);
+
+        $initiatorId = $request->user()->id;
+        $participantId = $request->participant_id;
+        $type = $request->type;
+        $projectId = $request->project_id;
+
+        // Check availability logic? (not requested yet)
+
+        // Find existing conversation
+        $query = DB::table('conversations')
+            ->where('type', $type)
+            ->where(function($q) use ($initiatorId, $participantId) {
+                 $q->where(function($sub) use ($initiatorId, $participantId) {
+                     $sub->where('initiator_id', $initiatorId)->where('participant_id', $participantId);
+                 })->orWhere(function($sub) use ($initiatorId, $participantId) {
+                     $sub->where('initiator_id', $participantId)->where('participant_id', $initiatorId);
+                 });
+            });
+        
+        if ($type === 'project' && $projectId) {
+            $query->where('project_id', $projectId);
+        }
+
+        $existing = $query->first();
+
+        if ($existing) {
+            return response()->json(['message' => 'Conversación existente', 'conversation' => $existing]);
+        }
+
+        // Create new
+        $id = DB::table('conversations')->insertGetId([
+            'type' => $type,
+            'project_id' => $projectId,
+            'initiator_id' => $initiatorId,
+            'participant_id' => $participantId,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['message' => 'Conversación creada', 'conversation_id' => $id], 201);
     }
 
-    public function messages(Request $request, Conversation $conversation): JsonResponse
+    public function index(Request $request)
     {
-        $user = $request->user();
+        $userId = $request->user()->id;
 
-        abort_unless($conversation->participants()->where('users.id', $user->id)->exists(), 403);
+        // Fetch conversations where user is initiator OR participant
+        $conversations = Conversation::where('initiator_id', $userId)
+            ->orWhere('participant_id', $userId)
+            ->with(['initiator', 'participant', 'lastMessage'])
+            ->get()
+            ->map(function ($conv) use ($userId) {
+                // Determine the "other" user
+                $otherUser = $conv->initiator_id === $userId ? $conv->participant : $conv->initiator;
+                
+                return [
+                    'id' => $conv->id,
+                    'name' => $otherUser->name . ' ' . $otherUser->lastname,
+                    'role' => $otherUser->role, // developer or company
+                    // Avatar logic if exists
+                    'timestamp' => $conv->lastMessage?->created_at ?? $conv->created_at,
+                    'lastMessage' => $conv->lastMessage?->content ?? 'Inicio de conversación',
+                    'unreadCount' => 0, // Implement unread logic later
+                    'isOnline' => false, // Real-time status later
+                ];
+            });
 
-        $messages = $conversation->messages()->with('sender:id,name,lastname')->orderBy('created_at')->get();
-
-        $conversation->messages()
-            ->whereNull('read_at')
-            ->where('sender_id', '!=', $user->id)
-            ->update(['read_at' => now()]);
-
-        $data = $messages->map(function ($message) {
-            return [
-                'id' => $message->id,
-                'senderId' => (string) $message->sender_id,
-                'senderName' => $message->sender
-                    ? $message->sender->name . ' ' . $message->sender->lastname
-                    : 'Usuario',
-                'content' => $message->body,
-                'timestamp' => $message->created_at?->toDateTimeString(),
-                'type' => 'text',
-                'isRead' => $message->read_at !== null,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-        ]);
+        return response()->json($conversations);
     }
 
-    public function storeMessage(Request $request, Conversation $conversation): JsonResponse
+    public function messages(Request $request, Conversation $conversation)
     {
-        $user = $request->user();
+        // Authorization check
+        $userId = $request->user()->id;
+        if ($conversation->initiator_id !== $userId && $conversation->participant_id !== $userId) {
+            abort(403, 'Unauthorized');
+        }
 
-        abort_unless($conversation->participants()->where('users.id', $user->id)->exists(), 403);
+        $messages = $conversation->messages()
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(function ($msg) {
+                return [
+                    'id' => $msg->id,
+                    'senderId' => (string)$msg->sender_id,
+                    'content' => $msg->content,
+                    'timestamp' => $msg->created_at,
+                    'type' => $msg->type,
+                    'isRead' => $msg->is_read,
+                ];
+            });
 
-        $data = $request->validate([
+        return response()->json($messages);
+    }
+
+    public function storeMessage(Request $request, Conversation $conversation)
+    {
+        $userId = $request->user()->id;
+        if ($conversation->initiator_id !== $userId && $conversation->participant_id !== $userId) {
+            abort(403, 'Unauthorized');
+        }
+
+        $request->validate([
             'content' => 'required|string',
         ]);
 
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $user->id,
-            'body' => $data['content'],
+        $message = $conversation->messages()->create([
+            'sender_id' => $userId,
+            'content' => $request->content,
+            'type' => 'text', // Handle file upload later if needed
         ]);
 
         return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $message->id,
-                'senderId' => (string) $message->sender_id,
-                'content' => $message->body,
-                'timestamp' => $message->created_at?->toDateTimeString(),
-                'type' => 'text',
-                'isRead' => false,
-            ],
+            'id' => $message->id,
+            'senderId' => (string)$message->sender_id,
+            'content' => $message->content,
+            'timestamp' => $message->created_at,
+            'type' => $message->type,
+            'isRead' => $message->is_read,
         ], 201);
     }
 }

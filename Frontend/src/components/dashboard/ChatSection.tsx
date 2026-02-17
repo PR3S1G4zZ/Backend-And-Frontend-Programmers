@@ -1,26 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
-import { 
-  Search, 
-  Send, 
-  Paperclip, 
-  Smile, 
+import {
+  Search,
+  Send,
+  Paperclip,
+  Smile,
   MoreVertical,
   Phone,
   Video,
-  Star,
-  Circle,
   ArrowLeft,
   ImageIcon,
-  FileText,
-  Download
+  MessageSquare
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchConversationMessages, fetchConversations, sendConversationMessage } from '../../services/chatService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -50,32 +54,33 @@ interface Message {
 
 interface ChatSectionProps {
   userType: 'programmer' | 'company';
+  initialChatId?: string;
 }
 
-export function ChatSection({ userType }: ChatSectionProps) {
+export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
   const { user } = useAuth();
-  const [selectedContact, setSelectedContact] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<string | null>(initialChatId || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isMobileView, setIsMobileView] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null); // New state for reply
+
   const currentUserId = user ? String(user.id) : 'me';
 
   const formatTimestamp = (timestamp: string) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
-    return date.toLocaleString();
+    return date.toLocaleString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true }); // Shorter timestamp
   };
 
+  // ... (Load Conversations & Messages effects remain similar, keep them or re-implement if needed for context)
+  // Re-implementing effects to ensure context is available in this replacement block
   useEffect(() => {
     let isMounted = true;
     const loadConversations = async () => {
-      setIsLoading(true);
-      setError(null);
       try {
         const response = await fetchConversations();
         if (!isMounted) return;
@@ -92,17 +97,13 @@ export function ChatSection({ userType }: ChatSectionProps) {
           isTyping: false,
         }));
         setContacts(mapped);
-        if (mapped.length > 0) {
-          setSelectedContact((prev) => prev ?? mapped[0].id);
+        if (mapped.length > 0 && !selectedContact) {
+          setSelectedContact(mapped[0].id);
         }
       } catch (error) {
         console.error('Error cargando conversaciones', error);
         if (isMounted) {
-          setError('No se pudieron cargar las conversaciones.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+          // Silently fail or show minimal error to avoid UI clutter
         }
       }
     };
@@ -162,15 +163,14 @@ export function ChatSection({ userType }: ChatSectionProps) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, replyingTo]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedContact) {
-      return;
-    }
+    if (!newMessage.trim() || !selectedContact) return;
 
     const content = newMessage.trim();
     setNewMessage('');
+    setReplyingTo(null);
 
     try {
       const response = await sendConversationMessage(Number(selectedContact), content);
@@ -198,288 +198,282 @@ export function ChatSection({ userType }: ChatSectionProps) {
     }
   };
 
+  // Dummy actions
+  const handleClearChat = () => setMessages([]);
+  const handleBlockUser = () => alert("Usuario bloqueado (Simulación)");
+  const handleDeleteMessage = (id: string) => setMessages(prev => prev.filter(m => m.id !== id));
+  const handleCopyMessage = (content: string) => navigator.clipboard.writeText(content);
+
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 h-screen flex flex-col">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">Chat</h1>
-        <p className="text-gray-300">
-          {userType === 'programmer' 
-            ? 'Comunicación directa con empresas y clientes'
-            : 'Conversaciones con desarrolladores y tu equipo'
-          }
-        </p>
-      </div>
+    <div className="h-screen flex flex-col bg-[#050505] overflow-hidden font-sans selection:bg-primary/20">
+      <div className="flex-1 flex overflow-hidden">
 
-      {error ? (
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200 mb-4">
-          {error}
-        </div>
-      ) : null}
-      {isLoading ? (
-        <div className="rounded-lg border border-[#333333] bg-[#1A1A1A] p-4 text-sm text-gray-300 mb-4">
-          Cargando conversaciones...
-        </div>
-      ) : null}
+        {/* Sidebar - Contact List */}
+        <div className={`w-full lg:w-96 flex flex-col border-r border-[#222] bg-[#0A0A0A] ${selectedContact && isMobileView ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="p-5 border-b border-[#222]">
+            <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Mensajes</h1>
+            <p className="text-xs text-gray-400 font-medium">
+              {userType === 'programmer' ? 'Chats con Empresas' : 'Equipo & Devs'}
+            </p>
+            <div className="mt-4 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-4 w-4" />
+              <Input
+                placeholder="Buscar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-[#151515] border-transparent focus:bg-[#1A1A1A] focus:border-primary/20 transition-all rounded-lg h-10 text-sm"
+              />
+            </div>
+          </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 min-h-0">
-        {/* Lista de Contactos */}
-        <div className={`lg:col-span-1 ${selectedContact && isMobileView ? 'hidden lg:block' : ''}`}>
-          <Card className="bg-[#1A1A1A] border-[#333333] h-full flex flex-col">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Conversaciones</CardTitle>
-                <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              {/* Buscador */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Buscar conversaciones..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-[#0D0D0D] border-[#333333] text-white placeholder-gray-400"
-                />
-              </div>
-            </CardHeader>
-
-            <CardContent className="flex-1 p-0 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="space-y-1 px-4 pb-4">
-                  {filteredContacts.length === 0 ? (
-                    <p className="text-sm text-gray-400 p-4">No hay conversaciones disponibles.</p>
-                  ) : filteredContacts.map((contact) => (
-                    <motion.div
-                      key={contact.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <Button
-                        variant="ghost"
-                        className={`w-full p-4 h-auto justify-start ${
-                          selectedContact === contact.id 
-                            ? 'bg-[#00FF85]/10 border border-[#00FF85]' 
-                            : 'hover:bg-[#333333]'
-                        }`}
-                        onClick={() => {
-                          setSelectedContact(contact.id);
-                          setIsMobileView(true);
-                        }}
-                      >
-                        <div className="flex items-start space-x-3 w-full">
-                          <div className="relative">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={contact.avatar} />
-                              <AvatarFallback className="bg-[#00FF85] text-[#0D0D0D]">
-                                {contact.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            {contact.isOnline && (
-                              <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500" />
-                            )}
-                          </div>
-                          
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="flex items-center justify-between">
-                              <p className="text-white font-medium truncate">{contact.name}</p>
-                              <span className="text-xs text-gray-400">{contact.timestamp}</span>
-                            </div>
-                            <p className="text-xs text-gray-400 truncate">{contact.role}</p>
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-sm text-gray-300 truncate">
-                                {contact.isTyping ? (
-                                  <span className="text-[#00FF85] italic">Escribiendo...</span>
-                                ) : (
-                                  contact.lastMessage
-                                )}
-                              </p>
-                              {contact.unreadCount > 0 && (
-                                <Badge className="bg-[#00FF85] text-[#0D0D0D] text-xs h-5 w-5 p-0 flex items-center justify-center">
-                                  {contact.unreadCount}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </Button>
-                    </motion.div>
-                  ))}
+          <ScrollArea className="flex-1">
+            <div className="p-3 space-y-1">
+              {filteredContacts.length === 0 ? (
+                <div className="text-center py-10 opacity-40">
+                  <p className="text-sm">Sin resultados</p>
                 </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
+              ) : filteredContacts.map((contact) => (
+                <button
+                  key={contact.id}
+                  onClick={() => {
+                    setSelectedContact(contact.id);
+                    setIsMobileView(true);
+                  }}
+                  className={`w-full p-3 rounded-xl flex items-center gap-4 transition-all duration-200 group relative overflow-hidden ${selectedContact === contact.id
+                    ? 'bg-gradient-to-r from-primary/10 to-transparent'
+                    : 'hover:bg-[#151515]'
+                    }`}
+                >
+                  {selectedContact === contact.id && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute left-0 top-3 bottom-3 w-1 bg-primary rounded-r-full"
+                    />
+                  )}
 
-        {/* Área de Chat */}
-        <div className={`lg:col-span-2 ${!selectedContact ? 'hidden lg:block' : ''}`}>
-          {selectedContact ? (
-            <Card className="bg-[#1A1A1A] border-[#333333] h-full flex flex-col">
-              {/* Header del Chat */}
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="lg:hidden text-gray-400 hover:text-white p-2"
-                      onClick={() => {
-                        setSelectedContact(null);
-                        setIsMobileView(false);
-                      }}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={selectedContactData?.avatar} />
-                        <AvatarFallback className="bg-[#00FF85] text-[#0D0D0D]">
-                          {selectedContactData?.name.split(' ').map(n => n[0]).join('')}
-                        </AvatarFallback>
-                      </Avatar>
-                      {selectedContactData?.isOnline && (
-                        <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500" />
+                  <div className="relative shrink-0">
+                    <Avatar className="h-12 w-12 border-2 border-[#151515] shadow-sm">
+                      <AvatarImage src={contact.avatar} />
+                      <AvatarFallback className={`font-bold text-xs ${selectedContact === contact.id ? 'bg-primary text-primary-foreground' : 'bg-[#222] text-gray-400'
+                        }`}>
+                        {contact.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {contact.isOnline && (
+                      <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-[#0A0A0A] rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex justify-between items-baseline mb-1">
+                      <span className={`font-semibold text-sm truncate ${selectedContact === contact.id ? 'text-white' : 'text-gray-300 group-hover:text-white'
+                        }`}>
+                        {contact.name}
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-medium">{contact.timestamp}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-gray-500 truncate max-w-[160px] group-hover:text-gray-400 transition-colors">
+                        {contact.isTyping ? <span className="text-primary animate-pulse">Escribiendo...</span> : contact.lastMessage}
+                      </p>
+                      {contact.unreadCount > 0 && (
+                        <Badge className="h-5 min-w-[20px] bg-primary text-primary-foreground text-[10px] px-0 flex items-center justify-center rounded-full">
+                          {contact.unreadCount}
+                        </Badge>
                       )}
                     </div>
-                    
-                    <div>
-                      <h3 className="text-white font-semibold">{selectedContactData?.name}</h3>
-                      <p className="text-xs text-gray-400">{selectedContactData?.role}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className={`flex-1 flex flex-col bg-[#050505] relative ${!selectedContact ? 'hidden lg:flex' : 'flex'} ${selectedContact && isMobileView ? 'fixed inset-0 z-50 lg:static' : ''}`}>
+          {!selectedContact ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+              <div className="w-24 h-24 rounded-full bg-[#111] flex items-center justify-center mb-6 animate-pulse">
+                <MessageSquare className="h-10 w-10 text-gray-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-200">Selecciona un chat</h2>
+              <p className="text-gray-500 mt-2 max-w-sm">Elige una conversación del panel izquierdo para comenzar a colaborar.</p>
+            </div>
+          ) : (
+            <>
+              {/* Chat Header */}
+              <div className="h-[73px] border-b border-[#222] bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between px-6">
+                <div className="flex items-center gap-4">
+                  <Button variant="ghost" size="icon" className="lg:hidden -ml-2 text-gray-400" onClick={() => setIsMobileView(false)}>
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+
+                  <Avatar className="h-10 w-10 border border-[#222]">
+                    <AvatarImage src={selectedContactData?.avatar} />
+                    <AvatarFallback className="bg-primary/20 text-primary font-bold">
+                      {selectedContactData?.name.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div>
+                    <h3 className="font-bold text-white leading-none mb-1">{selectedContactData?.name}</h3>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${selectedContactData?.isOnline ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' : 'bg-gray-500'}`}></span>
+                      <span className="text-xs text-gray-400 font-medium">{selectedContactData?.isOnline ? 'En línea' : 'Desconectado'}</span>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                      <Phone className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                      <Video className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                      <Star className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
-              </CardHeader>
 
-              <Separator className="bg-[#333333]" />
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-[#1A1A1A] rounded-full hidden sm:flex">
+                    <Phone className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-[#1A1A1A] rounded-full hidden sm:flex">
+                    <Video className="h-5 w-5" />
+                  </Button>
+                  <Separator orientation="vertical" className="h-6 mx-2 bg-[#222] hidden sm:block" />
 
-              {/* Mensajes */}
-              <CardContent className="flex-1 p-0 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="p-4 space-y-4">
-                    <AnimatePresence>
-                      {messages.map((message) => (
-                        <motion.div
-                          key={message.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
-                          className={`flex ${message.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div className={`max-w-[70%] ${message.senderId === currentUserId ? 'order-2' : 'order-1'}`}>
-                            <div className={`p-3 rounded-lg ${
-                              message.senderId === currentUserId
-                                ? 'bg-[#00FF85] text-[#0D0D0D]'
-                                : 'bg-[#333333] text-white'
-                            }`}>
-                              {message.type === 'text' ? (
-                                <p className="text-sm">{message.content}</p>
-                              ) : message.type === 'file' ? (
-                                <div className="flex items-center space-x-3">
-                                  <div className="bg-blue-600 p-2 rounded">
-                                    <FileText className="h-4 w-4 text-white" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-[#1A1A1A] rounded-full">
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-[#111] border-[#222] text-gray-200">
+                      <DropdownMenuLabel>Opciones del Chat</DropdownMenuLabel>
+                      <DropdownMenuSeparator className="bg-[#222]" />
+                      <DropdownMenuItem className="hover:bg-[#222] cursor-pointer">
+                        <Search className="h-4 w-4 mr-2" /> Buscar en chat
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="hover:bg-[#222] cursor-pointer" onClick={handleClearChat}>
+                        <div className="flex items-center text-orange-500">
+                          <MessageSquare className="h-4 w-4 mr-2" /> Limpiar historial
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-[#222]" />
+                      <DropdownMenuItem className="hover:bg-[#222] cursor-pointer text-red-500 focus:text-red-500" onClick={handleBlockUser}>
+                        Bloquear usuario
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
+              {/* Messages Area */}
+              <div className="flex-1 overflow-hidden relative bg-[#050505]">
+                <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+
+                <ScrollArea className="h-full px-4 py-6">
+                  <div className="space-y-6 pb-4 max-w-4xl mx-auto">
+                    <AnimatePresence initial={false}>
+                      {messages.map((message) => {
+                        const isMe = message.senderId === currentUserId;
+                        return (
+                          <motion.div
+                            key={message.id}
+                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            className={`flex group ${isMe ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div className={`flex flex-col max-w-[80%] md:max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+                              <div className={`relative px-5 py-3 shadow-sm text-sm leading-relaxed ${isMe
+                                ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm'
+                                : 'bg-[#1E1E1E] text-gray-100 rounded-2xl rounded-tl-sm border border-[#2A2A2A]'
+                                }`}>
+                                {message.type === 'image' && (
+                                  <div className="mb-2 rounded-lg overflow-hidden border border-black/10">
+                                    <div className="bg-black/20 h-48 w-64 flex items-center justify-center">
+                                      <ImageIcon className="h-8 w-8 opacity-50" />
+                                    </div>
                                   </div>
-                                  <div className="flex-1">
-                                    <p className="text-sm font-medium">{message.fileName}</p>
-                                    <p className="text-xs opacity-70">{message.fileSize}</p>
-                                  </div>
-                                  <Button size="sm" variant="ghost" className="p-1">
-                                    <Download className="h-4 w-4" />
-                                  </Button>
+                                )}
+
+                                <p className="whitespace-pre-wrap">{message.content}</p>
+
+                                {/* Message Meta & Actions */}
+                                <div className={`absolute -bottom-5 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isMe ? 'right-0' : 'left-0'}`}>
+                                  <span className="text-[10px] text-gray-500 font-mono">{message.timestamp}</span>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-4 w-4 text-gray-500 hover:text-white">
+                                        <MoreVertical className="h-3 w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="bg-[#111] border-[#222]">
+                                      <DropdownMenuItem onClick={() => handleCopyMessage(message.content)}>Copiar</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => setReplyingTo(message)}>Responder</DropdownMenuItem>
+                                      <DropdownMenuItem className="text-red-500" onClick={() => handleDeleteMessage(message.id)}>Eliminar</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
-                              ) : (
-                                <div className="space-y-2">
-                                  <div className="bg-gray-700 rounded p-2 flex items-center justify-center h-32">
-                                    <ImageIcon className="h-8 w-8 text-gray-400" />
-                                  </div>
-                                  <p className="text-sm">{message.content}</p>
-                                </div>
-                              )}
-                            </div>
-                            <div className={`flex items-center mt-1 space-x-2 ${
-                              message.senderId === currentUserId ? 'justify-end' : 'justify-start'
-                            }`}>
-                              <span className="text-xs text-gray-400">{message.timestamp}</span>
-                              {message.senderId === currentUserId && (
-                                <span className="text-xs text-gray-400">
-                                  {message.isRead ? '✓✓' : '✓'}
+                              </div>
+
+                              {isMe && (
+                                <span className="text-[10px] text-gray-600 mt-1 mr-1 flex items-center gap-0.5">
+                                  {message.isRead && <span className="text-primary">✓✓</span>}
                                 </span>
                               )}
                             </div>
-                          </div>
-                        </motion.div>
-                      ))}
+                          </motion.div>
+                        );
+                      })}
                     </AnimatePresence>
-
-                    
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
-              </CardContent>
+              </div>
 
-              {/* Input de mensaje */}
-              <div className="p-4 border-t border-[#333333]">
-                <div className="flex items-center space-x-2">
-                  <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="flex-1 relative">
+              {/* Input Area */}
+              <div className="p-4 bg-[#0A0A0A] border-t border-[#222]">
+                <div className="max-w-4xl mx-auto">
+                  {replyingTo && (
+                    <div className="flex items-center justify-between bg-[#151515] p-2 rounded-t-lg border-x border-t border-[#222] mb-0 ml-4 mr-4 text-xs text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-8 bg-primary rounded-full"></div>
+                        <div>
+                          <span className="font-bold text-primary">Respondiendo a mensaje:</span>
+                          <p className="line-clamp-1 opacity-70">{replyingTo.content}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyingTo(null)}>
+                        <span className="sr-only">Cancelar</span>
+                        ×
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="flex items-end gap-2 bg-[#121212] p-2 rounded-2xl border border-[#222] focus-within:border-primary/50 focus-within:bg-[#151515] transition-all shadow-lg">
+                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white rounded-xl h-10 w-10 shrink-0">
+                      <Paperclip className="h-5 w-5" />
+                    </Button>
+
                     <Input
-                      placeholder="Escribe un mensaje..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      className="bg-[#0D0D0D] border-[#333333] text-white placeholder-gray-400 pr-12"
+                      onKeyDown={handleKeyPress}
+                      placeholder="Escribe un mensaje..."
+                      className="border-0 bg-transparent p-2 h-auto text-sm focus-visible:ring-0 placeholder-gray-500 text-white min-h-[40px] max-h-32 resize-none"
                     />
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+
+                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white rounded-xl h-10 w-10 shrink-0">
+                      <Smile className="h-5 w-5" />
+                    </Button>
+
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim()}
+                      className={`h-10 w-10 rounded-xl shrink-0 transition-all duration-200 ${newMessage.trim()
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_10px_rgba(34,197,94,0.3)]'
+                        : 'bg-[#222] text-gray-600'
+                        }`}
                     >
-                      <Smile className="h-4 w-4" />
+                      <Send className="h-5 w-5 ml-0.5" />
                     </Button>
                   </div>
-                  
-                  <Button 
-                    size="sm" 
-                    onClick={handleSendMessage}
-                    disabled={!newMessage.trim()}
-                    className="bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] disabled:opacity-50"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
-            </Card>
-          ) : (
-            <Card className="bg-[#1A1A1A] border-[#333333] h-full flex items-center justify-center">
-              <div className="text-center">
-                <div className="bg-[#333333] p-8 rounded-full mb-4 mx-auto w-24 h-24 flex items-center justify-center">
-                  <Send className="h-12 w-12 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Selecciona una conversación</h3>
-                <p className="text-gray-400">
-                  Elige un contacto de la lista para comenzar a chatear
-                </p>
-              </div>
-            </Card>
+            </>
           )}
         </div>
       </div>

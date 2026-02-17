@@ -9,12 +9,14 @@ class Message extends Model
     protected $fillable = [
         'conversation_id',
         'sender_id',
-        'body',
-        'read_at',
+        'content',
+        'type',
+        'file_path',
+        'is_read',
     ];
 
     protected $casts = [
-        'read_at' => 'datetime',
+        'is_read' => 'boolean',
     ];
 
     public function conversation()

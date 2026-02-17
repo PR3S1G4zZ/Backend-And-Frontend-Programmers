@@ -11,7 +11,8 @@ use App\Http\Controllers\{
     ProfileController,
     TaxonomyController,
     PaymentMethodController,
-    WalletController
+    WalletController,
+    FavoriteController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -82,11 +83,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Developers
     Route::get('/developers', [DeveloperController::class, 'index']);
+    Route::get('/developers/{id}', [DeveloperController::class, 'show']);
 
     // Conversations
     Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::post('/conversations', [ConversationController::class, 'store']); // Create conversation
     Route::get('/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
     Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'storeMessage']);
+
+    // Favorites
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::post('/favorites', [FavoriteController::class, 'store']); // Toggle favorite
 
     // Company projects
     Route::get('/company/projects', [ProjectController::class, 'companyProjects']);
@@ -111,6 +118,16 @@ Route::middleware('auth:sanctum')->group(function () {
         // Categories Management
         Route::apiResource('categories', \App\Http\Controllers\CategoryController::class)->except(['index', 'show']);
     });
+
+    // Milestones
+    Route::get('/projects/{project}/milestones', [\App\Http\Controllers\MilestoneController::class, 'index']);
+    Route::post('/projects/{project}/milestones', [\App\Http\Controllers\MilestoneController::class, 'store']);
+    Route::put('/projects/{project}/milestones/{milestone}', [\App\Http\Controllers\MilestoneController::class, 'update']);
+    Route::delete('/projects/{project}/milestones/{milestone}', [\App\Http\Controllers\MilestoneController::class, 'destroy']);
+    Route::post('/projects/{project}/milestones/{milestone}/submit', [\App\Http\Controllers\MilestoneController::class, 'submit']);
+    Route::post('/projects/{project}/milestones/{milestone}/approve', [\App\Http\Controllers\MilestoneController::class, 'approve']);
+    Route::post('/projects/{project}/milestones/{milestone}/reject', [\App\Http\Controllers\MilestoneController::class, 'reject']);
+
 
     // Payment Methods
     Route::get('/payment-methods', [PaymentMethodController::class, 'index']);

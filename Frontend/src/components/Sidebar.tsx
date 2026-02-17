@@ -36,6 +36,7 @@ export function Sidebar({
 }: SidebarProps) {
   const programmerSections = [
     { id: 'welcome', label: 'Mi Espacio', icon: Home },
+    { id: 'projects-active', label: 'Proyectos Activos', icon: Code },
     { id: 'portfolio', label: 'Mi Portafolio', icon: FolderOpen },
     { id: 'projects', label: 'Proyectos Publicados', icon: Search },
     { id: 'profile', label: 'Mi Perfil', icon: User },

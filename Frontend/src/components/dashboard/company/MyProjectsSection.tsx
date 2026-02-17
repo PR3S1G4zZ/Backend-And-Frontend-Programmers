@@ -521,7 +521,11 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
 
                     {project.status === 'in-progress' && (
                       <>
-                        <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Button
+                          size="sm"
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                          onClick={() => onSectionChange('workspace', project.originalData)}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Progreso
                         </Button>
@@ -566,27 +570,29 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
         ))}
       </div>
 
-      {filteredProjects.length === 0 && (
-        <Card className="bg-[#1A1A1A] border-[#333333] p-12">
-          <div className="text-center">
-            <div className="bg-[#333333] p-8 rounded-full mb-4 mx-auto w-24 h-24 flex items-center justify-center">
-              <Search className="h-12 w-12 text-gray-400" />
+      {
+        filteredProjects.length === 0 && (
+          <Card className="bg-[#1A1A1A] border-[#333333] p-12">
+            <div className="text-center">
+              <div className="bg-[#333333] p-8 rounded-full mb-4 mx-auto w-24 h-24 flex items-center justify-center">
+                <Search className="h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">No hay proyectos</h3>
+              <p className="text-gray-400 mb-4">
+                No tienes proyectos en esta categoría. ¡Empieza creando tu primer proyecto!
+              </p>
+              <Button
+                onClick={() => onSectionChange('publish-project')}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Proyecto
+              </Button>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No hay proyectos</h3>
-            <p className="text-gray-400 mb-4">
-              No tienes proyectos en esta categoría. ¡Empieza creando tu primer proyecto!
-            </p>
-            <Button
-              onClick={() => onSectionChange('publish-project')}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Proyecto
-            </Button>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )
+      }
       <Alert />
-    </div>
+    </div >
   );
 }

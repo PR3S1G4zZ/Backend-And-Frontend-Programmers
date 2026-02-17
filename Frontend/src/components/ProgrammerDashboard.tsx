@@ -9,6 +9,9 @@ import { ChatSection } from './dashboard/ChatSection';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { useAuth } from '../contexts/AuthContext';
 import { WalletPaymentMethods } from './dashboard/wallet/WalletPaymentMethods';
+import { MyActiveProjectsSection } from './dashboard/programmer/MyActiveProjectsSection';
+import { Workspace } from './dashboard/shared/Workspace';
+import type { ProjectResponse } from '../services/projectService';
 
 interface ProgrammerDashboardProps {
   onLogout?: () => void;
@@ -18,6 +21,7 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
   const [currentSection, setCurrentSection] = useState('welcome');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [viewingWorkspace, setViewingWorkspace] = useState<ProjectResponse | null>(null);
   const { user } = useAuth();
 
   const sectionLabels: Record<string, string> = {
@@ -64,6 +68,25 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
             </div>
           </div>
         );
+      case 'projects-active':
+        return <MyActiveProjectsSection onWorkspaceSelect={(p) => {
+          setViewingWorkspace(p);
+          setCurrentSection('workspace');
+        }} />;
+      case 'workspace':
+        return viewingWorkspace ? (
+          <Workspace
+            projectId={Number(viewingWorkspace.id)}
+            userType="programmer"
+            onBack={() => {
+              setViewingWorkspace(null);
+              setCurrentSection('projects-active');
+            }}
+          />
+        ) : <MyActiveProjectsSection onWorkspaceSelect={(p) => {
+          setViewingWorkspace(p);
+          setCurrentSection('workspace');
+        }} />;
       default:
         return <WelcomeSection onSectionChange={setCurrentSection} />;
     }
