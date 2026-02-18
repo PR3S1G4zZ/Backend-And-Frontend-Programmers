@@ -1,0 +1,12 @@
+services:
+  frontend:
+    container_name: Frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_APP_NAME=ProgrammersApp
+      - VITE_API_URL=https://api.tudominio.com
+    restart: unless-stopped
