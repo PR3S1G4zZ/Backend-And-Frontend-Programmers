@@ -1,9 +1,9 @@
-import { Dialog, DialogContent } from '../../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { ScrollArea } from '../../ui/scroll-area';
-import { MapPin, Clock, Star, ExternalLink, Briefcase, Code, Award, X } from 'lucide-react';
+import { MapPin, Clock, Star, Briefcase, Code, Award, X } from 'lucide-react';
 import type { DeveloperProfile } from '../../../services/developerService'; // Reuse type
 import { Skeleton } from '../../ui/skeleton';
 
@@ -19,7 +19,13 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl bg-[#1A1A1A] border-[#333333] p-0 overflow-hidden text-white sm:rounded-xl">
+            <DialogContent className="max-w-6xl w-full sm:max-w-[90vw] lg:max-w-7xl h-[90vh] bg-[#111] border-[#333333] p-0 overflow-hidden text-white sm:rounded-xl flex flex-col">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Perfil de Desarrollador: {developer?.name ?? 'Cargando...'}</DialogTitle>
+                    <DialogDescription>
+                        Detalles completos, experiencia y portafolio del desarrollador seleccionado.
+                    </DialogDescription>
+                </DialogHeader>
                 {isLoading || !developer ? (
                     <div className="p-6 space-y-6">
                         <div className="flex items-start space-x-4">
@@ -45,132 +51,187 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col max-h-[90vh]">
-                        {/* Header / Cover */}
-                        <div className="bg-gradient-to-r from-primary/20 to-purple-500/10 p-6 pb-0 pt-8 relative">
-                            <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-gray-400 hover:text-white" onClick={onClose}>
-                                <X className="h-5 w-5" />
-                            </Button>
-                            <div className="flex flex-col md:flex-row gap-6 items-start">
-                                <Avatar className="h-24 w-24 border-4 border-[#1A1A1A] shadow-xl">
-                                    <AvatarImage src={developer.avatar} />
-                                    <AvatarFallback className="bg-primary text-2xl">{developer.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 space-y-1 mt-2">
-                                    <h2 className="text-2xl font-bold flex items-center gap-2">
-                                        {developer.name}
-                                        {developer.isVerified && <Award className="h-5 w-5 text-blue-400" />}
-                                    </h2>
-                                    <p className="text-lg text-gray-300">{developer.title}</p>
-                                    <div className="flex flex-wrap gap-4 text-sm text-gray-400 pt-1">
-                                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {developer.location}</span>
-                                        <span className="flex items-center gap-1 text-green-400"><Clock className="h-3 w-3" /> Disponible</span>
-                                        <span className="flex items-center gap-1 text-yellow-400"><Star className="h-3 w-3 fill-current" /> {developer.rating} ({developer.reviewsCount} reseñas)</span>
-                                    </div>
-                                </div>
-                                <div className="mt-4 md:mt-0 text-right">
-                                    <div className="text-2xl font-bold text-primary">€{developer.hourlyRate}<span className="text-sm text-gray-400 font-normal">/h</span></div>
-                                    <Button className="mt-2 w-full bg-primary text-primary-foreground hover:bg-primary/90">Contactar Ahora</Button>
-                                </div>
+                    <div className="flex flex-col max-h-[90vh] bg-[#111]">
+                        {/* Hero Section / Banner */}
+                        <div className="relative h-40 bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] overflow-hidden">
+                            <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:20px_20px]" />
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <Code className="h-64 w-64 text-white transform rotate-12" />
                             </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-4 right-4 z-20 text-white/70 hover:text-white hover:bg-black/20 rounded-full"
+                                onClick={onClose}
+                            >
+                                <X className="h-6 w-6" />
+                            </Button>
                         </div>
 
-                        <ScrollArea className="flex-1 p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                {/* Left Column: Bio & Skills */}
-                                <div className="md:col-span-2 space-y-8">
-                                    <section>
-                                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
-                                            <Briefcase className="h-5 w-5 text-primary" />
-                                            Sobre mí
-                                        </h3>
-                                        <p className="text-gray-300 leading-relaxed">
-                                            {developer.bio}
-                                        </p>
-                                    </section>
+                        <div className="px-8 pb-8 flex-1 overflow-hidden flex flex-col">
+                            {/* Profile Header (Overlapping Banner) */}
+                            <div className="flex flex-col md:flex-row gap-6 -mt-16 relative z-10 mb-8">
+                                <Avatar className="h-32 w-32 border-4 border-[#111] shadow-2xl ring-4 ring-primary/10">
+                                    <AvatarImage src={developer.avatar} />
+                                    <AvatarFallback className="bg-gradient-to-br from-primary to-purple-700 text-3xl font-bold text-white">
+                                        {developer.name.charAt(0)}
+                                    </AvatarFallback>
+                                </Avatar>
 
-                                    <section>
-                                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
-                                            <Code className="h-5 w-5 text-primary" />
-                                            Skills & Tecnologías
-                                        </h3>
-                                        <div className="flex flex-wrap gap-2">
-                                            {developer.skills.map(skill => (
-                                                <Badge key={skill} variant="secondary" className="bg-[#2A2A2A] text-gray-200 border border-[#444]">
-                                                    {skill}
-                                                </Badge>
-                                            ))}
+                                <div className="flex-1 pt-16 md:pt-20 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+                                                {developer.name}
+                                                {developer.isVerified && (
+                                                    <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 p-1 rounded-full">
+                                                        <Award className="h-4 w-4" />
+                                                    </span>
+                                                )}
+                                            </h2>
+                                            <p className="text-xl text-primary font-medium">{developer.title}</p>
                                         </div>
-                                    </section>
-
-                                    <section>
-                                        <h3 className="text-lg font-semibold mb-3 text-white">Portafolio Reciente</h3>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {/* Placeholder Portfolio Items */}
-                                            <div className="bg-[#262626] rounded-lg p-4 border border-[#333] hover:border-primary/50 transition-colors group cursor-pointer">
-                                                <div className="h-32 bg-[#333] rounded mb-3 flex items-center justify-center text-gray-500">
-                                                    Preview
-                                                </div>
-                                                <h4 className="font-medium text-white group-hover:text-primary transition-colors">E-commerce Dashboard</h4>
-                                                <p className="text-xs text-gray-400 mt-1 line-clamp-2">React, Tailwind, Node.js</p>
-                                            </div>
-                                            <div className="bg-[#262626] rounded-lg p-4 border border-[#333] hover:border-primary/50 transition-colors group cursor-pointer">
-                                                <div className="h-32 bg-[#333] rounded mb-3 flex items-center justify-center text-gray-500">
-                                                    Preview
-                                                </div>
-                                                <h4 className="font-medium text-white group-hover:text-primary transition-colors">SaaS Landing Page</h4>
-                                                <p className="text-xs text-gray-400 mt-1 line-clamp-2">Next.js, Framer Motion</p>
-                                            </div>
-                                        </div>
-                                    </section>
-                                </div>
-
-                                {/* Right Column: Stats & Info */}
-                                <div className="space-y-6">
-                                    <div className="bg-[#262626] rounded-xl p-5 border border-[#333]">
-                                        <h4 className="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">Estadísticas</h4>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-300">Proyectos Completados</span>
-                                                <span className="text-white font-bold">{developer.completedProjects}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-300">Años de Experiencia</span>
-                                                <span className="text-white font-bold">{developer.experience}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-300">Tasa de Éxito</span>
-                                                <span className="text-green-400 font-bold">100%</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-gray-300">Tiempo Respuesta</span>
-                                                <span className="text-white font-bold">&lt; 2 hrs</span>
-                                            </div>
+                                        <div className="text-right hidden md:block">
+                                            <p className="text-3xl font-bold text-white">€{developer.hourlyRate}<span className="text-sm text-gray-500 font-normal">/h</span></p>
                                         </div>
                                     </div>
 
-                                    <div className="bg-[#262626] rounded-xl p-5 border border-[#333]">
-                                        <h4 className="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">Certificaciones</h4>
-                                        <div className="space-y-3">
-                                            <div className="flex items-start gap-2">
-                                                <Award className="h-4 w-4 text-yellow-500 mt-0.5" />
-                                                <div>
-                                                    <p className="text-sm text-white font-medium">AWS Certified Developer</p>
-                                                    <p className="text-xs text-gray-500">Amazon Web Services</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <Award className="h-4 w-4 text-blue-500 mt-0.5" />
-                                                <div>
-                                                    <p className="text-sm text-white font-medium">Meta Frontend Dev</p>
-                                                    <p className="text-xs text-gray-500">Coursera</p>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-400">
+                                        <span className="flex items-center gap-1.5 hover:text-white transition-colors">
+                                            <MapPin className="h-4 w-4" /> {developer.location}
+                                        </span>
+                                        <span className={`flex items-center gap-1.5 font-medium ${developer.availability === 'available' ? 'text-green-400' : 'text-gray-400'
+                                            }`}>
+                                            <Clock className="h-4 w-4" />
+                                            {developer.availability === 'available' ? 'Disponible ahora' : 'Consultar disponibilidad'}
+                                        </span>
+                                        <span className="flex items-center gap-1.5 text-yellow-400">
+                                            <Star className="h-4 w-4 fill-current" />
+                                            <span className="text-white font-bold">{developer.rating}</span>
+                                            <span className="text-gray-500">({developer.reviewsCount} reseñas)</span>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                        </ScrollArea>
+
+                            <ScrollArea className="flex-1 pr-6 -mr-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8">
+                                    {/* Left Content (Bio/Skills/Portfolio) - Takes 8 columns */}
+                                    <div className="lg:col-span-8 space-y-8">
+                                        {/* Bio */}
+                                        <section className="bg-[#1A1A1A] p-8 rounded-xl border border-[#333]">
+                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                                                <div className="bg-primary/20 p-2.5 rounded-lg text-primary">
+                                                    <Briefcase className="h-6 w-6" />
+                                                </div>
+                                                Sobre mí
+                                            </h3>
+                                            <p className="text-gray-300 leading-8 text-lg">
+                                                {developer.bio}
+                                            </p>
+                                        </section>
+
+                                        {/* Skills */}
+                                        <section className="bg-[#1A1A1A] p-8 rounded-xl border border-[#333]">
+                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                                                <div className="bg-primary/20 p-2.5 rounded-lg text-primary">
+                                                    <Code className="h-6 w-6" />
+                                                </div>
+                                                Tecnologías & Herramientas
+                                            </h3>
+                                            <div className="flex flex-wrap gap-3">
+                                                {developer.skills.map(skill => (
+                                                    <Badge key={skill} variant="secondary" className="px-4 py-2 bg-[#111] text-gray-200 border border-[#333] hover:border-primary/50 transition-colors text-sm">
+                                                        {skill}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </section>
+
+                                        {/* Portfolio */}
+                                        <section>
+                                            <h3 className="text-xl font-bold text-white mb-6">Portafolio Destacado</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {[1, 2].map((i) => (
+                                                    <div key={i} className="group bg-[#1A1A1A] rounded-xl overflow-hidden border border-[#333] hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5 cursor-pointer">
+                                                        <div className="h-48 bg-[#151515] flex items-center justify-center relative overflow-hidden">
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
+                                                            <span className="text-gray-600 font-medium z-10 group-hover:text-primary transition-colors">Proyecto Demo {i}</span>
+                                                        </div>
+                                                        <div className="p-6">
+                                                            <h4 className="font-bold text-white text-xl group-hover:text-primary transition-colors">E-commerce Platform</h4>
+                                                            <p className="text-sm text-gray-400 mt-2 mb-4 leading-relaxed">Plataforma completa de ventas con panel administrativo, gestión de inventario y pagos en tiempo real.</p>
+                                                            <div className="flex gap-2">
+                                                                <Badge variant="outline" className="text-xs border-[#333] text-gray-400">React</Badge>
+                                                                <Badge variant="outline" className="text-xs border-[#333] text-gray-400">Node.js</Badge>
+                                                                <Badge variant="outline" className="text-xs border-[#333] text-gray-400">Stripe</Badge>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </section>
+                                    </div>
+
+                                    {/* Right Sidebar (Stats/Contact) - Takes 4 columns */}
+                                    <div className="lg:col-span-4 space-y-6">
+                                        <div className="bg-[#1A1A1A] rounded-xl p-8 border border-[#333] space-y-8 shadow-xl sticky top-0">
+                                            <div className="space-y-4">
+                                                <Button className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]">
+                                                    Contactar Ahora
+                                                </Button>
+                                                <Button variant="outline" className="w-full h-12 border-[#333] text-gray-300 hover:text-white hover:bg-[#222]">
+                                                    Descargar CV
+                                                </Button>
+                                            </div>
+
+                                            <div className="pt-8 border-t border-[#333] space-y-6">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-400">Tarifa Hora</span>
+                                                    <span className="text-white font-bold text-xl">€{developer.hourlyRate}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-400">Experiencia</span>
+                                                    <span className="text-white font-bold text-xl">{developer.experience} años</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-400">Proyectos</span>
+                                                    <span className="text-white font-bold text-xl">{developer.completedProjects}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-400">Respuesta</span>
+                                                    <span className="text-green-400 font-bold text-lg">Inmediata</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-[#1A1A1A] rounded-xl p-8 border border-[#333]">
+                                            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">Certificaciones</h4>
+                                            <div className="space-y-5">
+                                                <div className="flex gap-4">
+                                                    <div className="bg-yellow-500/10 p-2.5 rounded-lg h-fit">
+                                                        <Award className="h-6 w-6 text-yellow-500" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-white font-bold">AWS Certified Solutions Architect</p>
+                                                        <p className="text-sm text-gray-500 mt-1">Amazon Web Services • 2025</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-4">
+                                                    <div className="bg-blue-500/10 p-2.5 rounded-lg h-fit">
+                                                        <Award className="h-6 w-6 text-blue-500" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-white font-bold">Meta Frontend Developer</p>
+                                                        <p className="text-sm text-gray-500 mt-1">Coursera Professional • 2024</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ScrollArea>
+                        </div>
                     </div>
                 )}
             </DialogContent>

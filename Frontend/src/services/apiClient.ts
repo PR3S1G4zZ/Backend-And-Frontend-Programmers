@@ -4,9 +4,11 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost/api';
 
 export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = authService.getToken();
+  const isFormData = options.body instanceof FormData;
+
   const headers: HeadersInit = {
     Accept: 'application/json',
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };

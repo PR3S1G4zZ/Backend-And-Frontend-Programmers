@@ -16,6 +16,7 @@ import { CodeAnimations } from './components/CodeAnimations';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ForgotPasswordPage } from './components/ForgotPasswordPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { AuthCallbackPage } from './components/AuthCallbackPage';
 
 type PageType =
   | 'home'
@@ -28,7 +29,8 @@ type PageType =
   | 'company-dashboard'
   | 'admin-dashboard'
   | 'forgot-password'
-  | 'reset-password';
+  | 'reset-password'
+  | 'auth-callback';
 
 type UserType = 'guest' | 'programmer' | 'company' | 'admin';
 
@@ -68,6 +70,11 @@ function AppContent() {
 
     if (path === "/forgot-password") {
       setCurrentPage("forgot-password");
+      hasInitialized.current = true;
+    }
+
+    if (path === "/auth/callback") {
+      setCurrentPage("auth-callback");
       hasInitialized.current = true;
     }
   }, []);
@@ -168,6 +175,8 @@ function AppContent() {
           return <ForgotPasswordPage onNavigate={handleNavigate} />;
         case 'reset-password':
           return <ResetPasswordPage onNavigate={handleNavigate} />;
+        case 'auth-callback':
+          return <AuthCallbackPage onNavigate={handleNavigate} />;
         default:
           return <LandingPage onNavigate={handleNavigate} />;
       }

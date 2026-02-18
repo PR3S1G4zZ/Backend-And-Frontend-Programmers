@@ -27,6 +27,11 @@ Route::prefix('auth')->group(function () {
     // Registro y Login
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1');
     Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:6,1');
+    
+    // Google Auth
+    Route::get('/google', [AuthController::class, 'redirectToGoogle']);
+    Route::get('/google/callback', [AuthController::class, 'handleGoogleCallback']);
+
     // recuperar contraseña
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
@@ -75,7 +80,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'show']);
-    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::match(['put', 'post'], '/profile', [ProfileController::class, 'update']);
+    
+    // Portfolio Projects
+    Route::apiResource('portfolio-projects', \App\Http\Controllers\PortfolioProjectController::class);
 
     // Taxonomies
     Route::get('/taxonomies/skills', [TaxonomyController::class, 'skills']);

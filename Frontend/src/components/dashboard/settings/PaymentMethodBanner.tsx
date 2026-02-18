@@ -30,10 +30,10 @@ export function PaymentMethodBanner({ userType, onSetupClick }: PaymentMethodBan
                 <div className="flex gap-3">
                     <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                     <div>
-                        <h4 className="text-yellow-500 font-medium">
+                        <h4 className="text-yellow-600 dark:text-yellow-500 font-medium">
                             {userType === 'company' ? 'Método de pago no configuado' : 'Datos de cobro no configurados'}
                         </h4>
-                        <p className="text-yellow-200/80 text-sm mt-1">
+                        <p className="text-yellow-700/80 dark:text-yellow-200/80 text-sm mt-1">
                             {userType === 'company'
                                 ? 'Para contratar programadores, necesitas registrar una tarjeta o cuenta de PayPal.'
                                 : 'Para recibir pagos por tus proyectos, necesitas configurar tu cuenta bancaria o billetera.'}

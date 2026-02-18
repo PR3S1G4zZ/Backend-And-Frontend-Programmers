@@ -170,7 +170,7 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-[#0D0D0D]">
+    <div className="flex h-screen bg-background text-foreground">
       <Sidebar
         userType="company"
         currentSection={currentSection}
@@ -181,7 +181,7 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
         user={user}
       />
       <div className="flex-1 overflow-auto">
-        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[#333333] bg-[#0D0D0D] px-4 py-3 md:hidden">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
           <button
             type="button"
             onClick={() => setIsSidebarOpen(true)}

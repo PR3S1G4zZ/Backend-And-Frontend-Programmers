@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Lock } from "lucide-react";
 import { useSweetAlert } from "./ui/sweet-alert";
+import apiClient from "../services/apiClient";
 
 interface ResetPasswordProps {
   onNavigate?: (page: string) => void;
@@ -40,43 +41,29 @@ export function ResetPasswordPage({ onNavigate }: ResetPasswordProps) {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          email,
-          password,
-          password_confirmation: password2,
-        }),
+      await apiClient.post<{ message: string }>("/auth/reset-password", {
+        token,
+        email,
+        password,
+        password_confirmation: password2,
       });
 
-      const data = await res.json();
+      showAlert({
+        title: "Contraseña actualizada",
+        text: "Tu contraseña fue restablecida exitosamente.",
+        type: "success",
+      });
 
-      if (res.ok) {
-        showAlert({
-          title: "Contraseña actualizada",
-          text: "Tu contraseña fue restablecida exitosamente.",
-          type: "success",
-        });
+      setTimeout(() => {
+        if (onNavigate) {
+          onNavigate("login");
+        }
+      }, 2000);
 
-        setTimeout(() => {
-          if (onNavigate) {
-            onNavigate("login");
-          }
-        }, 2000);
-      } else {
-        showAlert({
-          title: "Error",
-          text: data.message || "No se pudo restablecer la contraseña",
-          type: "error",
-        });
-      }
-
-    } catch {
+    } catch (error: any) {
       showAlert({
         title: "Error de conexión",
-        text: "No se pudo contactar al servidor.",
+        text: error.message || "No se pudo contactar al servidor.",
         type: "error",
       });
 

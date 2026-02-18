@@ -32,7 +32,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
   const PASSWORD_NO_SPACE_REGEX = /^\S+$/;
 
   // contador de intentos fallidos
-  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [, setFailedAttempts] = useState(0);
 
   const { login } = useAuth();
   const { showAlert, Alert } = useSweetAlert();
@@ -104,20 +104,40 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         }
       } else {
         // fallo de credenciales (401, etc.)
-        handleLoginFailure();
+        // Use backend message if available
+        if (response.message) {
+          showAlert({
+            title: "Error de autenticación",
+            text: response.message,
+            type: "error"
+          });
+        } else {
+          handleLoginFailure();
+        }
+        setIsLoading(false); // Ensure loading is stopped
       }
-    } catch (error) {
-      // error de red / servidor, pero desde el punto de vista del usuario también es un fallo
-      handleLoginFailure();
+    } catch (error: any) {
+      // error de red / servidor
+      const message = error?.message || "Ocurrió un error inesperado";
+      showAlert({
+        title: "Error",
+        text: message,
+        type: "error"
+      });
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSocialLogin = (provider: string) => {
-    alert(`Iniciando sesión con ${provider}...`);
-    if (onNavigate) {
-      onNavigate("programmer-dashboard");
+    if (provider === "Google") {
+      window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
+    } else {
+      alert(`Iniciando sesión con ${provider}...`);
+      if (onNavigate) {
+        onNavigate("programmer-dashboard");
+      }
     }
   };
 
@@ -272,16 +292,13 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                   <span className="text-sm text-muted-foreground">Recordarme</span>
                 </label>
 
-                {/* solo se muestra después de 3 intentos fallidos */}
-                {failedAttempts >= 3 && (
-                  <button
-                    type="button"
-                    className="text-sm text-primary hover:text-primary/90 transition-colors animate-pulse"
-                    onClick={() => onNavigate && onNavigate("forgot-password")}
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="text-sm text-primary hover:text-primary/90 transition-colors"
+                  onClick={() => onNavigate && onNavigate("forgot-password")}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
               </div>
 
               <Button

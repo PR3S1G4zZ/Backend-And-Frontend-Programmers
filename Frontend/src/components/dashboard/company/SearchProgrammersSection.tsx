@@ -14,14 +14,14 @@ import {
   Filter,
   Star,
   MapPin,
-  Clock,
   Eye,
   Heart,
   MessageSquare,
   Award,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+  Code
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchDevelopers, type DeveloperProfile } from '../../../services/developerService';
@@ -243,19 +243,19 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
           <div className="space-y-4">
             {/* Search Bar */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <div className="flex-1 relative group">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 transition-colors group-hover:text-primary" />
                 <Input
                   placeholder="Buscar por nombre, habilidades, o especialización..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 bg-[#0D0D0D] border-[#333333] text-white h-12"
+                  className="pl-12 bg-[#0D0D0D] border-[#333333] text-white h-12 transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="border-[#333333] text-white hover:bg-[#333333] h-12 px-6 md:self-stretch"
+                className={`border-[#333333] text-white hover:bg-[#333333] h-12 px-6 md:self-stretch transition-all ${showFilters ? 'bg-[#333333] border-primary/30' : ''}`}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
@@ -470,121 +470,118 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="bg-[#1A1A1A] border-[#333333] hover-neon overflow-hidden h-full">
-                  <CardHeader className="pb-4">
+                <Card className="bg-[#1A1A1A] border-[#333333] hover:border-primary/50 transition-all duration-300 group overflow-hidden h-full flex flex-col relative">
+                  {/* Premium details */}
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Code className="h-24 w-24 text-primary transform rotate-12 translate-x-8 -translate-y-8" />
+                  </div>
+
+                  <CardHeader className="pb-4 z-10">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="relative">
-                          <Avatar className="h-16 w-16">
+                          <Avatar className="h-16 w-16 border-2 border-transparent group-hover:border-primary transition-colors duration-300 ring-2 ring-[#0D0D0D]">
                             <AvatarImage src={developer.avatar} />
-                            <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                            <AvatarFallback className="bg-gradient-to-br from-primary/80 to-purple-600/80 text-white text-lg font-bold">
                               {developer.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           {developer.isVerified && (
-                            <div className="absolute -bottom-1 -right-1 bg-blue-600 rounded-full p-1">
+                            <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-1 shadow-lg ring-2 ring-[#1A1A1A]">
                               <Award className="h-3 w-3 text-white" />
                             </div>
                           )}
                         </div>
 
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-white">{developer.name}</h3>
-                          <p className="text-sm text-gray-400">{developer.title}</p>
-                          <div className="flex items-center space-x-4 mt-1 text-xs text-gray-400">
+                          <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors">{developer.name}</h3>
+                          <p className="text-sm text-gray-400 font-medium">{developer.title}</p>
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                             <span className="flex items-center">
                               <MapPin className="h-3 w-3 mr-1" />
                               {developer.location}
                             </span>
-                            <span className={`flex items-center ${getAvailabilityColor(developer.availability)}`}>
-                              <Clock className="h-3 w-3 mr-1" />
+                            <span className={`flex items-center font-medium ${getAvailabilityColor(developer.availability)}`}>
+                              <div className={`h-1.5 w-1.5 rounded-full mr-1.5 ${developer.availability === 'available' ? 'bg-green-400 animate-pulse' : 'bg-current'}`} />
                               {getAvailabilityText(developer.availability)}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <div className="flex items-center space-x-1 mb-1">
-                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                          <span className="text-white font-medium">{developer.rating}</span>
-                          <span className="text-xs text-gray-400">({developer.reviewsCount})</span>
+                      <div className="text-right z-10">
+                        <div className="flex items-center justify-end space-x-1 mb-1 bg-[#0D0D0D] px-2 py-1 rounded-full border border-[#333]">
+                          <Star className="h-3.5 w-3.5 text-yellow-400 fill-current" />
+                          <span className="text-white font-bold text-sm">{developer.rating}</span>
+                          <span className="text-[10px] text-gray-500">({developer.reviewsCount})</span>
                         </div>
-                        <p className="text-lg font-semibold text-primary">
-                          {developer.hourlyRate ? `€${developer.hourlyRate}/h` : 'Sin tarifa'}
+                        <p className="text-xl font-bold text-primary mt-2">
+                          €{developer.hourlyRate}<span className="text-xs text-gray-500 font-normal">/h</span>
                         </p>
                       </div>
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-300 line-clamp-2">
+                  <CardContent className="space-y-5 flex-1 flex flex-col z-10">
+                    <p className="text-sm text-gray-300 line-clamp-2 leading-relaxed">
                       {developer.bio}
                     </p>
 
                     {/* Skills */}
                     <div>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {developer.skills.slice(0, 4).map(skill => (
-                          <Badge key={skill} variant="secondary" className="bg-[#0D0D0D] text-[#00C46A] text-xs">
+                          <Badge key={skill} variant="secondary" className="bg-[#0D0D0D] hover:bg-[#222] text-[#00C46A] border border-[#333333] text-xs px-2.5 py-0.5 transition-colors rounded-md">
                             {skill}
                           </Badge>
                         ))}
                         {developer.skills.length > 4 && (
-                          <Badge variant="secondary" className="bg-[#0D0D0D] text-gray-400 text-xs">
+                          <Badge variant="secondary" className="bg-[#0D0D0D] text-gray-500 border border-[#333333] text-xs px-2 rounded-md">
                             +{developer.skills.length - 4}
                           </Badge>
                         )}
                       </div>
                     </div>
 
-                    {/* Portfolio Preview */}
-                    <div>
-                      <p className="text-xs text-gray-400 mb-2">Proyectos recientes:</p>
-                      <div className="rounded border border-[#333333] bg-[#0D0D0D] p-3 text-xs text-gray-400">
-                        Sin portafolio disponible.
+                    <Separator className="bg-[#333333]" />
+
+                    {/* Stats Compact */}
+                    <div className="grid grid-cols-3 gap-2 py-1">
+                      <div className="text-center">
+                        <p className="text-white font-bold">{developer.completedProjects}</p>
+                        <p className="text-[10px] uppercase text-gray-500 tracking-wider">Proyectos</p>
+                      </div>
+                      <div className="text-center border-l border-[#333333]">
+                        <p className="text-white font-bold">{developer.experience ?? 0}+</p>
+                        <p className="text-[10px] uppercase text-gray-500 tracking-wider">Años</p>
+                      </div>
+                      <div className="text-center border-l border-[#333333]">
+                        <p className="text-green-400 font-bold">100%</p>
+                        <p className="text-[10px] uppercase text-gray-500 tracking-wider">Éxito</p>
                       </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 text-center border-t border-[#333333] pt-4">
-                      <div>
-                        <p className="text-lg font-semibold text-white">{developer.completedProjects}</p>
-                        <p className="text-xs text-gray-400">Proyectos</p>
-                      </div>
-                      <div>
-                        <p className="text-lg font-semibold text-white">{developer.experience ?? 0}</p>
-                        <p className="text-xs text-gray-400">Años exp.</p>
-                      </div>
-                      <div>
-                        <p className="text-lg font-semibold text-white">{developer.lastActive || 'Sin datos'}</p>
-                        <p className="text-xs text-gray-400">Últ. actividad</p>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex space-x-2 pt-4">
+                    <div className="mt-auto pt-2 flex space-x-2">
                       <Button
-                        size="sm"
-                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20"
                         onClick={() => handleContact(developer.id)}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Contactar
                       </Button>
                       <Button
-                        size="sm"
                         variant="outline"
-                        className="border-[#333333] text-white hover:bg-[#333333]"
+                        className="border-[#333333] bg-[#0D0D0D] text-white hover:bg-[#1A1A1A] hover:border-gray-500 transition-all"
                         onClick={() => setSelectedDeveloper(developer)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button
-                        size="sm"
                         variant="outline"
                         onClick={() => toggleFavorite(developer.id)}
-                        className={`border-[#333333] hover:bg-[#333333] transition-colors ${favorites.includes(Number(developer.id)) ? 'text-red-500 hover:text-red-600' : 'text-white'
+                        className={`border-[#333333] bg-[#0D0D0D] hover:bg-[#1A1A1A] transition-all ${favorites.includes(Number(developer.id))
+                          ? 'text-red-500 border-red-500/30 bg-red-500/10'
+                          : 'text-gray-400 hover:text-red-400 hover:border-red-500/30'
                           }`}
                       >
                         <Heart className={`h-4 w-4 ${favorites.includes(Number(developer.id)) ? 'fill-current animate-pulse-once' : ''}`} />

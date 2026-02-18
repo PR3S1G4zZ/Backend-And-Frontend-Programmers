@@ -16,6 +16,7 @@ export interface User {
     github_url?: string;
     linkedin_url?: string;
   };
+  profile_picture?: string;
 }
 
 export interface AuthResponse {
@@ -83,10 +84,11 @@ class AuthService {
 
       // Si el token es inválido/expirado, limpiar sesión y salir
       if (response.status === 401) {
+        const data = await response.json().catch(() => null);
         this.clearToken();
         return {
           success: false,
-          message: 'No autorizado. Inicia sesión nuevamente.',
+          message: data?.message || 'No autorizado. Inicia sesión nuevamente.',
         };
       }
 

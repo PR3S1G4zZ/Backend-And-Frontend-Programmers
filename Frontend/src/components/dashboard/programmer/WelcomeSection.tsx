@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
@@ -12,10 +13,14 @@ import {
   ArrowRight,
   User,
   FolderOpen,
-  Search
+  Search,
+  Loader2
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { PaymentMethodBanner } from "../settings/PaymentMethodBanner";
+import { dashboardService } from "../../../services/dashboardService";
+import type { DashboardData } from "../../../services/dashboardService";
+import { toast } from "sonner";
 
 interface WelcomeSectionProps {
   onSectionChange: (section: string) => void;
@@ -23,56 +28,50 @@ interface WelcomeSectionProps {
 
 export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
   const { user } = useAuth();
-  const recentActivity = [
-    {
-      type: 'project_completed',
-      title: 'E-commerce Platform completado',
-      description: 'Proyecto para RetailMax finalizado exitosamente',
-      time: 'Hace 2 días',
-      amount: '€5,200'
-    },
-    {
-      type: 'new_message',
-      title: 'Nuevo mensaje de TechStart',
-      description: 'Interesados en tus servicios de React Native',
-      time: 'Hace 5 horas',
-      unread: true
-    },
-    {
-      type: 'profile_view',
-      title: 'Tu perfil fue visto 12 veces',
-      description: 'Empresas han revisado tu portafolio',
-      time: 'Hoy',
-      views: 12
-    }
-  ];
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const activeProjects = [
-    {
-      title: 'SaaS Dashboard',
-      client: 'FinanceApp Inc',
-      progress: 75,
-      deadline: '15 Feb 2024',
-      value: '€8,500'
-    },
-    {
-      title: 'Mobile App MVP',
-      client: 'StartupXYZ',
-      progress: 40,
-      deadline: '28 Feb 2024',
-      value: '€12,000'
-    }
-  ];
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const dashboardData = await dashboardService.getProgrammerDashboard();
+        setData(dashboardData);
+      } catch (error) {
+        console.error("Error loading dashboard:", error);
+        toast.error("Error al cargar datos del tablero");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDashboard();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 flex justify-center text-white"><Loader2 className="animate-spin h-8 w-8" /></div>;
+  }
+
+  // Fallback defaults if API fails or returns null
+  const stats = data?.stats || {
+    earnings_month: 0,
+    earnings_growth: 0,
+    active_projects: 0,
+    rating: 0,
+    reviews_count: 0,
+    unread_messages: 0
+  };
+
+  const activeProjects = data?.active_projects || [];
+  const recentActivity = data?.recent_activity || [];
 
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Hola, {user?.name || 'Usuario'} 👋
         </h1>
-        <p className="text-gray-300">
-          Aquí está tu espacio de desarrollo. Tienes 2 proyectos activos y 5 nuevas oportunidades.
+        <p className="text-muted-foreground">
+          Aquí está tu espacio de desarrollo. Tienes {stats.active_projects} proyectos activos y nuevas oportunidades.
         </p>
       </div>
 
@@ -83,63 +82,63 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-[#1A1A1A] border-[#333333] hover-neon">
+        <Card className="bg-card border-border hover-neon">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Ganado este mes</p>
-                <p className="text-2xl font-bold text-white">€15,400</p>
-                <p className="text-primary text-sm flex items-center mt-1">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  +23% vs mes anterior
+                <p className="text-muted-foreground text-sm">Ganado este mes</p>
+                <p className="text-2xl font-bold text-foreground">€{stats.earnings_month.toLocaleString()}</p>
+                <p className={`text-sm flex items-center mt-1 ${stats.earnings_growth >= 0 ? 'text-primary' : 'text-red-500'}`}>
+                  <TrendingUp className={`h-4 w-4 mr-1 ${stats.earnings_growth < 0 ? 'rotate-180' : ''}`} />
+                  {stats.earnings_growth >= 0 ? '+' : ''}{stats.earnings_growth}% vs mes anterior
                 </p>
               </div>
               <div className="bg-primary p-3 rounded-full">
-                <DollarSign className="h-6 w-6 text-[#0D0D0D]" />
+                <DollarSign className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#1A1A1A] border-[#333333] hover-neon">
+        <Card className="bg-card border-border hover-neon">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Proyectos activos</p>
-                <p className="text-2xl font-bold text-white">2</p>
-                <p className="text-[#00C46A] text-sm">En progreso</p>
+                <p className="text-muted-foreground text-sm">Proyectos activos</p>
+                <p className="text-2xl font-bold text-foreground">{stats.active_projects}</p>
+                <p className="text-green-500 text-sm">En progreso</p>
               </div>
-              <div className="bg-[#00C46A] p-3 rounded-full">
-                <Clock className="h-6 w-6 text-[#0D0D0D]" />
+              <div className="bg-green-500/20 p-3 rounded-full">
+                <Clock className="h-6 w-6 text-green-500" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#1A1A1A] border-[#333333] hover-neon">
+        <Card className="bg-card border-border hover-neon">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Rating promedio</p>
-                <p className="text-2xl font-bold text-white">4.9</p>
+                <p className="text-muted-foreground text-sm">Rating promedio</p>
+                <p className="text-2xl font-bold text-foreground">{stats.rating}</p>
                 <div className="flex items-center mt-1">
                   <Star className="h-4 w-4 text-primary fill-current" />
-                  <span className="text-gray-400 text-sm ml-1">127 reviews</span>
+                  <span className="text-muted-foreground text-sm ml-1">{stats.reviews_count} reviews</span>
                 </div>
               </div>
               <div className="bg-primary p-3 rounded-full">
-                <Star className="h-6 w-6 text-[#0D0D0D]" />
+                <Star className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#1A1A1A] border-[#333333] hover-neon">
+        <Card className="bg-card border-border hover-neon">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Mensajes sin leer</p>
-                <p className="text-2xl font-bold text-white">3</p>
+                <p className="text-muted-foreground text-sm">Mensajes sin leer</p>
+                <p className="text-2xl font-bold text-foreground">{stats.unread_messages}</p>
                 <p className="text-orange-400 text-sm">Requieren atención</p>
               </div>
               <div className="bg-orange-500 p-3 rounded-full">
@@ -154,9 +153,9 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Active Projects */}
         <div className="lg:col-span-2">
-          <Card className="bg-[#1A1A1A] border-[#333333]">
+          <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-white">Proyectos Activos</CardTitle>
+              <CardTitle className="text-foreground">Proyectos Activos</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
@@ -167,86 +166,94 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {activeProjects.map((project, index) => (
-                <div key={index} className="border border-[#333333] rounded-lg p-4 hover:border-primary transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="text-white font-semibold">{project.title}</h3>
-                      <p className="text-gray-400 text-sm">{project.client}</p>
+              {activeProjects.length === 0 ? (
+                <p className="text-muted-foreground">No tienes proyectos activos.</p>
+              ) : (
+                activeProjects.map((project, index) => (
+                  <div key={index} className="border border-border rounded-lg p-4 hover:border-primary transition-colors">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-foreground font-semibold">{project.title}</h3>
+                        <p className="text-muted-foreground text-sm">{project.client}</p>
+                      </div>
+                      <Badge variant="secondary" className="bg-primary text-primary-foreground">
+                        {project.value}
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className="bg-primary text-primary-foreground">
-                      {project.value}
-                    </Badge>
-                  </div>
 
-                  <div className="mb-3">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-400">Progreso</span>
-                      <span className="text-white">{project.progress}%</span>
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Progreso</span>
+                        <span className="text-foreground">{project.progress}%</span>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${project.progress}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-[#333333] rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${project.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
 
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400">Deadline: {project.deadline}</span>
-                    <Button size="sm" variant="ghost" className="text-primary hover:bg-[#333333]">
-                      Ver detalles <ArrowRight className="h-4 w-4 ml-1" />
-                    </Button>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Deadline: {project.deadline}</span>
+                      <Button size="sm" variant="ghost" className="text-primary hover:bg-secondary">
+                        Ver detalles <ArrowRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
 
         {/* Recent Activity */}
         <div>
-          <Card className="bg-[#1A1A1A] border-[#333333]">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">Actividad Reciente</CardTitle>
+              <CardTitle className="text-foreground">Actividad Reciente</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-[#0D0D0D] transition-colors">
-                  <div className="flex-shrink-0">
-                    {activity.type === 'project_completed' && (
-                      <div className="bg-primary p-2 rounded-full">
-                        <CheckCircle className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                    {activity.type === 'new_message' && (
-                      <div className="bg-blue-600 p-2 rounded-full">
-                        <MessageSquare className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                    {activity.type === 'profile_view' && (
-                      <div className="bg-purple-600 p-2 rounded-full">
-                        <Eye className="h-4 w-4 text-white" />
-                      </div>
+              {recentActivity.length === 0 ? (
+                <p className="text-muted-foreground">No hay actividad reciente.</p>
+              ) : (
+                recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-secondary transition-colors">
+                    <div className="flex-shrink-0">
+                      {activity.type === 'project_completed' && (
+                        <div className="bg-primary p-2 rounded-full">
+                          <CheckCircle className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                      )}
+                      {activity.type === 'new_message' && (
+                        <div className="bg-blue-600 p-2 rounded-full">
+                          <MessageSquare className="h-4 w-4 text-white" />
+                        </div>
+                      )}
+                      {(activity.type === 'profile_view' || activity.type === 'application') && (
+                        <div className="bg-purple-600 p-2 rounded-full">
+                          <Eye className="h-4 w-4 text-white" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-foreground text-sm font-medium">{activity.title}</p>
+                      <p className="text-muted-foreground text-xs mt-1">{activity.description}</p>
+                      <p className="text-muted-foreground text-xs mt-2">{activity.time}</p>
+                    </div>
+
+                    {activity.unread && (
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
                     )}
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium">{activity.title}</p>
-                    <p className="text-gray-400 text-xs mt-1">{activity.description}</p>
-                    <p className="text-gray-500 text-xs mt-2">{activity.time}</p>
-                  </div>
-
-                  {activity.unread && (
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
 
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-primary hover:bg-[#333333]"
+                className="w-full text-primary hover:bg-secondary"
               >
                 Ver toda la actividad
               </Button>
@@ -256,9 +263,9 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
       </div>
 
       {/* Quick Actions */}
-      <Card className="bg-[#1A1A1A] border-[#333333]">
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-white">Acciones Rápidas</CardTitle>
+          <CardTitle className="text-foreground">Acciones Rápidas</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -273,7 +280,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
             <Button
               onClick={() => onSectionChange('portfolio')}
               variant="outline"
-              className="border-[#333333] text-white hover:bg-[#333333] p-6 h-auto flex-col space-y-2"
+              className="border-border text-foreground hover:bg-secondary p-6 h-auto flex-col space-y-2"
             >
               <FolderOpen className="h-6 w-6" />
               <span>Gestionar Portafolio</span>
@@ -282,7 +289,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
             <Button
               onClick={() => onSectionChange('projects')}
               variant="outline"
-              className="border-[#333333] text-white hover:bg-[#333333] p-6 h-auto flex-col space-y-2"
+              className="border-border text-foreground hover:bg-secondary p-6 h-auto flex-col space-y-2"
             >
               <Search className="h-6 w-6" />
               <span>Buscar Proyectos</span>
@@ -291,7 +298,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
             <Button
               onClick={() => onSectionChange('chat')}
               variant="outline"
-              className="border-[#333333] text-white hover:bg-[#333333] p-6 h-auto flex-col space-y-2"
+              className="border-border text-foreground hover:bg-secondary p-6 h-auto flex-col space-y-2"
             >
               <MessageSquare className="h-6 w-6" />
               <span>Revisar Mensajes</span>

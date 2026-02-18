@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import type { User } from './authService';
 
 export interface Profile {
   location?: string;
@@ -23,13 +24,7 @@ export interface Profile {
 export type ProfileResponse = {
   success: boolean;
   data: {
-    user: {
-      id: number;
-      name: string;
-      lastname: string;
-      email: string;
-      user_type: 'programmer' | 'company' | 'admin';
-    };
+    user: User;
     profile: Profile;
   };
 };
@@ -38,9 +33,13 @@ export async function fetchProfile() {
   return apiRequest<ProfileResponse>('/profile');
 }
 
-export async function updateProfile(payload: Record<string, unknown>) {
-  return apiRequest<{ success: boolean; message: string }>('/profile', {
-    method: 'PUT',
-    body: JSON.stringify(payload),
+export const updateProfile = async (data: any): Promise<{ success: boolean; message: string; user?: User }> => {
+  const response = await apiRequest<{ success: boolean; message: string; user?: User }>('/profile', {
+    method: 'POST',
+    body: data,
+    headers: {
+      // Content-Type is handled automatically for FormData by browser to include boundary
+    },
   });
-}
+  return response;
+};

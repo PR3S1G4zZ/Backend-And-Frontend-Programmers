@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Mail } from "lucide-react";
 import { useSweetAlert } from "./ui/sweet-alert";
+import apiClient from "../services/apiClient";
 
 interface ForgotPasswordProps {
   onNavigate?: (page: string) => void;
@@ -20,32 +21,18 @@ export function ForgotPasswordPage({ onNavigate }: ForgotPasswordProps) {
     setIsSending(true);
 
     try {
-      const res = await fetch("http://localhost/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      await apiClient.post<{ message: string }>("/auth/forgot-password", { email });
+
+      showAlert({
+        title: "Correo enviado",
+        text: "Te enviamos un correo con el enlace para restablecer tu contraseña.",
+        type: "success",
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        showAlert({
-          title: "Correo enviado",
-          text: "Te enviamos un correo con el enlace para restablecer tu contraseña.",
-          type: "success",
-        });
-      } else {
-        showAlert({
-          title: "Ups...",
-          text: data.message || "No pudimos enviar el correo",
-          type: "error",
-        });
-      }
-
-    } catch {
+    } catch (error: any) {
       showAlert({
-        title: "Error",
-        text: "No pudimos contactar al servidor.",
+        title: "Ups...",
+        text: error.message || "No pudimos contactar al servidor.",
         type: "error",
       });
     } finally {

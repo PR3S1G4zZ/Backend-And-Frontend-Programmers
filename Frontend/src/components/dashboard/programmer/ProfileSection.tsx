@@ -12,13 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
 import { Separator } from '../../ui/separator';
 import { Progress } from '../../ui/progress';
 import {
-  User,
+  User as UserIcon,
   Globe,
   Github,
   Linkedin,
   Twitter,
   Save,
-  Camera,
   Plus,
   X,
   Award,
@@ -36,6 +35,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { fetchProfile, updateProfile } from '../../../services/profileService';
 import { AppearanceSection } from '../settings/AppearanceSection';
 import { PaymentSettings } from './PaymentSettings';
+import { ImageUpload } from '../../ui/ImageUpload';
+import { SkillsSelector } from '../../ui/SkillsSelector';
 
 export function ProfileSection() {
   const [activeTab, setActiveTab] = useState('profile-tab');
@@ -54,10 +55,13 @@ export function ProfileSection() {
     website: '',
     github: '',
     linkedin: '',
-    twitter: ''
+    twitter: '',
+    profile_picture: '',
   });
 
-  const [skills, setSkills] = useState<{ id: number; name: string; level: number; years: number }[]>([]);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+
+  const [skills, setSkills] = useState<{ id?: number; name: string; level: number; years: number }[]>([]);
 
   const [languages, setLanguages] = useState<{ id: number; name: string; level: string }[]>([]);
 
@@ -72,7 +76,6 @@ export function ProfileSection() {
     profileCompletion: 85
   });
 
-  const [newSkill, setNewSkill] = useState('');
   const { showAlert } = useSweetAlert();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +103,7 @@ export function ProfileSection() {
           github: profile.links?.github || '',
           linkedin: profile.links?.linkedin || '',
           twitter: profile.links?.twitter || '',
+          profile_picture: userInfo.profile_picture ? `http://localhost/storage/${userInfo.profile_picture}` : '',
         }));
 
         const skillNames = Array.isArray(profile.skills) ? profile.skills : [];
@@ -140,23 +144,46 @@ export function ProfileSection() {
     const lastName = lastParts.join(' ');
 
     try {
-      await updateProfile({
-        name: firstName || user?.name,
-        lastname: lastName || user?.lastname,
-        headline: profileData.title,
-        bio: profileData.bio,
-        location: profileData.location,
-        hourly_rate: profileData.hourlyRate,
-        availability: profileData.availability,
-        skills: skills.map((skill) => skill.name).filter(Boolean),
-        links: {
-          website: profileData.website,
-          github: profileData.github,
-          linkedin: profileData.linkedin,
-          twitter: profileData.twitter,
-        },
-        languages: languages.map((lang) => lang.name),
+      // Create formData if there is an image, otherwise use JSON object (or update service to handle both)
+      // Since updateProfile implementation likely expects an object, we need to verify if it handles FormData or key/value pairs.
+      // Assuming updateProfile service needs to be updated or we send data differently.
+      // Let's check `profileService.ts` first. For now I'll assume I need to construct data.
+
+      const formData = new FormData();
+      formData.append('name', firstName || user?.name || '');
+      formData.append('lastname', lastName || user?.lastname || '');
+      formData.append('headline', profileData.title);
+      formData.append('bio', profileData.bio);
+      formData.append('location', profileData.location);
+      formData.append('hourly_rate', String(profileData.hourlyRate));
+      formData.append('availability', profileData.availability);
+
+      skills.forEach((skill, index) => {
+        formData.append(`skills[${index}]`, skill.name);
       });
+
+      // Links (as array or individual fields depending on backend expectation, Controller accepts 'links' array)
+      // Laravel validation: 'links' => 'nullable|array'
+      formData.append('links[website]', profileData.website);
+      formData.append('links[github]', profileData.github);
+      formData.append('links[linkedin]', profileData.linkedin);
+      formData.append('links[twitter]', profileData.twitter);
+
+      languages.forEach((lang, index) => {
+        formData.append(`languages[${index}]`, lang.name);
+      });
+
+      if (profileImageFile) {
+        formData.append('profile_picture', profileImageFile);
+      }
+
+      // We might need to update the service to accept FormData. 
+      // For now, let's keep the object structure but add a way to send the file.
+      // Actually, standardizing on FormData for everything with file uploads is best.
+      // But let's check if we can just pass the object and handling the file separately? No, must be one request.
+
+      await updateProfile(formData); // This requires updating profileService.ts signature
+      const response = await updateProfile(formData); // This requires updating profileService.ts signature
 
       showAlert({
         title: '¡Perfil Actualizado!',
@@ -165,7 +192,19 @@ export function ProfileSection() {
         timer: 2000,
         theme: 'code'
       });
+
+      if (response.user && response.user.profile_picture) {
+        const updatedUser = response.user;
+        setProfileData(prev => ({
+          ...prev,
+          profile_picture: `http://localhost/storage/${updatedUser.profile_picture}`
+        }));
+        // Update global auth user if needed
+        // updateUser(updatedUser); 
+      }
+
       setIsEditing(false);
+      setProfileImageFile(null); // Clear the file input
     } catch (error) {
       console.error('Error actualizando perfil', error);
       showAlert({
@@ -176,23 +215,6 @@ export function ProfileSection() {
         theme: 'code'
       });
     }
-  };
-
-  const addSkill = () => {
-    if (newSkill.trim()) {
-      const newId = skills.length > 0 ? Math.max(...skills.map(s => s.id)) + 1 : 1;
-      setSkills([...skills, {
-        id: newId,
-        name: newSkill,
-        level: 50,
-        years: 1
-      }]);
-      setNewSkill('');
-    }
-  };
-
-  const removeSkill = (id: number) => {
-    setSkills(skills.filter(skill => skill.id !== id));
   };
 
   const getAvailabilityColor = (status: string) => {
@@ -310,7 +332,7 @@ export function ProfileSection() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-card border border-border p-1">
           <TabsTrigger value="profile-tab" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <User className="h-4 w-4 mr-2" />
+            <UserIcon className="h-4 w-4 mr-2" />
             Información Personal
           </TabsTrigger>
           <TabsTrigger value="skills-tab" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -335,7 +357,7 @@ export function ProfileSection() {
               <Card className="bg-card border-border hover:border-primary/20 transition-colors">
                 <CardHeader>
                   <CardTitle className="text-foreground flex items-center">
-                    <User className="h-5 w-5 mr-2" />
+                    <UserIcon className="h-5 w-5 mr-2" />
                     Información Básica
                   </CardTitle>
                 </CardHeader>
@@ -343,19 +365,19 @@ export function ProfileSection() {
                   {/* Avatar Section */}
                   <div className="flex items-center space-x-6">
                     <div className="relative">
-                      <Avatar className="h-24 w-24">
-                        <AvatarImage src="" />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                          CM
-                        </AvatarFallback>
-                      </Avatar>
-                      {isEditing && (
-                        <Button
-                          size="sm"
-                          className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full w-8 h-8 p-0"
-                        >
-                          <Camera className="h-4 w-4" />
-                        </Button>
+                      {isEditing ? (
+                        <ImageUpload
+                          currentImage={profileData.profile_picture}
+                          name={profileData.name}
+                          onImageChange={setProfileImageFile}
+                        />
+                      ) : (
+                        <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
+                          <AvatarImage src={profileData.profile_picture} object-cover />
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                            {profileData.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                          </AvatarFallback>
+                        </Avatar>
                       )}
                     </div>
 
@@ -628,6 +650,7 @@ export function ProfileSection() {
             </motion.div>
           </TabsContent>
 
+
           <TabsContent key="skills-content" value="skills-tab" className="space-y-6">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -642,72 +665,19 @@ export function ProfileSection() {
                       <Award className="h-5 w-5 mr-2" />
                       Habilidades Técnicas
                     </div>
-                    {isEditing && (
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          value={newSkill}
-                          onChange={(e) => setNewSkill(e.target.value)}
-                          placeholder="Nueva habilidad"
-                          className="w-40 bg-background border-border text-foreground"
-                        />
-                        <Button
-                          onClick={addSkill}
-                          size="sm"
-                          className="bg-primary text-primary-foreground hover:bg-primary/90"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {skills.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Sin habilidades registradas.</p>
-                  ) : skills.map((skill) => (
-                    <motion.div
-                      key={`skill-${skill.id}`}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.05 * skill.id }}
-                      className="space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <span className="font-medium text-foreground">{skill.name}</span>
-                          <Badge variant="secondary" className="bg-background text-muted-foreground">
-                            {skill.years} años
-                          </Badge>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <span className="text-sm text-muted-foreground">{skill.level}%</span>
-                          {isEditing && (
-                            <Button
-                              onClick={() => removeSkill(skill.id)}
-                              size="sm"
-                              variant="ghost"
-                              className="text-muted-foreground hover:text-destructive p-1"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <Progress value={skill.level} className="h-3" />
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${skill.level}%` }}
-                          transition={{ delay: 0.2 + (0.05 * skill.id), duration: 1, ease: "easeOut" }}
-                          className="absolute top-0 left-0 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full"
-                        />
-                      </div>
-                    </motion.div>
-                  ))}
+                  <SkillsSelector
+                    skills={skills}
+                    onSkillsChange={setSkills}
+                    isEditing={isEditing}
+                  />
                 </CardContent>
               </Card>
             </motion.div>
           </TabsContent>
+
 
           <TabsContent key="settings-content" value="settings-tab" className="space-y-6">
             <motion.div
@@ -825,6 +795,7 @@ export function ProfileSection() {
               </Card>
             </motion.div>
           </TabsContent>
+
         </AnimatePresence>
       </Tabs>
     </div>

@@ -83,7 +83,7 @@ class ConversationController extends Controller
                 ];
             });
 
-        return response()->json($conversations);
+        return response()->json(['data' => $conversations]);
     }
 
     public function messages(Request $request, Conversation $conversation)
@@ -108,7 +108,7 @@ class ConversationController extends Controller
                 ];
             });
 
-        return response()->json($messages);
+        return response()->json(['data' => $messages]);
     }
 
     public function storeMessage(Request $request, Conversation $conversation)
@@ -128,13 +128,13 @@ class ConversationController extends Controller
             'type' => 'text', // Handle file upload later if needed
         ]);
 
-        return response()->json([
+        return response()->json(['data' => [
             'id' => $message->id,
             'senderId' => (string)$message->sender_id,
             'content' => $message->content,
             'timestamp' => $message->created_at,
             'type' => $message->type,
             'isRead' => $message->is_read,
-        ], 201);
+        ]], 201);
     }
 }

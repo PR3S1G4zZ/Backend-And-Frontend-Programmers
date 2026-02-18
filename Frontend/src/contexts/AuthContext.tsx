@@ -64,7 +64,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const login = async (data: LoginData): Promise<AuthResponse> => {
-    setIsLoading(true);
+    // setIsLoading(true); // Don't trigger global loading to prevent App navigation reset
     try {
       const response = await authService.login(data);
       if (response.success && response.user) {
@@ -73,12 +73,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       return response;
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 
   const register = async (data: RegisterData): Promise<AuthResponse> => {
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
       const response = await authService.register(data);
       if (response.success && response.user) {
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
       return response;
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 

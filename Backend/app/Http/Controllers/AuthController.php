@@ -9,7 +9,8 @@ use App\Models\User;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ResetPasswordMail;
+use App\Mail\ResetPasswordNotification;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -167,12 +168,24 @@ class AuthController extends Controller
             $password = $validated['password'];
 
             // Laravel usa consultas preparadas automáticamente, pero verificamos credenciales de forma segura
-            if (!Auth::attempt(['email' => $email, 'password' => $password])) {
+            $user = User::where('email', $email)->first();
+
+            if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Credenciales incorrectas'
+                    'message' => 'El correo electrónico no está registrado.'
+                ], 404);
+            }
+
+            if (!Hash::check($password, $user->password)) {
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'La contraseña es incorrecta.'
                 ], 401);
             }
+
+            // Manually logging in the user since we bypassed Auth::attempt
+            Auth::login($user);
 
             $user = Auth::user();
             
@@ -302,7 +315,7 @@ class AuthController extends Controller
     $resetUrl = "{$frontendUrl}/reset-password?token={$token}&email={$user->email}";
 
     // Enviar correo
-    Mail::to($user->email)->send(new ResetPasswordMail($resetUrl));
+    Mail::to($user->email)->send(new ResetPasswordNotification($resetUrl));
 
     return response()->json([
         'success' => true,
@@ -389,5 +402,74 @@ public function resetPassword(Request $request)
             'success' => true,
             'message' => 'Contraseña actualizada correctamente.'
         ], 200);
+    }
+    /**
+     * Redirigir a Google
+     */
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->stateless()->redirect();
+    }
+
+    /**
+     * Callback de Google
+     */
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+
+            $user = User::where('email', $googleUser->getEmail())->first();
+
+            if (!$user) {
+                // Si el usuario no existe, lo creamos (como programador por defecto o pide completar perfil)
+                // Para simplificar, lo creamos como Programador
+                $user = User::create([
+                    'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'google_id' => $googleUser->getId(),
+                    'avatar' => $googleUser->getAvatar(),
+                    'password' => Hash::make(\Illuminate\Support\Str::random(16)), // password aleatoria
+                    'user_type' => 'programmer', // Default
+                    'role' => 'programmer',
+                ]);
+
+                // Crear perfil vacío
+                if (class_exists(\App\Models\DeveloperProfile::class)) {
+                     \App\Models\DeveloperProfile::create([
+                        'user_id' => $user->id,
+                        'title' => 'Programador Web',
+                    ]);
+                }
+                
+                // Preferencias por defecto
+                $user->preferences()->create([
+                    'theme' => 'dark',
+                    'accent_color' => '#00FF85',
+                    'language' => 'es'
+                ]);
+
+            } else {
+                // Si existe, actualizamos google_id si no lo tiene
+                if (!$user->google_id) {
+                    $user->google_id = $googleUser->getId();
+                    $user->avatar = $googleUser->getAvatar();
+                    $user->save();
+                }
+            }
+
+            // Login manual
+            Auth::login($user);
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            // Retornamos un script que envía el token al opener (popup) o redirige con token en URL
+            // Como es SPA, lo mejor es redirigir al frontend con el token en la URL
+            $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
+            
+            return redirect("{$frontendUrl}/auth/callback?token={$token}&user_type={$user->user_type}&name={$user->name}");
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error en autenticación Google: ' . $e->getMessage()], 500);
+        }
     }
 }

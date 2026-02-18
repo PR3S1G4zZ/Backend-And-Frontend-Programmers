@@ -20,7 +20,7 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'user' => $user->only('id', 'name', 'lastname', 'email', 'user_type'),
+                'user' => $user->only('id', 'name', 'lastname', 'email', 'user_type', 'profile_picture'),
                 'profile' => $profile,
             ],
         ]);
@@ -33,9 +33,15 @@ class ProfileController extends Controller
         $userData = $request->validate([
             'name' => 'sometimes|string|max:255',
             'lastname' => 'sometimes|string|max:255',
+            'profile_picture' => 'nullable|image|max:2048', // Max 2MB
         ]);
 
         if (!empty($userData)) {
+            if ($request->hasFile('profile_picture')) {
+                $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+                // Generate full URL
+                $userData['profile_picture'] = url('storage/' . $path);
+            }
             $user->update($userData);
         }
 
@@ -71,6 +77,7 @@ class ProfileController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Perfil actualizado correctamente.',
+            'user' => $user->fresh()->only('id', 'name', 'lastname', 'email', 'user_type', 'profile_picture'),
         ]);
     }
 }

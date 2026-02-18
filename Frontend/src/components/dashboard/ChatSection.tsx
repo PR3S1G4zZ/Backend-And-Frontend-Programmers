@@ -117,6 +117,8 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
 
   useEffect(() => {
     let isMounted = true;
+    let intervalId: ReturnType<typeof setInterval>;
+
     const loadMessages = async () => {
       if (!selectedContact) {
         setMessages([]);
@@ -125,28 +127,38 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
       try {
         const response = await fetchConversationMessages(Number(selectedContact));
         if (!isMounted) return;
-        const data = response.data || [];
-        setMessages(
-          data.map((message) => ({
-            id: String(message.id),
-            senderId: message.senderId,
-            content: message.content,
-            timestamp: formatTimestamp(message.timestamp),
-            type: message.type,
-            fileName: message.fileName,
-            fileSize: message.fileSize,
-            isRead: message.isRead,
-          }))
-        );
+        const data = response?.data || [];
+
+        const newMessages = data.map((message) => ({
+          id: String(message.id),
+          senderId: message.senderId,
+          content: message.content,
+          timestamp: formatTimestamp(message.timestamp),
+          type: message.type,
+          fileName: message.fileName,
+          fileSize: message.fileSize,
+          isRead: message.isRead,
+        }));
+
+        setMessages(prev => {
+          // Simple check: if length is different or last message ID is different, update.
+          // This prevents re-rendering and auto-scrolling if no new messages.
+          if (prev.length !== newMessages.length) return newMessages;
+          if (prev.length > 0 && newMessages.length > 0 && prev[prev.length - 1].id !== newMessages[newMessages.length - 1].id) return newMessages;
+          return prev; // No change
+        });
+
       } catch (error) {
         console.error('Error cargando mensajes', error);
       }
     };
 
-    loadMessages();
+    loadMessages(); // Initial load
+    intervalId = setInterval(loadMessages, 3000); // Poll every 3 seconds
 
     return () => {
       isMounted = false;
+      clearInterval(intervalId);
     };
   }, [selectedContact]);
 
@@ -174,7 +186,13 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
 
     try {
       const response = await sendConversationMessage(Number(selectedContact), content);
-      const sentMessage = response.data;
+      const sentMessage = response?.data;
+
+      if (!sentMessage) {
+        console.error("No data received for sent message");
+        return;
+      }
+
       setMessages((prev) => [
         ...prev,
         {
