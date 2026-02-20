@@ -12,7 +12,8 @@ use App\Http\Controllers\{
     TaxonomyController,
     PaymentMethodController,
     WalletController,
-    FavoriteController
+    FavoriteController,
+    ReviewController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -72,7 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Wallet
     Route::get('/wallet', [\App\Http\Controllers\WalletController::class, 'show']);
-    Route::post('/wallet/recharge', [\App\Http\Controllers\WalletController::class, 'recharge']);
+    Route::post('/wallet/recharge', [\App\Http\Controllers\WalletController::class, 'recharge'])->middleware('throttle:10,1');
+    Route::post('/wallet/withdraw', [\App\Http\Controllers\WalletController::class, 'withdraw'])->middleware('throttle:10,1');
 
     // Dashboards
     Route::get('/dashboard/company', [DashboardController::class, 'company']);
@@ -102,6 +104,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Favorites
     Route::get('/favorites', [FavoriteController::class, 'index']);
     Route::post('/favorites', [FavoriteController::class, 'store']); // Toggle favorite
+
+    // Reviews
+    Route::get('/reviews', [ReviewController::class, 'index']);
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::get('/reviews/{id}', [ReviewController::class, 'show']);
 
     // Company projects
     Route::get('/company/projects', [ProjectController::class, 'companyProjects']);
@@ -139,7 +146,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Payment Methods
     Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
-    Route::post('/payment-methods', [PaymentMethodController::class, 'store']);
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->middleware('throttle:10,1');
     Route::put('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update']);
     Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy']);
 

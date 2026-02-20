@@ -29,6 +29,7 @@ export function PortfolioSection() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingProject, setEditingProject] = useState<PortfolioProject | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -66,8 +67,21 @@ export function PortfolioSection() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Handle image preview with cleanup to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      // Revoke previous URL to prevent memory leaks
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
       const file = e.target.files[0];
       setSelectedImage(file);
       setImagePreview(URL.createObjectURL(file));
@@ -100,14 +114,19 @@ export function PortfolioSection() {
         data.append('image', selectedImage);
       }
 
-      await portfolioService.create(data);
-      toast.success("Proyecto agregado correctamente");
+      if (editingProject) {
+        await portfolioService.update(editingProject.id, data);
+        toast.success("Proyecto actualizado correctamente");
+      } else {
+        await portfolioService.create(data);
+        toast.success("Proyecto agregado correctamente");
+      }
       setIsModalOpen(false);
       resetForm();
       loadProjects();
     } catch (error) {
-      console.error("Error creating project:", error);
-      toast.error("Error al crear el proyecto");
+      console.error("Error saving project:", error);
+      toast.error(editingProject ? "Error al actualizar el proyecto" : "Error al crear el proyecto");
     } finally {
       setIsSubmitting(false);
     }
@@ -138,6 +157,24 @@ export function PortfolioSection() {
     });
     setSelectedImage(null);
     setImagePreview(null);
+    setEditingProject(null);
+  };
+
+  const handleEdit = (project: PortfolioProject) => {
+    setEditingProject(project);
+    setFormData({
+      title: project.title,
+      description: project.description,
+      project_url: project.project_url || '',
+      github_url: project.github_url || '',
+      client: project.client || '',
+      completion_date: project.completion_date || '',
+      technologies: Array.isArray(project.technologies) ? project.technologies.join(', ') : project.technologies || '',
+      featured: project.featured
+    });
+    setImagePreview(project.image_url || null);
+    setSelectedImage(null);
+    setIsModalOpen(true);
   };
 
   const featuredProjects = projects.filter(project => project.featured);
@@ -145,7 +182,14 @@ export function PortfolioSection() {
   // Helper to safely get technologies array
   const getTechArray = (techs: string[] | string | undefined): string[] => {
     if (Array.isArray(techs)) return techs;
-    if (typeof techs === 'string') return JSON.parse(techs); // Or split if comma separated
+    if (typeof techs === 'string') {
+      try {
+        return JSON.parse(techs);
+      } catch {
+        // If JSON.parse fails, try comma-separated
+        return techs.split(',').map(t => t.trim()).filter(Boolean);
+      }
+    }
     return [];
   };
 
@@ -166,14 +210,20 @@ export function PortfolioSection() {
 
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => {
+                setEditingProject(null);
+                resetForm();
+              }}
+            >
               <Plus className="h-5 w-5 mr-2" />
               Agregar Proyecto
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] bg-[#1A1A1A] border-[#333333] text-white">
             <DialogHeader>
-              <DialogTitle>Agregar Nuevo Proyecto</DialogTitle>
+              <DialogTitle>{editingProject ? 'Editar Proyecto' : 'Agregar Nuevo Proyecto'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -361,7 +411,7 @@ export function PortfolioSection() {
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-lg font-bold text-white">{project.title}</h3>
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white">
+                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white" onClick={() => handleEdit(project)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="ghost" className="text-gray-400 hover:text-red-400" onClick={() => handleDelete(project.id)}>
@@ -455,7 +505,7 @@ export function PortfolioSection() {
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-base font-bold text-white">{project.title}</h3>
                     <div className="flex space-x-1">
-                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white p-1">
+                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white p-1" onClick={() => handleEdit(project)}>
                         <Edit className="h-3 w-3" />
                       </Button>
                       <Button size="sm" variant="ghost" className="text-gray-400 hover:text-red-400 p-1" onClick={() => handleDelete(project.id)}>

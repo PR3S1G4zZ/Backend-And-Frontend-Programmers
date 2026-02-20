@@ -2,16 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'project_id',
         'company_id',
         'developer_id',
         'rating',
         'comment',
+    ];
+
+    protected $uniqueConstraints = [
+        'project_developer_unique' => ['project_id', 'developer_id']
     ];
 
     public function project()

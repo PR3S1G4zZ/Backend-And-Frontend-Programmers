@@ -40,7 +40,8 @@ export function Sidebar({
     { id: 'portfolio', label: 'Mi Portafolio', icon: FolderOpen },
     { id: 'projects', label: 'Proyectos Publicados', icon: Search },
     { id: 'profile', label: 'Mi Perfil', icon: User },
-    { id: 'chat', label: 'Chat', icon: MessageSquare }
+    { id: 'chat', label: 'Chat', icon: MessageSquare },
+    { id: 'settings', label: 'Configuración', icon: Settings }
   ];
 
   const companySections = [
@@ -49,7 +50,8 @@ export function Sidebar({
     { id: 'publish-project', label: 'Publicar Proyecto', icon: Plus },
     { id: 'search-programmers', label: 'Buscar Programadores', icon: Search },
     { id: 'chat', label: 'Chat', icon: MessageSquare },
-    { id: 'wallet', label: 'Billetera & Pagos', icon: Wallet }
+    { id: 'wallet', label: 'Billetera & Pagos', icon: Wallet },
+    { id: 'settings', label: 'Configuración', icon: Settings }
   ];
 
   const adminSections = [

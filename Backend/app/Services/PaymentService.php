@@ -110,7 +110,7 @@ class PaymentService
     public function processProjectPayment(User $company, User $developer, float $amount, $reference)
     {
         $this->holdFunds($company, $amount, $reference);
-        $this->releaseFunds($company, $developer, $amount, $reference);
+        $this->releaseFunds($company, $amount, $reference);
     }
 
     public function getWallet(User $user): Wallet

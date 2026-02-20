@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronsUpDown, X, Plus } from 'lucide-react';
+import { ChevronsUpDown, X, Plus, Award } from 'lucide-react';
 import { cn } from './utils';
 import { Button } from './button';
 import {
@@ -90,7 +90,7 @@ export function SkillsSelector({ skills, onSkillsChange, isEditing }: SkillsSele
                                 variant="outline"
                                 role="combobox"
                                 aria-expanded={open}
-                                className="w-full justify-between bg-card hover:bg-muted/50 border-dashed"
+                                className="w-full justify-between bg-card hover:bg-muted/50 border-dashed border-2"
                             >
                                 <span className="flex items-center text-muted-foreground">
                                     <Plus className="mr-2 h-4 w-4" />
@@ -129,15 +129,15 @@ export function SkillsSelector({ skills, onSkillsChange, isEditing }: SkillsSele
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {skills.map((skill, index) => (
                     <div
                         key={`${skill.name}-${index}`}
-                        className="group relative flex flex-col gap-3 rounded-lg border border-border bg-card p-4 transition-all hover:shadow-md"
+                        className="group relative flex flex-col gap-3 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
                     >
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-base font-medium px-3 py-1">
+                                <Badge variant="outline" className="text-base font-semibold px-4 py-1.5 bg-primary/5">
                                     {skill.name}
                                 </Badge>
                             </div>
@@ -145,7 +145,7 @@ export function SkillsSelector({ skills, onSkillsChange, isEditing }: SkillsSele
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-destructive -mt-1 -mr-1"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive -mt-1 -mr-1 opacity-0 group-hover:opacity-100 transition-opacity"
                                     onClick={() => handleRemoveSkill(index)}
                                 >
                                     <X className="h-4 w-4" />
@@ -155,24 +155,26 @@ export function SkillsSelector({ skills, onSkillsChange, isEditing }: SkillsSele
 
                         <div className="grid grid-cols-2 gap-4 mt-1">
                             {/* Selector de Nivel */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-muted-foreground">Nivel</label>
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nivel</label>
                                 {isEditing ? (
-                                    <div className="flex flex-wrap gap-1">
-                                        {SKILL_LEVELS.map((lvl) => (
-                                            <button
-                                                key={lvl.value}
-                                                onClick={() => handleLevelChange(index, lvl.value)}
-                                                className={cn(
-                                                    "h-1.5 flex-1 rounded-full transition-all",
-                                                    skill.level >= lvl.value
-                                                        ? lvl.color.split(' ')[1].replace('text-', 'bg-')
-                                                        : "bg-muted"
-                                                )}
-                                                title={lvl.label}
-                                            />
-                                        ))}
-                                        <div className="w-full text-xs text-right font-medium mt-1">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex gap-1">
+                                            {SKILL_LEVELS.map((lvl) => (
+                                                <button
+                                                    key={lvl.value}
+                                                    onClick={() => handleLevelChange(index, lvl.value)}
+                                                    className={cn(
+                                                        "h-2 flex-1 rounded-full transition-all",
+                                                        skill.level >= lvl.value
+                                                            ? lvl.color.split(' ')[1].replace('text-', 'bg-')
+                                                            : "bg-muted"
+                                                    )}
+                                                    title={lvl.label}
+                                                />
+                                            ))}
+                                        </div>
+                                        <div className="text-xs font-medium text-right">
                                             {SKILL_LEVELS[skill.level - 1]?.label}
                                         </div>
                                     </div>
@@ -184,32 +186,32 @@ export function SkillsSelector({ skills, onSkillsChange, isEditing }: SkillsSele
                             </div>
 
                             {/* Selector de Años */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-muted-foreground">Experiencia</label>
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Experiencia</label>
                                 {isEditing ? (
                                     <div className="flex items-center gap-2">
                                         <Button
                                             variant="outline"
                                             size="icon"
-                                            className="h-6 w-6"
+                                            className="h-7 w-7"
                                             onClick={() => handleYearsChange(index, Math.max(0, skill.years - 1))}
                                         >
                                             -
                                         </Button>
-                                        <span className="text-sm font-medium w-12 text-center">
+                                        <span className="text-sm font-semibold w-14 text-center">
                                             {skill.years} {skill.years === 1 ? 'año' : 'años'}
                                         </span>
                                         <Button
                                             variant="outline"
                                             size="icon"
-                                            className="h-6 w-6"
+                                            className="h-7 w-7"
                                             onClick={() => handleYearsChange(index, skill.years + 1)}
                                         >
                                             +
                                         </Button>
                                     </div>
                                 ) : (
-                                    <div className="text-sm font-medium">
+                                    <div className="text-sm font-semibold bg-primary/10 px-3 py-1 rounded-md inline-block">
                                         {skill.years} {skill.years === 1 ? 'año' : 'años'}
                                     </div>
                                 )}
@@ -219,8 +221,10 @@ export function SkillsSelector({ skills, onSkillsChange, isEditing }: SkillsSele
                 ))}
 
                 {skills.length === 0 && (
-                    <div className="col-span-full py-8 text-center text-muted-foreground border border-dashed rounded-lg">
-                        <p>No has agregado habilidades técnicas aún.</p>
+                    <div className="col-span-full py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl bg-muted/20">
+                        <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium">No has agregado habilidades técnicas aún.</p>
+                        <p className="text-sm mt-1">Agrega tus habilidades para destacar tu perfil profesional.</p>
                     </div>
                 )}
             </div>

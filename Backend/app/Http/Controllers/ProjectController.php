@@ -43,7 +43,9 @@ class ProjectController extends Controller
                 'categories:id,name',
                 'skills:id,name',
             ])
-            ->withCount('applications')
+            ->withCount(['applications', 'milestones', 'milestones as completed_milestones_count' => function ($query) {
+                $query->where('progress_status', 'completed');
+            }])
             ->withExists(['applications as has_applied' => function ($query) use ($r) {
                 $query->where('developer_id', $r->user()->id ?? 0);
             }]);
@@ -97,7 +99,9 @@ class ProjectController extends Controller
         abort_unless($request->user()->user_type === 'company', 403);
 
         $projects = Project::with(['categories', 'skills'])
-            ->withCount('applications')
+            ->withCount(['applications', 'milestones', 'milestones as completed_milestones_count' => function ($query) {
+                $query->where('progress_status', 'completed');
+            }])
             ->where('company_id', $request->user()->id)
             ->latest()
             ->get();

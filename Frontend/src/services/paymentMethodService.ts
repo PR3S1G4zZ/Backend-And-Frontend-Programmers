@@ -13,17 +13,19 @@ export async function fetchPaymentMethods() {
 }
 
 export async function addPaymentMethod(payload: { type: string; details: string; is_default?: boolean }) {
-    return apiRequest<{ data: PaymentMethod; message: string }>('/payment-methods', {
+    const response = await apiRequest<{ message: string; data: PaymentMethod }>('/payment-methods', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
+    return response.data;
 }
 
 export async function updatePaymentMethod(id: number, payload: { type?: string; details?: string; is_default?: boolean }) {
-    return apiRequest<{ data: PaymentMethod; message: string }>(`/payment-methods/${id}`, {
+    const response = await apiRequest<{ message: string; data: PaymentMethod }>(`/payment-methods/${id}`, {
         method: 'PUT',
         body: JSON.stringify(payload),
     });
+    return response.data;
 }
 
 export async function deletePaymentMethod(id: number) {

@@ -32,6 +32,7 @@ class UserSeeder extends Seeder
         Message::truncate();
         Conversation::truncate();
         Application::truncate();
+        \App\Models\Milestone::truncate();
         Project::truncate();
         DeveloperProfile::truncate();
         CompanyProfile::truncate();
@@ -233,6 +234,41 @@ class UserSeeder extends Seeder
             $profile->user->skills()->sync($skillIds);
         }
 
+        // Arrays de datos en español para variedad
+        $projectDescriptions = [
+            'Buscamos un desarrollador para crear una plataforma integral que gestione el ciclo de vida del talento humano. Debe incluir módulos de reclutamiento, onboarding y evaluación de desempeño.',
+            'Necesitamos un experto en backend para optimizar nuestra base de datos y reducir los tiempos de respuesta de la API. El sistema actual está hecho en Laravel y MySQL.',
+            'Proyecto para diseñar y desarrollar una aplicación móvil híbrida para el seguimiento de rutas de logística en tiempo real. Integración con Google Maps requerida.',
+            'Estamos migrando nuestro ecommerce a una arquitectura de microservicios. Buscamos arquitectos de software con experiencia en AWS y Docker.',
+            'Desarrollo de un dashboard interactivo para visualizar KPIs financieros. Debe ser responsivo y permitir exportar reportes en PDF y Excel.',
+            'Creación de una landing page de alto impacto para el lanzamiento de un nuevo producto SaaS. Animaciones fluidas y optimización SEO son prioridad.',
+            'Sistema de gestión de inventario para una cadena de retail. Debe sincronizarse con el punto de venta y la tienda online.',
+            'Implementación de pasarela de pagos y sistema de facturación electrónica para una startup fintech.',
+            'Auditoría de seguridad y pentesting para nuestra plataforma web. Se requiere informe detallado de vulnerabilidades y plan de mitigación.',
+            'Desarrollo de un chatbot con IA para atención al cliente, integrado con WhatsApp Business API.',
+        ];
+
+        $milestoneTitles = [
+            'Investigación y Análisis', 'Diseño de Base de Datos', 'Prototipado UI/UX', 'Desarrollo del Backend', 
+            'Integración de API', 'Desarrollo del Frontend', 'Pruebas Unitarias', 'Pruebas de Integración', 
+            'Despliegue a Staging', 'Corrección de Bugs', 'Optimización de Rendimiento', 'Entrega Final'
+        ];
+
+        $milestoneDescriptions = [
+            'Análisis detallado de los requerimientos y elaboración del documento de especificaciones técnicas.',
+            'Diseño del esquema de base de datos relacional y scripts de migración.',
+            'Creación de wireframes y prototipos de alta fidelidad en Figma.',
+            'Implementación de la lógica de negocio y endpoints de la API RESTful.',
+            'Conexión de los servicios externos y configuración de webhooks.',
+            'Maquetación de las vistas y componentes visuales usando React.',
+            'Escritura y ejecución de tests para asegurar la calidad del código.',
+            'Verificación del flujo completo de la aplicación en un entorno controlado.',
+            'Configuración del servidor y despliegue de la versión de prueba.',
+            'Ajustes basados en el feedback de la revisión y solución de incidencias.',
+            'Mejoras en la velocidad de carga y consumo de recursos.',
+            'Puesta en producción y entrega de la documentación técnica y de usuario.'
+        ];
+
         $this->command->info('🧩 Creando proyectos para empresas...');
 
         $projectTitles = [
@@ -257,7 +293,7 @@ class UserSeeder extends Seeder
                 $project = Project::create([
                     'company_id' => $companyUser->id,
                     'title' => $faker->randomElement($projectTitles),
-                    'description' => $faker->paragraph(3),
+                    'description' => $faker->randomElement($projectDescriptions) . ' ' . $faker->text(200),
                     'budget_min' => $budgetMin,
                     'budget_max' => $budgetMax,
                     'budget_type' => $faker->randomElement(['fixed', 'hourly']),
@@ -270,7 +306,7 @@ class UserSeeder extends Seeder
                     'featured' => $faker->boolean(30),
                     'deadline' => $faker->dateTimeBetween('now', '+2 months'),
                     'max_applicants' => $faker->numberBetween(8, 30),
-                    'tags' => $faker->randomElements(['Remoto', 'Urgente', 'Fintech', 'SaaS', 'Marketplace', 'B2B'], rand(2, 4)),
+                    'tags' => $faker->randomElements(['Remoto', 'Urgente', 'Fintech', 'SaaS', 'Marketplace', 'B2B', 'React', 'Laravel', 'API'], rand(2, 4)),
                     'status' => $status,
                 ]);
 
@@ -296,6 +332,50 @@ class UserSeeder extends Seeder
                     'status' => $faker->randomElement(['sent', 'reviewed', 'accepted', 'rejected']),
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
+                ]);
+            }
+        }
+
+        $this->command->info('📍 Creando hitos para los proyectos...');
+
+        foreach ($projects as $project) {
+            // Only create milestones for projects that are not drafts
+            if ($project->status === 'draft') continue;
+
+            $milestoneCount = rand(3, 6);
+            $completedMilestones = 0;
+
+            // Determine how many milestones should be completed based on project status
+            if ($project->status === 'completed') {
+                $completedCount = $milestoneCount;
+            } elseif ($project->status === 'in_progress') {
+                $completedCount = rand(1, $milestoneCount - 1);
+            } else {
+                $completedCount = 0;
+            }
+
+            for ($i = 1; $i <= $milestoneCount; $i++) {
+                $milestoneStatus = 'pending';
+                $progressStatus = 'todo';
+                
+                if ($i <= $completedCount) {
+                    $milestoneStatus = 'released'; 
+                    $progressStatus = 'completed';
+                } elseif ($i === $completedCount + 1 && $project->status === 'in_progress') {
+                    $milestoneStatus = 'funded';
+                    $progressStatus = 'in_progress';
+                }
+
+                \App\Models\Milestone::create([
+                    'project_id' => $project->id,
+                    'title' => "Hito $i: " . $faker->randomElement($milestoneTitles),
+                    'description' => $faker->randomElement($milestoneDescriptions),
+                    'amount' => $project->budget_max / $milestoneCount,
+                    'status' => $milestoneStatus,
+                    'progress_status' => $progressStatus,
+                    'order' => $i,
+                    'due_date' => $faker->dateTimeBetween($project->created_at, $project->deadline ?? '+2 months'),
+                    'deliverables' => $progressStatus === 'completed' ? [$faker->url] : null,
                 ]);
             }
         }
@@ -330,19 +410,20 @@ class UserSeeder extends Seeder
             $messages = [
                 [
                     'sender_id' => $project->company_id,
-                    'body' => 'Hola, gracias por tu interés. ¿Podemos coordinar próximos pasos?',
+                    'body' => 'Hola, hemos revisado tu perfil y nos gustaría avanzar contigo.',
                 ],
                 [
                     'sender_id' => $application->developer_id,
-                    'body' => '¡Claro! Estoy disponible para una llamada esta semana.',
+                    'body' => '¡Genial! Estoy muy entusiasmado por colaborar.',
                 ],
                 [
                     'sender_id' => $project->company_id,
-                    'body' => 'Perfecto, te comparto la agenda del proyecto.',
+                    'body' => 'Te envío los detalles del primer hito.',
                 ],
             ];
-
-            $msgTime = Carbon::parse($conversationCreatedAt);
+            
+            // ... message creation loop ...
+             $msgTime = Carbon::parse($conversationCreatedAt);
             foreach ($messages as $messageData) {
                 // Determine random delay for next message (e.g., 2 minutes to 2 hours)
                 $msgTime = $msgTime->copy()->addMinutes(rand(2, 120));
@@ -366,6 +447,15 @@ class UserSeeder extends Seeder
 
         $this->command->info('⭐ Creando reviews de proyectos completados...');
 
+        $reviewComments = [
+            'Excelente profesional, entregó todo a tiempo y con gran calidad.',
+            'Muy buena comunicación y disposición para resolver problemas.',
+            'El código es limpio y bien estructurado. Recomendado 100%.',
+            'Hubo algunos retrasos pero el resultado final fue satisfactorio.',
+            'Gran experiencia trabajando juntos, esperamos colaborar nuevamente.',
+            'Superó nuestras expectativas en cuanto a funcionalidad y diseño.'
+        ];
+
         $completedProjects = Project::where('status', 'completed')->get();
         foreach ($completedProjects as $project) {
             $application = Application::where('project_id', $project->id)
@@ -382,7 +472,7 @@ class UserSeeder extends Seeder
                 'company_id' => $project->company_id,
                 'developer_id' => $application->developer_id,
                 'rating' => $faker->numberBetween(3, 5),
-                'comment' => $faker->sentence(16),
+                'comment' => $faker->randomElement($reviewComments),
             ]);
         }
 

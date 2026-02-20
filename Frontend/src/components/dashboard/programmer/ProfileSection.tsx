@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSweetAlert } from '../../ui/sweet-alert';
 import { useAuth } from '../../../contexts/AuthContext';
 import { fetchProfile, updateProfile } from '../../../services/profileService';
+import apiClient from '../../../services/apiClient';
 import { AppearanceSection } from '../settings/AppearanceSection';
 import { PaymentSettings } from './PaymentSettings';
 import { ImageUpload } from '../../ui/ImageUpload';
@@ -73,12 +74,32 @@ export function ProfileSection() {
     projectAlerts: true,
     marketingEmails: false,
     twoFactorAuth: false,
-    profileCompletion: 85
+    profileCompletion: 0
   });
 
   const { showAlert } = useSweetAlert();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Handler for privacy and notification toggles
+  const handleSettingsToggle = async (key: string, value: boolean) => {
+    const previousValue = settings[key as keyof typeof settings];
+    // Optimistic update
+    setSettings(prev => ({ ...prev, [key]: value }));
+
+    try {
+      await apiClient.put('/preferences', { [key]: value });
+    } catch (error) {
+      console.error('Error updating preference:', error);
+      // Revert on error
+      setSettings(prev => ({ ...prev, [key]: previousValue }));
+      showAlert({
+        title: 'Error',
+        text: 'No se pudo guardar la configuración. Inténtalo de nuevo.',
+        type: 'error',
+      });
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -103,7 +124,7 @@ export function ProfileSection() {
           github: profile.links?.github || '',
           linkedin: profile.links?.linkedin || '',
           twitter: profile.links?.twitter || '',
-          profile_picture: userInfo.profile_picture ? `http://localhost/storage/${userInfo.profile_picture}` : '',
+          profile_picture: userInfo.profile_picture ? `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${userInfo.profile_picture}` : '',
         }));
 
         const skillNames = Array.isArray(profile.skills) ? profile.skills : [];
@@ -182,8 +203,8 @@ export function ProfileSection() {
       // Actually, standardizing on FormData for everything with file uploads is best.
       // But let's check if we can just pass the object and handling the file separately? No, must be one request.
 
-      await updateProfile(formData); // This requires updating profileService.ts signature
-      const response = await updateProfile(formData); // This requires updating profileService.ts signature
+      // Save the profile with all data including the image
+      const response = await updateProfile(formData);
 
       showAlert({
         title: '¡Perfil Actualizado!',
@@ -197,7 +218,7 @@ export function ProfileSection() {
         const updatedUser = response.user;
         setProfileData(prev => ({
           ...prev,
-          profile_picture: `http://localhost/storage/${updatedUser.profile_picture}`
+          profile_picture: `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${updatedUser.profile_picture}`
         }));
         // Update global auth user if needed
         // updateUser(updatedUser); 
@@ -233,6 +254,38 @@ export function ProfileSection() {
       case 'unavailable': return 'No disponible';
       default: return 'Desconocido';
     }
+  };
+
+  // Calculate profile completion percentage dynamically
+  const calculateProfileCompletion = () => {
+    let filledFields = 0;
+    const totalFields = 12; // Total de campos a evaluar
+
+    // Basic info fields
+    if (profileData.name && profileData.name.trim() !== '') filledFields++;
+    if (profileData.email && profileData.email.trim() !== '') filledFields++;
+    if (profileData.phone && profileData.phone.trim() !== '') filledFields++;
+    if (profileData.location && profileData.location.trim() !== '') filledFields++;
+    if (profileData.title && profileData.title.trim() !== '') filledFields++;
+    if (profileData.bio && profileData.bio.trim() !== '') filledFields++;
+    if (profileData.hourlyRate && profileData.hourlyRate > 0) filledFields++;
+
+    // Profile picture
+    if (profileData.profile_picture && profileData.profile_picture.trim() !== '') filledFields++;
+
+    // Social links (at least one)
+    if ((profileData.website && profileData.website.trim() !== '') ||
+      (profileData.github && profileData.github.trim() !== '') ||
+      (profileData.linkedin && profileData.linkedin.trim() !== '') ||
+      (profileData.twitter && profileData.twitter.trim() !== '')) filledFields++;
+
+    // Skills (at least one)
+    if (skills && skills.length > 0) filledFields++;
+
+    // Languages (at least one)
+    if (languages && languages.length > 0) filledFields++;
+
+    return Math.round((filledFields / totalFields) * 100);
   };
 
   return (
@@ -309,19 +362,22 @@ export function ProfileSection() {
                 <p className="text-sm text-muted-foreground">Completa tu perfil para atraer más oportunidades</p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-primary">{settings.profileCompletion}%</div>
+                <div className="text-2xl font-bold text-primary">{calculateProfileCompletion()}%</div>
                 <div className="text-xs text-muted-foreground">Completado</div>
               </div>
             </div>
-            <Progress value={settings.profileCompletion} className="h-3" />
+            <Progress value={calculateProfileCompletion()} className="h-3" />
 
-            {settings.profileCompletion < 100 && (
+            {calculateProfileCompletion() < 100 && (
               <div className="mt-4 text-sm text-muted-foreground">
                 <p>Para completar tu perfil:</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Añade más habilidades técnicas</li>
-                  <li>Completa tu experiencia laboral</li>
-                  <li>Sube una foto de perfil profesional</li>
+                  {!profileData.title && <li>Añade un título profesional</li>}
+                  {!profileData.bio && <li>Escribe una biografía profesional</li>}
+                  {!profileData.profile_picture && <li>Sube una foto de perfil profesional</li>}
+                  {skills.length === 0 && <li>Añade habilidades técnicas</li>}
+                  {languages.length === 0 && <li>Agrega tus idiomas</li>}
+                  {!profileData.website && !profileData.github && !profileData.linkedin && <li>Agrega enlaces a tus redes profesionales</li>}
                 </ul>
               </div>
             )}
@@ -372,12 +428,19 @@ export function ProfileSection() {
                           onImageChange={setProfileImageFile}
                         />
                       ) : (
-                        <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
-                          <AvatarImage src={profileData.profile_picture} object-cover />
-                          <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                            {profileData.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                          <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
+                            <AvatarImage src={profileData.profile_picture} object-cover />
+                            <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                              {profileData.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          {!profileData.profile_picture && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                              <UserIcon className="h-8 w-8 text-white" />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -718,7 +781,7 @@ export function ProfileSection() {
                     </div>
                     <Switch
                       checked={settings.profileVisibility}
-                      onCheckedChange={(checked) => setSettings({ ...settings, profileVisibility: checked })}
+                      onCheckedChange={(checked) => handleSettingsToggle('profileVisibility', checked)}
                     />
                   </div>
                 </CardContent>
@@ -740,7 +803,7 @@ export function ProfileSection() {
                     </div>
                     <Switch
                       checked={settings.emailNotifications}
-                      onCheckedChange={(checked) => setSettings({ ...settings, emailNotifications: checked })}
+                      onCheckedChange={(checked) => handleSettingsToggle('emailNotifications', checked)}
                     />
                   </div>
 
@@ -753,7 +816,7 @@ export function ProfileSection() {
                     </div>
                     <Switch
                       checked={settings.projectAlerts}
-                      onCheckedChange={(checked) => setSettings({ ...settings, projectAlerts: checked })}
+                      onCheckedChange={(checked) => handleSettingsToggle('projectAlerts', checked)}
                     />
                   </div>
 
@@ -766,7 +829,7 @@ export function ProfileSection() {
                     </div>
                     <Switch
                       checked={settings.marketingEmails}
-                      onCheckedChange={(checked) => setSettings({ ...settings, marketingEmails: checked })}
+                      onCheckedChange={(checked) => handleSettingsToggle('marketingEmails', checked)}
                     />
                   </div>
                 </CardContent>
@@ -788,7 +851,7 @@ export function ProfileSection() {
                     </div>
                     <Switch
                       checked={settings.twoFactorAuth}
-                      onCheckedChange={(checked) => setSettings({ ...settings, twoFactorAuth: checked })}
+                      onCheckedChange={(checked) => handleSettingsToggle('twoFactorAuth', checked)}
                     />
                   </div>
                 </CardContent>

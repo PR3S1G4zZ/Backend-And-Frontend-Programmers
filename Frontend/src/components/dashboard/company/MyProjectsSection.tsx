@@ -4,7 +4,6 @@ import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs';
-import { Progress } from '../../ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import {
   Plus,
@@ -77,7 +76,15 @@ const mapProject = (project: ProjectResponse): Project => {
   const skills = project.skills?.map((skill) => skill.name) ?? [];
   const acceptedApplication = project.applications?.find((application) => application.developer);
 
-  const progress = status === 'completed' ? 100 : status === 'in-progress' ? 60 : 0;
+  let progress = 0;
+  if (status === 'completed') {
+    progress = 100;
+  } else if (project.milestones_count && project.milestones_count > 0) {
+    progress = Math.round((project.completed_milestones_count || 0) / project.milestones_count * 100);
+  } else if (status === 'in-progress') {
+    // Fallback if no milestones but in progress (e.g. just started or legacy)
+    progress = 0;
+  }
 
   return {
     id: String(project.id),
@@ -478,11 +485,23 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                     {project.status === 'in-progress' && (
                       <div className="space-y-3">
                         <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-gray-400">Progreso del proyecto</span>
-                            <span className="text-sm text-white">{project.progress}%</span>
+                          <div className="flex justify-between items-end mb-2">
+                            <span className="text-xs font-medium text-gray-400">Progreso del proyecto</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm font-bold text-primary">{project.progress}%</span>
+                            </div>
                           </div>
-                          <Progress value={project.progress} className="h-2" />
+                          <div className="h-2.5 w-full bg-gray-800 rounded-full overflow-hidden border border-gray-700/50">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${project.progress}%` }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className={`h-full rounded-full ${project.progress === 100 ? 'bg-gradient-to-r from-green-500 to-emerald-400' :
+                                project.progress > 50 ? 'bg-gradient-to-r from-blue-500 to-cyan-400' :
+                                  'bg-gradient-to-r from-yellow-500 to-orange-400'
+                                }`}
+                            />
+                          </div>
                         </div>
 
                         {project.developer && (

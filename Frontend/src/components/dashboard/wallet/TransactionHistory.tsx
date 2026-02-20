@@ -1,26 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { fetchWallet } from '../../../services/walletService';
+import { fetchWalletWithTransactions } from '../../../services/walletService';
 import type { TransactionResponse } from '../../../services/walletService';
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { useWallet } from '../../../contexts/WalletContext';
 
 export function TransactionHistory() {
-    const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const loadTransactions = async () => {
-            try {
-                const data = await fetchWallet();
-                setTransactions(data.transactions || []);
-            } catch (error) {
-                console.error('Error loading transactions', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadTransactions();
-    }, []);
+    const { transactions, loading } = useWallet();
 
     if (loading) return <div className="text-gray-400">Cargando movimientos...</div>;
 
@@ -31,7 +17,7 @@ export function TransactionHistory() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {transactions.length === 0 ? (
+                    {(!Array.isArray(transactions) || transactions.length === 0) ? (
                         <p className="text-gray-400 text-sm">No hay movimientos registrados.</p>
                     ) : (
                         transactions.map((tx) => (

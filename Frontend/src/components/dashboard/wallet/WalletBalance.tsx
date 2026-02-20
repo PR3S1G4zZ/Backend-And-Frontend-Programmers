@@ -4,26 +4,14 @@ import { fetchWallet } from '../../../services/walletService';
 import type { WalletResponse } from '../../../services/walletService';
 import { Wallet, RefreshCw } from 'lucide-react';
 import { Button } from '../../ui/button';
+import { useWallet } from '../../../contexts/WalletContext';
 
 export function WalletBalance() {
-    const [wallet, setWallet] = useState<WalletResponse | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { wallet, loading, refreshWallet } = useWallet();
 
-    const loadWallet = async () => {
-        setLoading(true);
-        try {
-            const data = await fetchWallet();
-            setWallet(data);
-        } catch (error) {
-            console.error('Error loading wallet', error);
-        } finally {
-            setLoading(false);
-        }
+    const handleRefresh = async () => {
+        await refreshWallet();
     };
-
-    useEffect(() => {
-        loadWallet();
-    }, []);
 
     if (loading) return <div className="text-gray-400">Cargando saldo...</div>;
 
@@ -36,7 +24,7 @@ export function WalletBalance() {
             <CardContent>
                 <div className="text-2xl font-bold text-white flex items-center justify-between">
                     <span>${parseFloat(wallet?.balance || '0').toFixed(2)}</span>
-                    <Button variant="ghost" size="sm" onClick={loadWallet} className="ml-2">
+                    <Button variant="ghost" size="sm" onClick={handleRefresh} className="ml-2">
                         <RefreshCw className="h-4 w-4 text-gray-400" />
                     </Button>
                 </div>

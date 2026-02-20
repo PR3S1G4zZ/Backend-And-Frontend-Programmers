@@ -117,7 +117,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
 
       <PaymentMethodBanner
         userType="company"
-        onSetupClick={() => onSectionChange('settings')}
+        onSetupClick={() => onSectionChange('wallet')}
       />
 
       {/* Metrics Cards */}

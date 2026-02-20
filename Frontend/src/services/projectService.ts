@@ -26,6 +26,8 @@ export type ProjectResponse = {
   applications_count?: number;
   applications?: Array<{ developer: { id: number; name: string } }>;
   has_applied?: boolean;
+  milestones_count?: number;
+  completed_milestones_count?: number;
   deleted_at?: string | null;
 };
 

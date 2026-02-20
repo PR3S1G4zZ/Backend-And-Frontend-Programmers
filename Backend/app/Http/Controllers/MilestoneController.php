@@ -10,16 +10,23 @@ class MilestoneController extends Controller
 {
     public function index(Request $request, Project $project)
     {
-        // Verify access (Project Company or Assigned Developer)
-        // For now, allow if user is auth
-        // TODO: Strict policies
-        
+        // Policy check
+        // We pass the class name and the project for the 'viewAny' check if needed, 
+        // essentially validating if the user has access to THIS project's milestones.
+        // Since our Policy viewAny returns true, we rely on the project relationship check here or in a middleware.
+        // For stricter control:
+        $user = $request->user();
+        if ($user->id !== $project->company_id && 
+            !$project->applications()->where('developer_id', $user->id)->where('status', 'accepted')->exists()) {
+             abort(403, 'Unauthorized');
+        }
+
         return $project->milestones()->orderBy('order')->get();
     }
 
     public function store(Request $request, Project $project)
     {
-        abort_unless($request->user()->id === $project->company_id, 403);
+        $this->authorize('create', [Milestone::class, $project]);
 
         $data = $request->validate([
             'title' => 'required|string|max:255',
@@ -36,8 +43,7 @@ class MilestoneController extends Controller
 
     public function update(Request $request, Project $project, Milestone $milestone)
     {
-        // Allow Company to edit details, Developer to edit status
-        $user = $request->user();
+        $this->authorize('update', $milestone);
         
         $data = $request->validate([
             'title' => 'sometimes|string',
@@ -47,34 +53,36 @@ class MilestoneController extends Controller
             'due_date' => 'nullable|date'
         ]);
         
-        // Use Policies! simplified logic here:
-        if ($user->id === $project->company_id) {
-            // Company Approval Logic
-            if (($data['progress_status'] ?? '') === 'completed' && $milestone->progress_status !== 'completed') {
-                try {
-                    $paymentService = app(\App\Services\PaymentService::class);
-                    $paymentService->releaseMilestone($user, $milestone->amount, $project);
-                    $milestone->status = 'released'; // Mark as paid
-                } catch (\Exception $e) {
-                    return response()->json(['message' => 'Error liberando fondos: ' . $e->getMessage()], 400);
-                }
+        // Restrict amount field for developers (only company can change amount)
+        $user = $request->user();
+        $isDeveloper = $user->id !== $project->company_id && 
+            $project->applications()->where('developer_id', $user->id)->where('status', 'accepted')->exists();
+        
+        if ($isDeveloper && isset($data['amount'])) {
+            unset($data['amount']);
+        }
+        
+        // Strict State Transition Logic
+        if (isset($data['progress_status'])) {
+            $newStatus = $data['progress_status'];
+            $currentStatus = $milestone->progress_status;
+
+            // Prevent direct jump to 'review' without 'submit' endpoint
+            if ($newStatus === 'review' && $currentStatus !== 'review') {
+                return response()->json(['message' => 'Para enviar a revisión, debes usar la opción de "Entregar" y adjuntar entregables.'], 400);
             }
-        } elseif ($request->has('progress_status')) {
-             // Developer moving status
-             // Ensure developer is the assignee
-             $isAssigned = $project->applications()
-                ->where('developer_id', $user->id)
-                ->where('status', 'accepted')
-                ->exists();
-                
-             if (!$isAssigned) {
-                 abort(403, 'No estás asignado a este proyecto.');
-             }
-             
-             // Developer cannot mark as completed (only review)
-             if ($data['progress_status'] === 'completed') {
-                 abort(403, 'Solo la empresa puede aprobar y completar el hito.');
-             }
+
+            // Prevent direct jump to 'completed' without 'approve' endpoint
+            if ($newStatus === 'completed' && $currentStatus !== 'completed') {
+                return response()->json(['message' => 'Para completar, la empresa debe aprobar el hito explícitamente.'], 400);
+            }
+            
+            // Allow moving back to 'in_progress' from 'review' (Reject logic handled in separate endpoint, but manual move allowed?)
+            // Actually, Reject endpoint handles logic. Manual move by developer from review -> in_progress? 
+            // If developer realizes they made a mistake.
+            if ($currentStatus === 'review' && $newStatus === 'in_progress') {
+                // Allow
+            }
         }
 
         $milestone->update($data);
@@ -84,30 +92,18 @@ class MilestoneController extends Controller
 
     public function destroy(Request $request, Project $project, Milestone $milestone)
     {
-        abort_unless($request->user()->id === $project->company_id, 403);
+        $this->authorize('delete', $milestone);
         $milestone->delete();
         return response()->noContent();
     }
 
     public function submit(Request $request, Project $project, Milestone $milestone)
     {
-        $user = $request->user();
-        
-        // Ensure user is the assigned developer and project status is active stuff...
-        // Simplified check:
-        // Check if user is the developer of the accepted application
-        $isAssigned = $project->applications()
-            ->where('developer_id', $user->id)
-            ->where('status', 'accepted')
-            ->exists();
-
-        if (!$isAssigned) {
-            return response()->json(['message' => 'No tienes permiso para entregar este hito.'], 403);
-        }
+        $this->authorize('submit', $milestone);
 
         $data = $request->validate([
             'deliverables' => 'required|array',
-            'deliverables.*' => 'required|string' // Array of links or descriptions
+            'deliverables.*' => 'required|string'
         ]);
 
         $milestone->update([
@@ -115,18 +111,12 @@ class MilestoneController extends Controller
             'progress_status' => 'review'
         ]);
 
-        // Optional: Create a system message in the conversation?
-
         return response()->json($milestone);
     }
 
     public function approve(Request $request, Project $project, Milestone $milestone)
     {
-        $user = $request->user();
-
-        if ($user->id !== $project->company_id) {
-            return response()->json(['message' => 'Solo la empresa puede aprobar hitos.'], 403);
-        }
+        $this->authorize('approve', $milestone);
 
         if ($milestone->progress_status !== 'review') {
             return response()->json(['message' => 'El hito no está en revisión.'], 400);
@@ -134,11 +124,13 @@ class MilestoneController extends Controller
 
         try {
             $paymentService = app(\App\Services\PaymentService::class);
-            $paymentService->releaseMilestone($user, $milestone->amount, $project);
+            $paymentService->releaseMilestone($request->user(), $milestone->amount, $project);
             
             $milestone->update([
                 'progress_status' => 'completed',
-                'status' => 'released' // Funds released
+                // 'status' => 'released' // Keep status as 'funded' or whatever it was, maybe? Or just don't set to released.
+                // Assuming 'status' field tracks payment status. If we don't release, maybe we shouldn't change it to 'released'.
+                // Let's keep it simply as completed for progress.
             ]);
 
             return response()->json($milestone);
@@ -150,20 +142,14 @@ class MilestoneController extends Controller
 
     public function reject(Request $request, Project $project, Milestone $milestone)
     {
-        $user = $request->user();
-
-        if ($user->id !== $project->company_id) {
-            return response()->json(['message' => 'Solo la empresa puede rechazar entregas.'], 403);
-        }
+        $this->authorize('reject', $milestone);
 
         if ($milestone->progress_status !== 'review') {
              return response()->json(['message' => 'El hito no está en revisión.'], 400);
         }
 
-        // Reset to in_progress
         $milestone->update([
             'progress_status' => 'in_progress',
-            // potentially clear deliverables or keep them as history? Keeping them for now.
         ]);
 
         return response()->json($milestone);

@@ -20,12 +20,17 @@ export interface PortfolioProject {
 
 export const portfolioService = {
     async getAll(): Promise<PortfolioProject[]> {
-        const response = await apiRequest<{ data: PortfolioProject[] }>('/portfolio-projects');
+        const response = await apiRequest<{ success: boolean; data: { data: PortfolioProject[]; meta?: any } }>('/portfolio-projects');
+        return response.data.data;
+    },
+
+    async getById(id: number): Promise<PortfolioProject> {
+        const response = await apiRequest<{ success: boolean; data: PortfolioProject }>(`/portfolio-projects/${id}`);
         return response.data;
     },
 
     async create(data: FormData): Promise<PortfolioProject> {
-        const response = await apiRequest<{ data: PortfolioProject, message: string }>('/portfolio-projects', {
+        const response = await apiRequest<{ success: boolean; data: PortfolioProject; message: string }>('/portfolio-projects', {
             method: 'POST',
             body: data,
         });
@@ -37,7 +42,7 @@ export const portfolioService = {
         // Actually standard PUT with FormData/Multipart is often tricky in PHP/Laravel.
         // Ideally use POST with _method=PUT.
         data.append('_method', 'PUT');
-        const response = await apiRequest<{ data: PortfolioProject, message: string }>(`/portfolio-projects/${id}`, {
+        const response = await apiRequest<{ success: boolean; data: PortfolioProject; message: string }>(`/portfolio-projects/${id}`, {
             method: 'POST',
             body: data,
         });

@@ -108,7 +108,7 @@ class User extends Authenticatable
                 $user->user_type === 'company' ? 'nullable' : 'required', 
                 'string', 
                 'max:255', 
-                'regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/'
+                'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-]+$/'
             ],
             'email'     => [
                 'required', 'string', 'email', 'max:255',
@@ -200,5 +200,10 @@ class User extends Authenticatable
     public function activityLogs()
     {
         return $this->hasMany(ActivityLog::class);
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(Application::class, 'developer_id');
     }
 }

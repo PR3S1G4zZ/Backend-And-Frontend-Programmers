@@ -18,4 +18,9 @@ class PaymentMethod extends Model
         'is_default' => 'boolean',
         // 'details' => 'array', // Removing this to keep it as string for frontend to parse
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

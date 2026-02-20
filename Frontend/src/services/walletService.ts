@@ -21,8 +21,18 @@ export type WalletResponse = {
     transactions?: TransactionResponse[];
 };
 
-export async function fetchWallet() {
-    return apiRequest<WalletResponse>('/wallet');
+export type WalletApiResponse = {
+    wallet: WalletResponse;
+    transactions: TransactionResponse[];
+};
+
+export async function fetchWallet(): Promise<WalletResponse> {
+    const response = await apiRequest<WalletApiResponse>('/wallet');
+    return response.wallet;
+}
+
+export async function fetchWalletWithTransactions(): Promise<WalletApiResponse> {
+    return apiRequest<WalletApiResponse>('/wallet');
 }
 
 export async function rechargeWallet(amount: number) {

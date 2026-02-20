@@ -82,6 +82,17 @@ export function PaymentSettings() {
     };
 
     const handleDelete = async (id: number) => {
+        const confirmed = await showAlert({
+            title: 'Confirmar eliminación',
+            text: '¿Estás seguro de que deseas eliminar este método de pago? Esta acción no se puede deshacer.',
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Eliminar',
+            cancelButtonText: 'Cancelar',
+        });
+
+        if (!confirmed) return;
+
         try {
             await apiClient.delete(`/payment-methods/${id}`);
             setMethods(methods.filter(m => m.id !== id));

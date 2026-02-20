@@ -12,11 +12,22 @@ class PortfolioProjectController extends Controller
     {
         $projects = PortfolioProject::where('user_id', $request->user()->id)
             ->latest()
-            ->get();
+            ->paginate(15);
 
         return response()->json([
             'success' => true,
             'data' => $projects
+        ]);
+    }
+
+    public function show(Request $request, $id)
+    {
+        $project = PortfolioProject::where('user_id', $request->user()->id)
+            ->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $project
         ]);
     }
 
@@ -78,7 +89,7 @@ class PortfolioProjectController extends Controller
             $project->image_url = Storage::url($path);
         }
 
-        $project->fill($request->except('image'));
+        $project->fill($data);
         $project->save();
 
         return response()->json([

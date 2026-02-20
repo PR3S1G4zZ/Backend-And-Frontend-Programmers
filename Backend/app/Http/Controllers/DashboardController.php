@@ -63,17 +63,17 @@ class DashboardController extends Controller
             ->whereHas('project', function($q) {
                 $q->whereIn('status', ['in_progress', 'open']);
             })
-            ->with('project')
+            ->with(['project', 'project.company'])
             ->take(3)
             ->get()
             ->map(function($app) {
                 return [
                     'id' => $app->project->id,
                     'title' => $app->project->title,
-                    'client' => $app->project->company->name ?? 'Confidencial',
+                    'client' => $app->project->company?->name ?? 'Confidencial',
                     'progress' => 0, // No progress logic yet?
                     'deadline' => $app->project->deadline ?? 'N/A',
-                    'value' => '€' . number_format($app->project->budget_min, 0)
+                    'value' => '€' . number_format($app->project->budget_min ?? 0, 0)
                 ];
             });
 

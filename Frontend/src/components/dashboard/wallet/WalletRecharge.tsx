@@ -6,6 +6,7 @@ import { Label } from '../../ui/label';
 import { useSweetAlert } from '../../ui/sweet-alert';
 import { rechargeWallet } from '../../../services/walletService';
 import { Wallet, CreditCard, DollarSign } from 'lucide-react';
+import { useWallet } from '../../../contexts/WalletContext';
 
 interface WalletRechargeProps {
     onRechargeSuccess?: () => void;
@@ -15,6 +16,7 @@ export function WalletRecharge({ onRechargeSuccess }: WalletRechargeProps) {
     const [amount, setAmount] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { showAlert } = useSweetAlert();
+    const { refreshWallet } = useWallet();
 
     const quickAmounts = [10, 50, 100, 500];
 
@@ -28,8 +30,10 @@ export function WalletRecharge({ onRechargeSuccess }: WalletRechargeProps) {
         setIsLoading(true);
         try {
             await rechargeWallet(value);
-            showAlert({ title: 'Recarga Exitosa', text: `Se han añadido $${value.toFixed(2)} a tu saldo.`, type: 'success' });
+            showAlert({ title: 'Recarga Exitosa', text: `Se han añadido ${value.toFixed(2)} a tu saldo.`, type: 'success' });
             setAmount('');
+            // Refresh wallet data and optionally call onRechargeSuccess
+            await refreshWallet();
             if (onRechargeSuccess) onRechargeSuccess();
         } catch (error) {
             console.error(error);

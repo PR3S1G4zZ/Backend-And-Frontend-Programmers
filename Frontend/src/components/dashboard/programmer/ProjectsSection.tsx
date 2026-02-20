@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchProjects, type ProjectResponse } from '../../../services/projectService';
+import { toggleFavorite as toggleFavoriteApi } from '../../../services/favoriteService';
 
 interface Project {
   id: string;
@@ -159,12 +160,43 @@ export function ProjectsSection() {
     return matchesSearch && matchesCategory && matchesLevel && matchesLocation && project.status === 'open';
   });
 
-  const toggleFavorite = (projectId: string) => {
-    setFavorites(prev =>
-      prev.includes(projectId)
-        ? prev.filter(id => id !== projectId)
-        : [...prev, projectId]
-    );
+  // Apply sorting to filtered projects
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime();
+      case 'oldest':
+        return new Date(a.postedDate).getTime() - new Date(b.postedDate).getTime();
+      case 'budget-high':
+        return b.budget.max - a.budget.max;
+      case 'budget-low':
+        return a.budget.max - b.budget.max;
+      case 'deadline':
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      default:
+        return 0;
+    }
+  });
+
+  const toggleFavorite = async (projectId: string) => {
+    try {
+      // Call backend to toggle favorite
+      await toggleFavoriteApi(parseInt(projectId));
+      // Update local state
+      setFavorites(prev =>
+        prev.includes(projectId)
+          ? prev.filter(id => id !== projectId)
+          : [...prev, projectId]
+      );
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      // Still update local state for better UX even if backend fails
+      setFavorites(prev =>
+        prev.includes(projectId)
+          ? prev.filter(id => id !== projectId)
+          : [...prev, projectId]
+      );
+    }
   };
 
   const applyToProject = async (projectId: string) => {
@@ -287,7 +319,7 @@ export function ProjectsSection() {
               className="bg-card border border-border rounded-lg p-4"
             >
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{filteredProjects.length}</div>
+                <div className="text-2xl font-bold text-primary">{sortedProjects.length}</div>
                 <div className="text-xs text-muted-foreground">Proyectos activos</div>
               </div>
             </motion.div>
@@ -428,7 +460,7 @@ export function ProjectsSection() {
       {/* Projects Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <AnimatePresence>
-          {filteredProjects.map((project, index) => (
+          {sortedProjects.map((project, index) => (
             <motion.div
               key={project.id}
               layout

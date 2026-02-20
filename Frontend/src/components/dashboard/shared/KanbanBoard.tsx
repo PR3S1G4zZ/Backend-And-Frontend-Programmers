@@ -5,7 +5,8 @@ import { Button } from '../../ui/button';
 import { motion } from 'framer-motion';
 import { Play, Check, RotateCcw } from 'lucide-react';
 import apiClient from '../../../services/apiClient';
-import { useSweetAlert } from '../../ui/sweet-alert';
+import { useMilestoneActions } from '../../../hooks/useMilestoneActions';
+import { SubmitMilestoneDialog } from './MilestoneActionDialogs';
 
 interface Milestone {
     id: number;
@@ -19,19 +20,41 @@ interface Milestone {
 interface KanbanBoardProps {
     projectId: number;
     onUpdate?: () => void;
+    refreshTrigger?: number;
     userType: 'programmer' | 'company';
 }
 
-export function KanbanBoard({ projectId, onUpdate, userType }: KanbanBoardProps) {
+export function KanbanBoard({ projectId, onUpdate, refreshTrigger, userType }: KanbanBoardProps) {
     const [milestones, setMilestones] = useState<Milestone[]>([]);
     const [loading, setLoading] = useState(true);
-    const { showAlert } = useSweetAlert();
+
+    const {
+        openSubmitDialog,
+        handleApprove,
+        handleReject,
+        isSubmitDialogOpen,
+        setIsSubmitDialogOpen,
+        handleSubmit: hookHandleSubmit,
+        isSubmitting: hookIsSubmitting,
+        selectedMilestone,
+        updateStatusSimple
+    } = useMilestoneActions({
+        projectId,
+        onUpdate: () => {
+            fetchMilestones();
+            onUpdate?.();
+        },
+        userType
+    });
+
 
     const fetchMilestones = async () => {
-        setLoading(true);
+        // Only show full loader if we have no data yet
+        if (milestones.length === 0) setLoading(true);
         try {
             const response = await apiClient.get<Milestone[]>(`/projects/${projectId}/milestones`);
-            setMilestones(response);
+            const data = Array.isArray(response) ? response : (response as any).data || [];
+            setMilestones(data);
         } catch (error) {
             console.error(error);
         } finally {
@@ -41,29 +64,30 @@ export function KanbanBoard({ projectId, onUpdate, userType }: KanbanBoardProps)
 
     useEffect(() => {
         if (projectId) fetchMilestones();
-    }, [projectId]);
+    }, [projectId, refreshTrigger]);
 
-    const updateStatus = async (milestone: Milestone, newStatus: string) => {
-        try {
-            await apiClient.put(`/projects/${projectId}/milestones/${milestone.id}`, {
-                progress_status: newStatus
-            });
-            fetchMilestones();
-            onUpdate?.();
-            showAlert({
-                title: 'Actualizado',
-                text: `El estado ha cambiado a ${newStatus}`,
-                type: 'success',
-                timer: 1000
-            });
-        } catch (error) {
-            showAlert({
-                title: 'Error',
-                text: 'No se pudo actualizar el estado',
-                type: 'error'
-            });
+    // Use shared logic for updates, but intercept critical ones
+    const handleStatusChange = (milestone: Milestone, newStatus: string) => {
+        // Critical Transitions
+        if (newStatus === 'review' && userType === 'programmer') {
+            openSubmitDialog(milestone);
+            return;
         }
+
+        if (newStatus === 'completed' && userType === 'company') {
+            handleApprove(milestone);
+            return;
+        }
+
+        if (newStatus === 'in_progress' && userType === 'company' && milestone.progress_status === 'review') {
+            handleReject(milestone);
+            return;
+        }
+
+        // Simple Transitions
+        updateStatusSimple(milestone, newStatus);
     };
+
 
     const columns = [
         { id: 'todo', label: 'Por Hacer', color: 'bg-gray-500/10 border-gray-500/20' },
@@ -75,7 +99,15 @@ export function KanbanBoard({ projectId, onUpdate, userType }: KanbanBoardProps)
     if (loading) return <div>Cargando tablero...</div>;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 overflow-x-auto pb-4 h-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 overflow-x-auto pb-4 h-full relative">
+            <SubmitMilestoneDialog
+                open={isSubmitDialogOpen}
+                onOpenChange={setIsSubmitDialogOpen}
+                onSubmit={hookHandleSubmit}
+                isSubmitting={hookIsSubmitting}
+                milestoneTitle={selectedMilestone?.title}
+            />
+
             {columns.map((column) => {
                 const items = milestones.filter(m => m.progress_status === column.id);
 
@@ -99,32 +131,28 @@ export function KanbanBoard({ projectId, onUpdate, userType }: KanbanBoardProps)
                                     <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{item.description}</p>
 
                                     <div className="flex items-center justify-between mt-2">
-                                        <Badge variant="outline" className="text-[10px] h-5">
-                                            ${Number(item.amount).toLocaleString()}
-                                        </Badge>
-
                                         {/* Actions based on role and status */}
                                         <div className="flex gap-1 mt-2 justify-end border-t border-gray-700/50 pt-2 w-full">
                                             {/* PROGRAMMER ACTIONS */}
                                             {userType === 'programmer' && (
                                                 <>
                                                     {column.id === 'todo' && (
-                                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-primary/20 hover:text-primary" onClick={() => updateStatus(item, 'in_progress')} title="Iniciar">
+                                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-primary/20 hover:text-primary" onClick={() => handleStatusChange(item, 'in_progress')} title="Iniciar">
                                                             <Play className="h-3 w-3" />
                                                         </Button>
                                                     )}
                                                     {column.id === 'in_progress' && (
                                                         <>
-                                                            <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-yellow-500/20 hover:text-yellow-500" onClick={() => updateStatus(item, 'todo')} title="Pausar / Devolver a Pendiente">
+                                                            <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-yellow-500/20 hover:text-yellow-500" onClick={() => handleStatusChange(item, 'todo')} title="Pausar / Devolver a Pendiente">
                                                                 <RotateCcw className="h-3 w-3" />
                                                             </Button>
-                                                            <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-green-500/20 hover:text-green-500" onClick={() => updateStatus(item, 'review')} title="Enviar a Revisión">
+                                                            <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-green-500/20 hover:text-green-500" onClick={() => handleStatusChange(item, 'review')} title="Enviar a Revisión">
                                                                 <Check className="h-3 w-3" />
                                                             </Button>
                                                         </>
                                                     )}
                                                     {column.id === 'review' && (
-                                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-yellow-500/20 hover:text-yellow-500" onClick={() => updateStatus(item, 'in_progress')} title="Retirar de Revisión">
+                                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-yellow-500/20 hover:text-yellow-500" onClick={() => handleStatusChange(item, 'in_progress')} title="Retirar de Revisión">
                                                             <RotateCcw className="h-3 w-3" />
                                                         </Button>
                                                     )}
@@ -135,21 +163,21 @@ export function KanbanBoard({ projectId, onUpdate, userType }: KanbanBoardProps)
                                             {userType === 'company' && (
                                                 <>
                                                     {column.id === 'todo' && (
-                                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-primary/20 hover:text-primary" onClick={() => updateStatus(item, 'in_progress')} title="Forzar Inicio">
+                                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-primary/20 hover:text-primary" onClick={() => handleStatusChange(item, 'in_progress')} title="Forzar Inicio">
                                                             <Play className="h-3 w-3" />
                                                         </Button>
                                                     )}
                                                     {column.id === 'in_progress' && (
-                                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-yellow-500/20 hover:text-yellow-500" onClick={() => updateStatus(item, 'todo')} title="Pausar / Devolver a Pendiente">
+                                                        <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-yellow-500/20 hover:text-yellow-500" onClick={() => handleStatusChange(item, 'todo')} title="Pausar / Devolver a Pendiente">
                                                             <RotateCcw className="h-3 w-3" />
                                                         </Button>
                                                     )}
                                                     {column.id === 'review' && (
                                                         <>
-                                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => updateStatus(item, 'in_progress')} title="Rechazar">
+                                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-red-400 hover:bg-red-500/20 hover:text-red-300" onClick={() => handleStatusChange(item, 'in_progress')} title="Rechazar">
                                                                 <RotateCcw className="h-3 w-3" />
                                                             </Button>
-                                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-green-400 hover:bg-green-500/20 hover:text-green-300" onClick={() => updateStatus(item, 'completed')} title="Aprobar y Liberar Fondos">
+                                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-green-400 hover:bg-green-500/20 hover:text-green-300" onClick={() => handleStatusChange(item, 'completed')} title="Aprobar y Liberar Fondos">
                                                                 <Check className="h-3 w-3" />
                                                             </Button>
                                                         </>

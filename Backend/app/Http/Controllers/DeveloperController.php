@@ -24,9 +24,11 @@ class DeveloperController extends Controller
             });
         }
 
-        $developers = $query->get()->map(function ($developer) {
+        $developers = $query->paginate(15)->through(function ($developer) {
             $profile = $developer->developerProfile;
-            $completedProjects = Application::where('developer_id', $developer->id)
+            
+            // Use preloaded applications relationship if available
+            $completedProjects = $developer->applications()
                 ->whereHas('project', function ($builder) {
                     $builder->where('status', 'completed');
                 })
@@ -53,7 +55,7 @@ class DeveloperController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $developers,
+            ...$developers->toArray(),
         ]);
     }
     public function show($id): JsonResponse
@@ -66,7 +68,7 @@ class DeveloperController extends Controller
             ->firstOrFail();
 
         $profile = $developer->developerProfile;
-        $completedProjects = Application::where('developer_id', $developer->id)
+        $completedProjects = $developer->applications()
             ->whereHas('project', function ($builder) {
                 $builder->where('status', 'completed');
             })

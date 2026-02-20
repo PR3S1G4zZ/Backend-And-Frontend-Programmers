@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Settings as SettingsIcon } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { WelcomeSection } from './dashboard/programmer/WelcomeSection';
 import { PortfolioSection } from './dashboard/programmer/PortfolioSection';
@@ -11,6 +11,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { WalletPaymentMethods } from './dashboard/wallet/WalletPaymentMethods';
 import { MyActiveProjectsSection } from './dashboard/programmer/MyActiveProjectsSection';
 import { Workspace } from './dashboard/shared/Workspace';
+import { AppearanceSection } from './dashboard/settings/AppearanceSection';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import type { ProjectResponse } from '../services/projectService';
 
 interface ProgrammerDashboardProps {
@@ -52,9 +54,23 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
         return <ChatSection userType="programmer" />;
       case 'settings':
         return (
-          <div className="p-8">
+          <div className="p-8 space-y-6">
             <h2 className="text-3xl font-bold text-white mb-6">Configuración</h2>
-            <div className="max-w-4xl">
+            <div className="max-w-4xl space-y-6">
+              {/* Sección de Apariencia */}
+              <Card className="bg-card border-border hover:border-primary/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center">
+                    <SettingsIcon className="h-5 w-5 mr-2" />
+                    Apariencia y UX
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AppearanceSection />
+                </CardContent>
+              </Card>
+
+              {/* Nota sobre métodos de pago */}
               <p className="text-gray-400">La configuración de cobros se ha movido a la sección de Billetera.</p>
             </div>
           </div>

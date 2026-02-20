@@ -1,6 +1,7 @@
 import { WalletBalance } from './dashboard/wallet/WalletBalance';
 import { TransactionHistory } from './dashboard/wallet/TransactionHistory';
 import { WalletRecharge } from './dashboard/wallet/WalletRecharge';
+import { WalletProvider } from '../contexts/WalletContext';
 
 // ... (existing imports)
 import { useState, useEffect } from 'react';
@@ -17,6 +18,9 @@ import { useAuth } from '../contexts/AuthContext';
 import type { ProjectResponse } from '../services/projectService';
 import { WalletPaymentMethods } from './dashboard/wallet/WalletPaymentMethods';
 import { Workspace } from './dashboard/shared/Workspace';
+import { AppearanceSection } from './dashboard/settings/AppearanceSection';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Settings as SettingsIcon } from 'lucide-react';
 
 interface CompanyDashboardProps {
   onLogout?: () => void;
@@ -126,29 +130,45 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
         return <ChatSection userType="company" initialChatId={viewingChatId} />;
       case 'wallet':
         return (
-          <div className="p-8">
-            <h2 className="text-3xl font-bold text-white mb-6">Billetera & Pagos</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1 space-y-6">
-                <WalletBalance />
-                <WalletRecharge onRechargeSuccess={() => window.location.reload()} />
-              </div>
-              <div className="lg:col-span-2">
-                <TransactionHistory />
-              </div>
-              <div className="lg:col-span-3 mt-4">
-                <WalletPaymentMethods userType="company" />
+          <WalletProvider>
+            <div className="p-8">
+              <h2 className="text-3xl font-bold text-white mb-6">Billetera & Pagos</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 space-y-6">
+                  <WalletBalance />
+                  <WalletRecharge />
+                </div>
+                <div className="lg:col-span-2">
+                  <TransactionHistory />
+                </div>
+                <div className="lg:col-span-3 mt-4">
+                  <WalletPaymentMethods userType="company" />
+                </div>
               </div>
             </div>
-          </div>
+          </WalletProvider>
         );
       case 'notifications':
         return <div className="text-white p-8">Notificaciones (Próximamente)</div>;
       case 'settings':
         return (
-          <div className="p-8">
+          <div className="p-8 space-y-6">
             <h2 className="text-3xl font-bold text-white mb-6">Configuración</h2>
-            <div className="max-w-4xl">
+            <div className="max-w-4xl space-y-6">
+              {/* Sección de Apariencia */}
+              <Card className="bg-card border-border hover:border-primary/20 transition-colors">
+                <CardHeader>
+                  <CardTitle className="text-foreground flex items-center">
+                    <SettingsIcon className="h-5 w-5 mr-2" />
+                    Apariencia y UX
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AppearanceSection />
+                </CardContent>
+              </Card>
+
+              {/* Nota sobre métodos de pago */}
               <p className="text-gray-400">La configuración de métodos de pago se ha movido a la sección de Billetera.</p>
             </div>
           </div>

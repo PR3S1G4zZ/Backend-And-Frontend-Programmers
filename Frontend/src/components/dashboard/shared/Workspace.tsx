@@ -68,7 +68,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                     <Clock className="h-4 w-4" />
                     Línea de Tiempo del Proyecto
                 </div>
-                <MilestoneTimeline projectId={projectId} refreshTrigger={refreshTrigger} userType={userType} />
+                <MilestoneTimeline projectId={projectId} refreshTrigger={refreshTrigger} onUpdate={handleUpdate} userType={userType} />
             </Card>
 
             {/* Main Content Areas */}
@@ -81,7 +81,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                 </div>
 
                 <div className="flex-1 mt-4 min-h-0 overflow-hidden">
-                    <KanbanBoard projectId={projectId} onUpdate={handleUpdate} userType={userType} />
+                    <KanbanBoard projectId={projectId} refreshTrigger={refreshTrigger} onUpdate={handleUpdate} userType={userType} />
                 </div>
             </div>
         </div>

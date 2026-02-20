@@ -14,23 +14,26 @@ interface MyActiveProjectsSectionProps {
 export function MyActiveProjectsSection({ onWorkspaceSelect }: MyActiveProjectsSectionProps) {
     const [projects, setProjects] = useState<ProjectResponse[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const loadMyProjects = async () => {
-            try {
-                // Updated to use the new filter parameter in ProjectController
-                const response = await apiClient.get<any>('/projects?my_projects=true');
-                // @ts-ignore
-                const data = response.data || response;
-                setProjects(data);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
-            }
-        };
         loadMyProjects();
     }, []);
+
+    const loadMyProjects = async () => {
+        try {
+            // Updated to use the new filter parameter in ProjectController
+            const response = await apiClient.get<any>('/projects?my_projects=true');
+            // @ts-ignore
+            const data = response.data || response;
+            setProjects(data);
+        } catch (error) {
+            console.error(error);
+            setError('No se pudieron cargar los proyectos. Por favor, inténtalo de nuevo.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -39,6 +42,12 @@ export function MyActiveProjectsSection({ onWorkspaceSelect }: MyActiveProjectsS
             case 'review': return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20">En Revisión</Badge>;
             default: return <Badge variant="outline" className="text-gray-400 border-gray-700">{status}</Badge>;
         }
+    };
+
+    // Helper function to calculate progress (extracted to avoid repetition)
+    const calculateProgress = (project: ProjectResponse): number => {
+        if (!project.milestones_count || project.milestones_count === 0) return 0;
+        return Math.round((project.completed_milestones_count || 0) / project.milestones_count * 100);
     };
 
     const container = {
@@ -60,6 +69,32 @@ export function MyActiveProjectsSection({ onWorkspaceSelect }: MyActiveProjectsS
         return (
             <div className="flex h-96 items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 max-w-7xl mx-auto">
+                <div className="flex flex-col items-center justify-center p-12 border border-dashed border-red-500/30 rounded-2xl bg-red-500/5">
+                    <div className="h-20 w-20 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+                        <Clock className="h-10 w-10 text-red-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white mb-2">Error al cargar proyectos</h3>
+                    <p className="text-gray-400 max-w-md text-center mb-6">
+                        {error}
+                    </p>
+                    <Button
+                        onClick={() => {
+                            setError(null);
+                            setLoading(true);
+                            loadMyProjects();
+                        }}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                        Reintentar
+                    </Button>
+                </div>
             </div>
         );
     }
@@ -117,6 +152,31 @@ export function MyActiveProjectsSection({ onWorkspaceSelect }: MyActiveProjectsS
                                         {project.description}
                                     </p>
 
+                                    {/* Progress Bar for Active Projects */}
+                                    {project.status === 'in_progress' && (
+                                        <div className="space-y-2 mt-2">
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-xs font-medium text-gray-400">Progreso</span>
+                                                <span className="text-sm font-bold text-primary">
+                                                    {calculateProgress(project)}%
+                                                </span>
+                                            </div>
+                                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden border border-gray-700/50">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{
+                                                        width: `${calculateProgress(project)}%`
+                                                    }}
+                                                    transition={{ duration: 1, ease: "easeOut" }}
+                                                    className={`h-full rounded-full ${calculateProgress(project) === 100 ? 'bg-gradient-to-r from-green-500 to-emerald-400' :
+                                                        calculateProgress(project) > 50 ? 'bg-gradient-to-r from-blue-500 to-cyan-400' :
+                                                            'bg-gradient-to-r from-yellow-500 to-orange-400'
+                                                        }`}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="mt-auto pt-4 space-y-4">
                                         <div className="flex items-center text-sm text-gray-500 gap-2 bg-[#1A1A1A] p-2 rounded-lg">
                                             <Clock className="h-4 w-4 text-primary" />
@@ -141,7 +201,8 @@ export function MyActiveProjectsSection({ onWorkspaceSelect }: MyActiveProjectsS
                         </motion.div>
                     ))}
                 </motion.div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
