@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
+import { Skeleton } from './ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -22,7 +23,8 @@ import {
   Users,
   Filter,
   RefreshCw,
-  MoreVertical
+  MoreVertical,
+  Ban
 } from 'lucide-react';
 
 interface User {
@@ -33,6 +35,17 @@ interface User {
   user_type: 'programmer' | 'company' | 'admin';
   created_at: string;
   email_verified_at?: string;
+  banned_at: string | null;
+}
+
+interface UsersStats {
+  total_users: number;
+  admins: number;
+  companies: number;
+  programmers: number;
+  verified_emails: number;
+  unverified_emails: number;
+  recent_registrations: number;
 }
 
 interface UsersResponse {
@@ -56,6 +69,7 @@ export function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDialog, setShowUserDialog] = useState(false);
@@ -63,6 +77,29 @@ export function UserManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [stats, setStats] = useState({
+    admins: 0,
+    companies: 0,
+    programmers: 0,
+    recent_registrations: 0
+  });
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch users when page or search changes
+  useEffect(() => {
+    fetchUsers();
+  }, [page, debouncedSearch, filterType]);
   const [editForm, setEditForm] = useState({
     name: '',
     lastname: '',
@@ -83,8 +120,35 @@ export function UserManagement() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const data = await apiRequest<UsersResponse>('/admin/users');
-      setUsers(data.users || []);
+
+      // Build query params
+      const params = new URLSearchParams();
+      params.append('page', page.toString());
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (filterType !== 'all') params.append('user_type', filterType);
+
+      const [usersRes, statsRes] = await Promise.all([
+        apiRequest<UsersResponse>(`/admin/users?${params.toString()}`),
+        apiRequest<{ success: boolean; stats: UsersStats }>('/admin/users/stats')
+      ]);
+
+      if (usersRes.success) {
+        setUsers(usersRes.users || []);
+        if (usersRes.pagination) {
+          setTotalPages(usersRes.pagination.last_page);
+          setTotalUsers(usersRes.pagination.total);
+        }
+      }
+
+      if (statsRes.success && statsRes.stats) {
+        setStats({
+          admins: statsRes.stats.admins || 0,
+          companies: statsRes.stats.companies || 0,
+          programmers: statsRes.stats.programmers || 0,
+          recent_registrations: statsRes.stats.recent_registrations || 0
+        });
+        setTotalUsers(statsRes.stats.total_users || 0);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
       showAlert({
@@ -97,20 +161,8 @@ export function UserManagement() {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   // Filtrar usuarios
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastname.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesFilter = filterType === 'all' || user.user_type === filterType;
-
-    return matchesSearch && matchesFilter;
-  });
+  const filteredUsers = users;
 
   // Obtener color del badge según el tipo de usuario
   const getUserTypeColor = (userType: string) => {
@@ -175,16 +227,16 @@ export function UserManagement() {
 
     try {
       await apiRequest(`/admin/users/${userToDelete.id}`, { method: 'DELETE' });
-      setUsers(users.filter(u => u.id !== userToDelete.id));
       showAlert({
         title: 'Usuario eliminado',
         text: 'El usuario ha sido eliminado exitosamente',
         type: 'success'
       });
+      fetchUsers();
     } catch (error) {
       showAlert({
         title: 'Error',
-        text: 'No se pudo eliminar el usuario',
+        text: error instanceof Error ? error.message : 'No se pudo eliminar el usuario.',
         type: 'error'
       });
     } finally {
@@ -222,9 +274,20 @@ export function UserManagement() {
       return;
     }
 
+    // Validar contraseña: 8-15 caracteres, al menos 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,15}$/;
+    if (!passwordRegex.test(createForm.password)) {
+      showAlert({
+        title: 'Error de validación',
+        text: 'La contraseña debe tener entre 8-15 caracteres, incluyendo al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&#).',
+        type: 'error'
+      });
+      return;
+    }
+
     try {
       setIsSaving(true);
-      const response = await apiRequest<UserResponse>('/admin/users', {
+      await apiRequest<UserResponse>('/admin/users', {
         method: 'POST',
         body: JSON.stringify({
           name: createForm.name,
@@ -234,17 +297,17 @@ export function UserManagement() {
           password: createForm.password
         })
       });
-      setUsers([response.user, ...users]);
       setShowCreateDialog(false);
       showAlert({
         title: 'Usuario creado',
         text: 'El usuario se creó correctamente.',
         type: 'success'
       });
+      fetchUsers();
     } catch (error) {
       showAlert({
         title: 'Error',
-        text: 'No se pudo crear el usuario.',
+        text: error instanceof Error ? error.message : 'No se pudo crear el usuario.',
         type: 'error'
       });
     } finally {
@@ -284,7 +347,7 @@ export function UserManagement() {
     } catch (error) {
       showAlert({
         title: 'Error',
-        text: 'No se pudo actualizar el usuario.',
+        text: error instanceof Error ? error.message : 'No se pudo actualizar el usuario.',
         type: 'error'
       });
     } finally {
@@ -292,12 +355,33 @@ export function UserManagement() {
     }
   };
 
+  // Manejar ban/unban de usuario
+  const handleBanUser = async (userId: number) => {
+    try {
+      const response = await apiRequest<{ success: boolean; banned: boolean; message: string }>(`/admin/users/${userId}/ban`, {
+        method: 'POST'
+      });
+      showAlert({
+        title: response.banned ? 'Usuario Baneado' : 'Usuario Desbaneado',
+        text: response.message,
+        type: 'success'
+      });
+      fetchUsers();
+    } catch (error) {
+      showAlert({
+        title: 'Error',
+        text: error instanceof Error ? error.message : 'No se pudo cambiar el estado del usuario.',
+        type: 'error'
+      });
+    }
+  };
+
   // Estadísticas de usuarios
   const userStats = {
-    total: users.length,
-    admins: users.filter(u => u.user_type === 'admin').length,
-    companies: users.filter(u => u.user_type === 'company').length,
-    programmers: users.filter(u => u.user_type === 'programmer').length
+    total: totalUsers,
+    admins: stats.admins,
+    companies: stats.companies,
+    programmers: stats.programmers
   };
 
   return (
@@ -428,12 +512,8 @@ export function UserManagement() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-                <span className="ml-3 text-muted-foreground">Cargando usuarios...</span>
-              </div>
-            ) : (
               <>
+                {/* Skeleton Loaders para la tabla */}
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border hover:bg-accent/50">
@@ -446,143 +526,246 @@ export function UserManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id} className="border-border hover:bg-accent/50">
-                        <TableCell className="font-medium">
+                    {[...Array(5)].map((_, index) => (
+                      <TableRow key={index} className="border-border">
+                        <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
-                              {user.name.charAt(0).toUpperCase()}
-                            </div>
+                            <Skeleton className="w-8 h-8 rounded-full" />
                             <div>
-                              <div className="text-foreground font-semibold">{user.name} {user.lastname}</div>
-                              <div className="text-muted-foreground text-sm">ID: {user.id}</div>
+                              <Skeleton className="h-4 w-32 mb-1" />
+                              <Skeleton className="h-3 w-16" />
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
-                            <Mail className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">{user.email}</span>
-                          </div>
+                          <Skeleton className="h-4 w-48" />
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${getUserTypeColor(user.user_type)} border flex items-center gap-1 w-fit`}>
-                            {getUserTypeIcon(user.user_type)}
-                            {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
-                          </Badge>
+                          <Skeleton className="h-6 w-24 rounded-full" />
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">{formatDate(user.created_at)}</span>
-                          </div>
+                          <Skeleton className="h-4 w-28" />
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${user.email_verified_at
-                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                            } border`}>
-                            {user.email_verified_at ? 'Verificado' : 'Pendiente'}
-                          </Badge>
+                          <Skeleton className="h-6 w-20 rounded-full" />
                         </TableCell>
                         <TableCell className="sticky right-0 bg-card border-l border-border">
-                          <div className="flex items-center justify-end gap-2">
-                            {/* Botones para pantallas medianas y grandes */}
-                            <div className="hidden sm:flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleViewUser(user)}
-                                className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
-                                title="Ver usuario"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEditUser(user)}
-                                className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
-                                title="Editar usuario"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDeleteUser(user)}
-                                className="bg-secondary border-border hover:bg-red-500/20 text-red-400 hover:text-red-300 h-8 w-8 p-0"
-                                title="Eliminar usuario"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-
-                            {/* Menú desplegable para pantallas pequeñas */}
-                            <div className="sm:hidden">
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
-                                  >
-                                    <MoreVertical className="w-4 h-4" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-40 bg-popover border-border p-0">
-                                  <div className="flex flex-col gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleViewUser(user)}
-                                      className="w-full justify-start text-foreground hover:bg-accent text-left"
-                                    >
-                                      <Eye className="w-4 h-4 mr-2" />
-                                      Ver
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleEditUser(user)}
-                                      className="w-full justify-start text-foreground hover:bg-accent text-left"
-                                    >
-                                      <Edit className="w-4 h-4 mr-2" />
-                                      Editar
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleDeleteUser(user)}
-                                      className="w-full justify-start text-red-400 hover:bg-red-500/20 text-left"
-                                    >
-                                      <Trash2 className="w-4 h-4 mr-2" />
-                                      Eliminar
-                                    </Button>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            </div>
+                          <div className="flex items-center gap-2 justify-end">
+                            <Skeleton className="h-8 w-8 rounded" />
+                            <Skeleton className="h-8 w-8 rounded" />
+                            <Skeleton className="h-8 w-8 rounded" />
                           </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-
-                {filteredUsers.length === 0 && (
-                  <div className="text-center py-12">
-                    <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No se encontraron usuarios</p>
-                  </div>
-                )}
               </>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No se encontraron usuarios</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border hover:bg-accent/50">
+                    <TableHead className="text-primary">Usuario</TableHead>
+                    <TableHead className="text-primary">Email</TableHead>
+                    <TableHead className="text-primary">Tipo</TableHead>
+                    <TableHead className="text-primary">Registro</TableHead>
+                    <TableHead className="text-primary">Estado</TableHead>
+                    <TableHead className="text-primary sticky right-0 bg-card">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="border-border hover:bg-accent/50">
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="text-foreground font-semibold">{user.name} {user.lastname}</div>
+                            <div className="text-muted-foreground text-sm">ID: {user.id}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{user.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${getUserTypeColor(user.user_type)} border flex items-center gap-1 w-fit`}>
+                          {getUserTypeIcon(user.user_type)}
+                          {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{formatDate(user.created_at)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Badge className={`${user.email_verified_at
+                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                            : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                            } border`}>
+                            {user.email_verified_at ? 'Verificado' : 'Pendiente'}
+                          </Badge>
+                          {user.banned_at && (
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 border text-xs">
+                              <Ban className="w-3 h-3 mr-1" />
+                              Baneado
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="sticky right-0 bg-card border-l border-border">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Botones para pantallas medianas y grandes */}
+                          <div className="hidden sm:flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewUser(user)}
+                              className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
+                              title="Ver usuario"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditUser(user)}
+                              className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
+                              title="Editar usuario"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            {user.user_type !== 'admin' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleBanUser(user.id)}
+                                className={`bg-secondary border-border hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300 h-8 w-8 p-0 ${user.banned_at ? 'border-yellow-500/50' : ''}`}
+                                title={user.banned_at ? 'Desbanear usuario' : 'Banear usuario'}
+                              >
+                                <Ban className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteUser(user)}
+                              className="bg-secondary border-border hover:bg-red-500/20 text-red-400 hover:text-red-300 h-8 w-8 p-0"
+                              title="Eliminar usuario"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          {/* Menú desplegable para pantallas pequeñas */}
+                          <div className="sm:hidden">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="bg-secondary border-border hover:bg-accent text-foreground h-8 w-8 p-0"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-40 bg-popover border-border p-0">
+                                <div className="flex flex-col gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleViewUser(user)}
+                                    className="w-full justify-start text-foreground hover:bg-accent text-left"
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Ver
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditUser(user)}
+                                    className="w-full justify-start text-foreground hover:bg-accent text-left"
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Editar
+                                  </Button>
+                                  {user.user_type !== 'admin' && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleBanUser(user.id)}
+                                      className={`w-full justify-start text-yellow-400 hover:bg-yellow-500/20 text-left ${user.banned_at ? 'text-orange-400 hover:bg-orange-500/20' : ''}`}
+                                    >
+                                      <Ban className="w-4 h-4 mr-2" />
+                                      {user.banned_at ? 'Desbanear' : 'Banear'}
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteUser(user)}
+                                    className="w-full justify-start text-red-400 hover:bg-red-500/20 text-left"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Eliminar
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Diálogos fuera del contenedor max-w para que se rendericen correctamente */}
+
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center text-sm text-muted-foreground">
+            <p>Mostrando {users.length} de {totalUsers} usuarios</p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                variant="outline"
+                className="bg-card border-border hover:bg-accent text-foreground"
+              >
+                Anterior
+              </Button>
+              <span className="flex items-center px-3">
+                Página {page} de {totalPages}
+              </span>
+              <Button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                variant="outline"
+                className="bg-card border-border hover:bg-accent text-foreground"
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Dialog crear usuario */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -794,13 +977,19 @@ export function UserManagement() {
 
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Estado</label>
-                  <div className="mt-0.5">
+                  <div className="mt-0.5 flex flex-col gap-1">
                     <Badge className={`${selectedUser.email_verified_at
                       ? 'bg-green-500/20 text-green-400 border-green-500/30'
                       : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                      } border text-xs py-0 px-1.5`}>
+                      } border text-xs py-0 px-1.5 w-fit`}>
                       {selectedUser.email_verified_at ? 'Verificado' : 'Pendiente'}
                     </Badge>
+                    {selectedUser.banned_at && (
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30 border text-xs py-0 px-1.5 w-fit">
+                        <Ban className="w-3 h-3 mr-1" />
+                        Baneado
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
@@ -825,6 +1014,6 @@ export function UserManagement() {
         title="¿Eliminar usuario?"
         variant="danger"
       />
-    </div>
+    </div >
   );
 }

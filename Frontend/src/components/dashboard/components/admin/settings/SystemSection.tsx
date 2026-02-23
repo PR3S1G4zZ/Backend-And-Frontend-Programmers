@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '../../../../../services/apiClient';
-import { Activity, Power, Search, Filter } from 'lucide-react';
+import { Activity, Power, Search, Filter, FileText } from 'lucide-react';
 import { cn } from '../../../../../components/ui/utils';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -28,16 +28,34 @@ export function SystemSection() {
     const [saving, setSaving] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    // Debounce search term
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setPage(1); // Reset to first page on search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     useEffect(() => {
         fetchData();
-    }, [page]);
+    }, [page, debouncedSearch]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
+            const searchParams = new URLSearchParams({
+                page: page.toString()
+            });
+            if (debouncedSearch) {
+                searchParams.append('search', debouncedSearch);
+            }
+
             const [logsRes, settingsRes] = await Promise.all([
-                apiRequest<any>(`/admin/system/logs?page=${page}`),
+                apiRequest<any>(`/admin/system/logs?${searchParams.toString()}`),
                 apiRequest<any>('/admin/system/settings')
             ]);
 
@@ -70,11 +88,11 @@ export function SystemSection() {
                 : "La plataforma volverá a estar accesible para todos.",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: newValue ? '#d33' : '#00FF85', // SweetAlert uses hex, cannot easily use class here without custom css
-            cancelButtonColor: '#3085d6',
+            confirmButtonColor: newValue ? 'hsl(var(--destructive))' : 'hsl(var(--primary))',
+            cancelButtonColor: 'hsl(var(--primary))',
             confirmButtonText: newValue ? 'Sí, activar' : 'Sí, desactivar',
-            background: '#1A1A1A',
-            color: '#fff'
+            background: 'hsl(var(--card))',
+            color: 'hsl(var(--foreground))'
         });
 
         if (result.isConfirmed) {
@@ -96,8 +114,8 @@ export function SystemSection() {
                     position: 'top-end',
                     showConfirmButton: false,
                     timer: 3000,
-                    background: '#1A1A1A',
-                    color: '#fff'
+                    background: 'hsl(var(--card))',
+                    color: 'hsl(var(--foreground))'
                 });
             } catch (error) {
                 console.error('Error updating maintenance mode:', error);
@@ -161,6 +179,8 @@ export function SystemSection() {
                             <input
                                 type="text"
                                 placeholder="Buscar en logs..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                                 className="bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-foreground w-64 focus:border-primary outline-none"
                             />
                             <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-2" />
@@ -185,11 +205,35 @@ export function SystemSection() {
                             </thead>
                             <tbody className="divide-y divide-border">
                                 {loading ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                                            Cargando registros...
-                                        </td>
-                                    </tr>
+                                    <>
+                                        {/* Skeleton Loaders para la tabla de logs */}
+                                        {[...Array(5)].map((_, index) => (
+                                            <tr key={index} className="hover:bg-muted/50 transition-colors">
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
+                                                        <div>
+                                                            <div className="h-4 w-32 bg-muted rounded animate-pulse mb-1" />
+                                                            <div className="h-3 w-40 bg-muted rounded animate-pulse" />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="h-4 w-48 bg-muted rounded animate-pulse" />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="h-3 w-32 bg-muted rounded animate-pulse mb-1" />
+                                                    <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="h-4 w-28 bg-muted rounded animate-pulse" />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </>
                                 ) : logs.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
@@ -231,6 +275,27 @@ export function SystemSection() {
                         </table>
                     </div>
                 </div>
+
+                {/* Estado vacío decorativo cuando no hay logs */}
+                {!loading && logs.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 px-4">
+                        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                            <FileText className="w-10 h-10 text-primary" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-foreground mb-2">Sin actividad registrada</h3>
+                        <p className="text-muted-foreground text-center mb-6 max-w-md">
+                            No hay registros de actividad en el sistema todavía.
+                            Las acciones de los usuarios aparecerán aquí.
+                        </p>
+                        <button
+                            onClick={fetchData}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                        >
+                            <Search className="w-4 h-4" />
+                            Actualizar
+                        </button>
+                    </div>
+                )}
 
                 {/* Pagination */}
                 <div className="flex justify-between items-center text-sm text-muted-foreground">

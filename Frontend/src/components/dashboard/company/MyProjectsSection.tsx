@@ -255,6 +255,27 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
   }).filter(project => {
     if (filterStatus === 'all') return true;
     return project.status === filterStatus;
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      case 'oldest':
+        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      case 'name-asc':
+        return a.title.localeCompare(b.title);
+      case 'name-desc':
+        return b.title.localeCompare(a.title);
+      case 'budget-high':
+        return b.budget - a.budget;
+      case 'budget-low':
+        return a.budget - b.budget;
+      case 'progress-high':
+        return b.progress - a.progress;
+      case 'progress-low':
+        return a.progress - b.progress;
+      default:
+        return 0;
+    }
   });
 
   const stats = {

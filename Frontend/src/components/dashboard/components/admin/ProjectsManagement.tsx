@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Filter, Trash2, Eye,
-    RefreshCcw, CheckCircle, XCircle, Clock
+    RefreshCcw, CheckCircle, XCircle, Clock, FolderOpen
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -17,6 +17,8 @@ import {
 } from '../../../../services/adminProjectService';
 import type { ProjectResponse } from '../../../../services/projectService';
 import { Card, CardContent } from '../ui/card';
+import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 
 const MySwal = withReactContent(Swal);
 
@@ -224,9 +226,63 @@ export function ProjectsManagement() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="flex justify-center items-center py-20"
+                        className="grid grid-cols-1 gap-4"
                     >
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                        {/* Skeleton Loaders para proyectos */}
+                        {[...Array(4)].map((_, index) => (
+                            <Card key={index} className="bg-card border-border">
+                                <CardContent className="p-5">
+                                    <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <Skeleton className="h-6 w-48" />
+                                                <Skeleton className="h-5 w-20 rounded-full" />
+                                            </div>
+                                            <Skeleton className="h-4 w-full mb-2" />
+                                            <Skeleton className="h-4 w-2/3 mb-3" />
+                                            <div className="flex flex-wrap gap-4">
+                                                <Skeleton className="h-3 w-24" />
+                                                <Skeleton className="h-3 w-32" />
+                                                <Skeleton className="h-3 w-28" />
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Skeleton className="h-8 w-8 rounded" />
+                                            <Skeleton className="h-8 w-8 rounded" />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </motion.div>
+                ) : projects.length === 0 ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {/* Estado vacío decorativo */}
+                        <Card className="bg-card border-border border-dashed">
+                            <CardContent className="flex flex-col items-center justify-center py-16">
+                                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                    <FolderOpen className="w-10 h-10 text-primary" />
+                                </div>
+                                <h3 className="text-xl font-semibold text-foreground mb-2">No hay proyectos</h3>
+                                <p className="text-muted-foreground text-center mb-6 max-w-md">
+                                    No se encontraron proyectos que coincidan con los filtros seleccionados.
+                                    ¡Publica el primer proyecto para comenzar!
+                                </p>
+                                <Button
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                                    onClick={() => {
+                                        setFilters((prev: AdminProjectParams) => ({ ...prev, search: '', status: '' }));
+                                    }}
+                                >
+                                    <RefreshCcw className="w-4 h-4 mr-2" />
+                                    Ver Todos los Proyectos
+                                </Button>
+                            </CardContent>
+                        </Card>
                     </motion.div>
                 ) : (
                     <motion.div
@@ -235,84 +291,78 @@ export function ProjectsManagement() {
                         transition={{ duration: 0.3 }}
                         className="grid grid-cols-1 gap-4"
                     >
-                        {projects.length === 0 ? (
-                            <div className="text-center py-20 bg-card rounded-xl border border-border border-dashed">
-                                <p className="text-muted-foreground">No se encontraron proyectos</p>
-                            </div>
-                        ) : (
-                            projects.map((project) => (
-                                <Card key={project.id} className={`bg-card border-border hover:border-primary/30 transition-all duration-300 ${project.deleted_at ? 'opacity-75 border-red-900/30' : ''}`}>
-                                    <CardContent className="p-5">
-                                        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                                                        {project.title}
-                                                    </h3>
-                                                    {getStatusBadge(project.status, project.deleted_at || undefined)}
-                                                </div>
-
-                                                <p className="text-gray-400 text-sm mb-3 line-clamp-2">{project.description}</p>
-
-                                                <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-                                                    <span className="flex items-center gap-1">
-                                                        <CheckCircle className="w-3 h-3 text-[#00FF85]" />
-                                                        ID: {project.id}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" />
-                                                        Creado: {new Date(project.created_at).toLocaleDateString()}
-                                                    </span>
-                                                    {project.company && (
-                                                        <span className="flex items-center gap-1 text-blue-400">
-                                                            @ {project.company.name}
-                                                        </span>
-                                                    )}
-                                                    {project.deleted_at && (
-                                                        <span className="flex items-center gap-1 text-red-400 font-semibold bg-red-900/20 px-2 py-0.5 rounded">
-                                                            <Trash2 className="w-3 h-3" />
-                                                            Borrado {formatDistanceToNow(new Date(project.deleted_at), { addSuffix: true, locale: es })}
-                                                        </span>
-                                                    )}
-                                                </div>
+                        {projects.map((project) => (
+                            <Card key={project.id} className={`bg-card border-border hover:border-primary/30 transition-all duration-300 ${project.deleted_at ? 'opacity-75 border-red-900/30' : ''}`}>
+                                <CardContent className="p-5">
+                                    <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                                                    {project.title}
+                                                </h3>
+                                                {getStatusBadge(project.status, project.deleted_at || undefined)}
                                             </div>
 
-                                            <div className="flex items-center gap-2 self-end md:self-center">
-                                                {project.deleted_at ? (
-                                                    <button
-                                                        onClick={() => handleRestore(project)}
-                                                        className="bg-green-600/20 hover:bg-green-600/40 text-green-500 text-sm px-3 py-1.5 rounded-md flex items-center gap-2 transition-all"
-                                                    >
-                                                        <RefreshCcw className="w-4 h-4" />
-                                                        Restaurar
-                                                    </button>
-                                                ) : (
-                                                    <>
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedProject(project);
-                                                                setIsEditModalOpen(true);
-                                                            }}
-                                                            className="bg-accent hover:bg-muted text-muted-foreground hover:text-foreground p-2 rounded-md transition-all"
-                                                            title="Ver Detalles"
-                                                        >
-                                                            <Eye className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(project)}
-                                                            className="bg-red-500/10 hover:bg-red-500/30 text-red-500 p-2 rounded-md transition-all"
-                                                            title="Eliminar"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </>
+                                            <p className="text-gray-400 text-sm mb-3 line-clamp-2">{project.description}</p>
+
+                                            <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                                                <span className="flex items-center gap-1">
+                                                    <CheckCircle className="w-3 h-3 text-[#00FF85]" />
+                                                    ID: {project.id}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" />
+                                                    Creado: {new Date(project.created_at).toLocaleDateString()}
+                                                </span>
+                                                {project.company && (
+                                                    <span className="flex items-center gap-1 text-blue-400">
+                                                        @ {project.company.name}
+                                                    </span>
+                                                )}
+                                                {project.deleted_at && (
+                                                    <span className="flex items-center gap-1 text-red-400 font-semibold bg-red-900/20 px-2 py-0.5 rounded">
+                                                        <Trash2 className="w-3 h-3" />
+                                                        Borrado {formatDistanceToNow(new Date(project.deleted_at), { addSuffix: true, locale: es })}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            ))
-                        )}
+
+                                        <div className="flex items-center gap-2 self-end md:self-center">
+                                            {project.deleted_at ? (
+                                                <button
+                                                    onClick={() => handleRestore(project)}
+                                                    className="bg-green-600/20 hover:bg-green-600/40 text-green-500 text-sm px-3 py-1.5 rounded-md flex items-center gap-2 transition-all"
+                                                >
+                                                    <RefreshCcw className="w-4 h-4" />
+                                                    Restaurar
+                                                </button>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedProject(project);
+                                                            setIsEditModalOpen(true);
+                                                        }}
+                                                        className="bg-accent hover:bg-muted text-muted-foreground hover:text-foreground p-2 rounded-md transition-all"
+                                                        title="Ver Detalles"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(project)}
+                                                        className="bg-red-500/10 hover:bg-red-500/30 text-red-500 p-2 rounded-md transition-all"
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -338,9 +388,9 @@ export function ProjectsManagement() {
                 </button>
             </div>
 
-            {isEditModalOpen && selectedProject && (
+            {isEditModalOpen && selectedProject !== null && (
                 <ProjectDetailsModal
-                    project={selectedProject}
+                    project={selectedProject as ProjectResponse}
                     onClose={() => setIsEditModalOpen(false)}
                 />
             )}

@@ -42,7 +42,7 @@ class SettingsController extends Controller
     {
         $validated = $request->validate([
             'theme' => 'sometimes|in:dark,light,terminal',
-            'accent_color' => 'sometimes|string|max:7',
+            'accent_color' => 'sometimes|string|regex:/^#[0-9A-Fa-f]{3,6}$/',
             'language' => 'sometimes|in:es,en',
             'two_factor_enabled' => 'sometimes|boolean'
         ]);
@@ -133,9 +133,24 @@ class SettingsController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $logs = ActivityLog::with('user:id,name,email')
-            ->latest()
-            ->paginate(50);
+        $perPage = min((int)$request->get('per_page', 50), 100);
+        $search = $request->get('search', '');
+
+        $query = ActivityLog::with('user:id,name,email');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('action', 'like', "%{$search}%")
+                  ->orWhere('details', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $logs = $query->latest()->paginate($perPage);
 
         return response()->json([
             'success' => true,

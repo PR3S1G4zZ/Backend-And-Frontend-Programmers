@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
+import { Save, Circle } from 'lucide-react';
 import { apiRequest } from '../../../../../services/apiClient';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import Swal from 'sweetalert2';
@@ -18,19 +18,37 @@ export function ProfileSection() {
         linkedin_url: ''
     });
     const [loading, setLoading] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [initialData, setInitialData] = useState({
+        name: '',
+        lastname: '',
+        email: '',
+        bio: '',
+        github_url: '',
+        linkedin_url: ''
+    });
 
     useEffect(() => {
         if (user) {
-            setFormData({
+            const newFormData = {
                 name: user.name || '',
                 lastname: user.lastname || '',
                 email: user.email || '',
                 bio: user.profile?.bio || '',
                 github_url: user.profile?.github_url || '',
                 linkedin_url: user.profile?.linkedin_url || ''
-            });
+            };
+            setFormData(newFormData);
+            setInitialData(newFormData);
+            setHasUnsavedChanges(false);
         }
     }, [user]);
+
+    // Detectar cambios no guardados
+    useEffect(() => {
+        const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialData);
+        setHasUnsavedChanges(hasChanges);
+    }, [formData, initialData]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -127,19 +145,32 @@ export function ProfileSection() {
                     />
                 </div>
 
-                <div className="flex justify-end pt-4">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-bold hover:bg-primary/80 transition-all disabled:opacity-50"
-                    >
-                        {loading ? 'Guardando...' : (
-                            <>
-                                <Save className="w-4 h-4" />
-                                Guardar Cambios
-                            </>
-                        )}
-                    </button>
+                <div className="flex justify-between items-center pt-4">
+                    {hasUnsavedChanges && (
+                        <div className="flex items-center gap-2 text-amber-500">
+                            <Circle className="w-2 h-2 fill-amber-500" />
+                            <span className="text-sm">Tienes cambios sin guardar</span>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                        {!hasUnsavedChanges && <span className="text-sm text-muted-foreground mr-2">Todos los cambios guardados</span>}
+                        <button
+                            type="submit"
+                            disabled={loading || !hasUnsavedChanges}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all ${hasUnsavedChanges
+                                    ? 'bg-amber-500 hover:bg-amber-600 text-black'
+                                    : 'bg-primary text-primary-foreground hover:bg-primary/80'
+                                } disabled:opacity-50`}
+                        >
+                            {loading ? 'Guardando...' : (
+                                <>
+                                    {hasUnsavedChanges && <Circle className="w-3 h-3 fill-black" />}
+                                    <Save className="w-4 h-4" />
+                                    Guardar Cambios
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

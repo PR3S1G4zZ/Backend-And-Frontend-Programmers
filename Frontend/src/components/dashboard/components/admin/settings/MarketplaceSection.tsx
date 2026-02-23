@@ -74,8 +74,8 @@ export function MarketplaceSection() {
                 position: 'top-end',
                 showConfirmButton: false,
                 timer: 3000,
-                background: '#1A1A1A',
-                color: '#fff'
+                background: 'hsl(var(--card))',
+                color: 'hsl(var(--foreground))'
             });
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -83,8 +83,8 @@ export function MarketplaceSection() {
                 icon: 'error',
                 title: 'Error al guardar',
                 text: 'No se pudo actualizar la configuración.',
-                background: '#1A1A1A',
-                color: '#fff'
+                background: 'hsl(var(--card))',
+                color: 'hsl(var(--foreground))'
             });
         } finally {
             setSavingSettings(false);
@@ -112,8 +112,8 @@ export function MarketplaceSection() {
                 position: 'top-end',
                 showConfirmButton: false,
                 timer: 3000,
-                background: '#1A1A1A',
-                color: '#fff'
+                background: 'hsl(var(--card))',
+                color: 'hsl(var(--foreground))'
             });
         } catch (error) {
             console.error('Error saving category:', error);
@@ -121,8 +121,8 @@ export function MarketplaceSection() {
                 icon: 'error',
                 title: 'Error',
                 text: 'No se pudo guardar la categoría.',
-                background: '#1A1A1A',
-                color: '#fff'
+                background: 'hsl(var(--card))',
+                color: 'hsl(var(--foreground))'
             });
         }
     };
@@ -133,12 +133,12 @@ export function MarketplaceSection() {
             text: "Esta acción no se puede deshacer.",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
+            confirmButtonColor: 'hsl(var(--destructive))',
+            cancelButtonColor: 'hsl(var(--primary))',
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
-            background: '#1A1A1A',
-            color: '#fff'
+            background: 'hsl(var(--card))',
+            color: 'hsl(var(--foreground))'
         });
 
         if (result.isConfirmed) {
@@ -149,8 +149,8 @@ export function MarketplaceSection() {
                     title: 'Eliminado!',
                     text: 'La categoría ha sido eliminada.',
                     icon: 'success',
-                    background: '#1A1A1A',
-                    color: '#fff'
+                    background: 'hsl(var(--card))',
+                    color: 'hsl(var(--foreground))'
                 });
             } catch (error) {
                 console.error('Error deleting category:', error);
@@ -158,8 +158,8 @@ export function MarketplaceSection() {
                     title: 'Error!',
                     text: 'No se pudo eliminar la categoría.',
                     icon: 'error',
-                    background: '#1A1A1A',
-                    color: '#fff'
+                    background: 'hsl(var(--card))',
+                    color: 'hsl(var(--foreground))'
                 });
             }
         }

@@ -1,9 +1,65 @@
 import { Palette, Moon, Sun, Monitor, Check } from 'lucide-react';
 import { cn } from '../../../components/ui/utils';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { apiRequest } from '../../../services/apiClient';
+import { useState, useEffect } from 'react';
 
 export function AppearanceSection() {
     const { theme, accentColor, setTheme, setAccentColor } = useTheme();
+    const [savingTheme, setSavingTheme] = useState(false);
+    const [savingColor, setSavingColor] = useState(false);
+
+    // Load preferences on mount
+    useEffect(() => {
+        loadPreferences();
+    }, []);
+
+    const loadPreferences = async () => {
+        try {
+            const response = await apiRequest<{ success: boolean; preferences?: { theme: string; accent_color: string; language: string } }>('/preferences');
+            if (response.success && response.preferences) {
+                if (response.preferences.theme && response.preferences.theme !== theme) {
+                    setTheme(response.preferences.theme as any);
+                }
+                if (response.preferences.accent_color && response.preferences.accent_color !== accentColor) {
+                    setAccentColor(response.preferences.accent_color);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading preferences:', error);
+        } finally {
+            // preferences loaded
+        }
+    };
+
+    const handleThemeChange = async (newTheme: string) => {
+        setTheme(newTheme as any);
+        await savePreference(newTheme, accentColor);
+    };
+
+    const handleColorChange = async (newColor: string) => {
+        setAccentColor(newColor);
+        await savePreference(theme, newColor);
+    };
+
+    const savePreference = async (newTheme: string, newColor: string) => {
+        setSavingTheme(true);
+        setSavingColor(true);
+        try {
+            await apiRequest('/preferences', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    theme: newTheme,
+                    accent_color: newColor
+                })
+            });
+        } catch (error) {
+            console.error('Error saving preference:', error);
+        } finally {
+            setSavingTheme(false);
+            setSavingColor(false);
+        }
+    };
 
     const themes = [
         { id: 'dark', label: 'Oscuro', icon: Moon },
@@ -39,7 +95,8 @@ export function AppearanceSection() {
                         return (
                             <button
                                 key={t.id}
-                                onClick={() => setTheme(t.id as any)}
+                                onClick={() => handleThemeChange(t.id)}
+                                disabled={savingTheme}
                                 className={cn(
                                     "flex items-center gap-3 p-4 rounded-xl border transition-all",
                                     isActive
@@ -63,7 +120,8 @@ export function AppearanceSection() {
                     {colors.map((color) => (
                         <button
                             key={color}
-                            onClick={() => setAccentColor(color)}
+                            onClick={() => handleColorChange(color)}
+                            disabled={savingColor}
                             className={cn(
                                 "relative w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 focus:outline-none ring-2 ring-offset-2 ring-offset-background",
                                 accentColor === color ? "ring-foreground" : "ring-transparent"
@@ -79,7 +137,7 @@ export function AppearanceSection() {
                         <input
                             type="color"
                             value={accentColor}
-                            onChange={(e) => setAccentColor(e.target.value)}
+                            onChange={(e) => handleColorChange(e.target.value)}
                             className="w-10 h-10 rounded-full overflow-hidden opacity-0 absolute inset-0 cursor-pointer"
                         />
                         <div className={cn(

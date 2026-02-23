@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -25,7 +26,11 @@ use App\Notifications\ResetPasswordNotification;
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
+
+    protected $dates = [
+        'deleted_at',
+    ];
 
     protected $fillable = [
         'name',
@@ -35,6 +40,7 @@ class User extends Authenticatable
         'user_type',
         'role',
         'profile_picture',
+        'banned_at',
     ];
 
     protected $hidden = [
@@ -46,6 +52,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'banned_at'         => 'datetime',
         ];
     }
 

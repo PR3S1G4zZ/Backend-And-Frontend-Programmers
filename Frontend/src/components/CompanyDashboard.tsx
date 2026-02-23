@@ -27,8 +27,8 @@ interface CompanyDashboardProps {
 }
 
 export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
-  const [currentSection, setCurrentSection] = useState(() => {
-    return localStorage.getItem('company_dashboard_section') || 'overview';
+  const [currentSection, setCurrentSection] = useState(() => { 
+    return localStorage.getItem('company_dashboard_section') || 'welcome';
   });
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectResponse | null>(null);
@@ -51,7 +51,7 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
   }, [currentSection, editingProject, viewingCandidates, viewingWorkspace]);
 
   const sectionLabels: Record<string, string> = {
-    overview: 'Dashboard',
+    welcome: 'Dashboard',
     'my-projects': 'Mis Proyectos',
     'publish-project': 'Publicar Proyecto',
     'edit-project': 'Editar Proyecto',
@@ -101,7 +101,7 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
 
   const renderSection = () => {
     switch (currentSection) {
-      case 'overview':
+      case 'welcome':
         return <WelcomeSection onSectionChange={handleSectionChange} />;
       case 'my-projects':
         return <MyProjectsSection onSectionChange={handleSectionChange} />;
@@ -130,23 +130,21 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
         return <ChatSection userType="company" initialChatId={viewingChatId} />;
       case 'wallet':
         return (
-          <WalletProvider>
-            <div className="p-8">
-              <h2 className="text-3xl font-bold text-white mb-6">Billetera & Pagos</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1 space-y-6">
-                  <WalletBalance />
-                  <WalletRecharge />
-                </div>
-                <div className="lg:col-span-2">
-                  <TransactionHistory />
-                </div>
-                <div className="lg:col-span-3 mt-4">
-                  <WalletPaymentMethods userType="company" />
-                </div>
+          <div className="p-8">
+            <h2 className="text-3xl font-bold text-white mb-6">Billetera & Pagos</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 space-y-6">
+                <WalletBalance />
+                <WalletRecharge />
+              </div>
+              <div className="lg:col-span-2">
+                <TransactionHistory />
+              </div>
+              <div className="lg:col-span-3 mt-4">
+                <WalletPaymentMethods userType="company" />
               </div>
             </div>
-          </WalletProvider>
+          </div>
         );
       case 'notifications':
         return <div className="text-white p-8">Notificaciones (Próximamente)</div>;
@@ -190,45 +188,47 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <Sidebar
-        userType="company"
-        currentSection={currentSection}
-        onSectionChange={handleSectionChange}
-        onLogout={handleLogout}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        user={user}
-      />
-      <div className="flex-1 overflow-auto">
-        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
-          <button
-            type="button"
-            onClick={() => setIsSidebarOpen(true)}
-            className="rounded-md border border-[#333333] p-2 text-white hover:bg-[#1A1A1A]"
-            aria-label="Abrir menú"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div>
-            <p className="text-sm text-gray-400">Panel de empresa</p>
-            <p className="text-base font-semibold text-white">{sectionLabels[currentSection] || 'Dashboard'}</p>
+    <WalletProvider>
+      <div className="flex h-screen bg-background text-foreground">
+        <Sidebar
+          userType="company"
+          currentSection={currentSection}
+          onSectionChange={handleSectionChange}
+          onLogout={handleLogout}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          user={user}
+        />
+        <div className="flex-1 overflow-auto">
+          <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="rounded-md border border-border p-2 text-foreground hover:bg-accent"
+              aria-label="Abrir menú"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div>
+              <p className="text-sm text-muted-foreground">Panel de empresa</p>
+              <p className="text-base font-semibold text-foreground">{sectionLabels[currentSection] || 'Dashboard'}</p>
+            </div>
           </div>
+          {renderSection()}
         </div>
-        {renderSection()}
+        <ConfirmDialog
+          cancelText="Cancelar"
+          confirmText="Sí, cerrar sesión"
+          description="¿Estás seguro de que quieres cerrar tu sesión?"
+          isOpen={isLogoutDialogOpen}
+          onCancel={() => setIsLogoutDialogOpen(false)}
+          onConfirm={() => {
+            setIsLogoutDialogOpen(false);
+            onLogout?.();
+          }}
+          title="¿Cerrar Sesión?"
+        />
       </div>
-      <ConfirmDialog
-        cancelText="Cancelar"
-        confirmText="Sí, cerrar sesión"
-        description="¿Estás seguro de que quieres cerrar tu sesión?"
-        isOpen={isLogoutDialogOpen}
-        onCancel={() => setIsLogoutDialogOpen(false)}
-        onConfirm={() => {
-          setIsLogoutDialogOpen(false);
-          onLogout?.();
-        }}
-        title="¿Cerrar Sesión?"
-      />
-    </div>
+    </WalletProvider>
   );
 }

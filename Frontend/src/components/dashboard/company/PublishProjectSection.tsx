@@ -16,7 +16,7 @@ import {
   Send
 } from 'lucide-react';
 import { useSweetAlert } from '../../ui/sweet-alert';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { createProject, updateProject, fundProject, type ProjectResponse } from '../../../services/projectService';
 import { fetchCategories, fetchSkills, type TaxonomyItem } from '../../../services/taxonomyService';
 
@@ -250,6 +250,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
       priority: formData.priority,
       max_applicants: maxApplicants,
       tags: deliverables.filter(Boolean),
+      requirements: requirements.filter(Boolean),
       category_ids: formData.category ? [Number(formData.category)] : [],
       skill_ids: skillIds,
       status: asDraft ? 'draft' : 'pending_payment', // Default to pending_payment if not draft
@@ -543,7 +544,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                     onChange={(e) => setNewSkill(e.target.value)}
                     placeholder="Escribe una habilidad..."
                     className="bg-[#0D0D0D] border-[#333333] text-white"
-                    onKeyPress={(e) => e.key === 'Enter' && addSkill(newSkill)}
+                    onKeyDown={(e) => e.key === 'Enter' && addSkill(newSkill)}
                   />
                   <Button
                     onClick={() => addSkill(newSkill)}

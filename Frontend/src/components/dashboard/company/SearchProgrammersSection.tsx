@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -54,7 +54,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
   const [selectedDeveloper, setSelectedDeveloper] = useState<DeveloperProfile | null>(null);
   const { showAlert } = useSweetAlert();
 
-  const allSkills = Array.from(new Set(developers.flatMap(d => d.skills))).sort();
+  const allSkills = useMemo(() => Array.from(new Set(developers.flatMap(d => d.skills))).sort(), [developers]);
 
   useEffect(() => {
     let isMounted = true;
@@ -116,6 +116,27 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
 
     return matchesSearch && matchesSkills && matchesExperience &&
       matchesRate && matchesAvailability && matchesRating && matchesVerified;
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case 'name-asc':
+        return a.name.localeCompare(b.name);
+      case 'name-desc':
+        return b.name.localeCompare(a.name);
+      case 'rating-high':
+        return b.rating - a.rating;
+      case 'rating-low':
+        return a.rating - b.rating;
+      case 'rate-high':
+        return (b.hourlyRate ?? 0) - (a.hourlyRate ?? 0);
+      case 'rate-low':
+        return (a.hourlyRate ?? 0) - (b.hourlyRate ?? 0);
+      case 'experience-high':
+        return (b.experience ?? 0) - (a.experience ?? 0);
+      case 'experience-low':
+        return (a.experience ?? 0) - (b.experience ?? 0);
+      default:
+        return 0;
+    }
   });
 
   const toggleFavorite = async (developerId: string) => {

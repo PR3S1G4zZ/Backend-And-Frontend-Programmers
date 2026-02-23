@@ -121,6 +121,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/{id}', [AdminController::class, 'getUser']);
         Route::put('/users/{id}', [AdminController::class, 'updateUser']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+        Route::post('/users/{id}/restore', [AdminController::class, 'restoreUser']);
+        Route::post('/users/{id}/ban', [AdminController::class, 'banUser']);
         
         // Admin Projects
         Route::get('/projects', [AdminController::class, 'getProjects']);
@@ -132,6 +134,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Categories Management
         Route::apiResource('categories', \App\Http\Controllers\CategoryController::class)->except(['index', 'show']);
+
+        // System Settings & Logs
+        Route::get('/system/settings', [\App\Http\Controllers\SettingsController::class, 'getSystemSettings']);
+        Route::put('/system/settings', [\App\Http\Controllers\SettingsController::class, 'updateSystemSettings']);
+        Route::get('/system/logs', [\App\Http\Controllers\SettingsController::class, 'getActivityLogs']);
     });
 
     // Milestones
@@ -153,10 +160,5 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- Settings & Preferences ---
     Route::get('/preferences', [\App\Http\Controllers\SettingsController::class, 'getPreferences']);
     Route::put('/preferences', [\App\Http\Controllers\SettingsController::class, 'updatePreferences']);
-
-    // Admin System Settings
-    Route::get('/system/settings', [\App\Http\Controllers\SettingsController::class, 'getSystemSettings']);
-    Route::put('/system/settings', [\App\Http\Controllers\SettingsController::class, 'updateSystemSettings']);
-    Route::get('/system/logs', [\App\Http\Controllers\SettingsController::class, 'getActivityLogs']);
     
 });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Key, Lock } from 'lucide-react';
+import { Shield, Key, Lock, Smartphone, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
 import { apiRequest } from '../../../../../services/apiClient';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
@@ -27,8 +27,8 @@ export function SecuritySection() {
                 icon: 'error',
                 title: 'Error',
                 text: 'Las nuevas contraseñas no coinciden.',
-                background: '#1A1A1A',
-                color: '#fff'
+                background: 'hsl(var(--card))',
+                color: 'hsl(var(--foreground))'
             });
             return;
         }
@@ -50,9 +50,9 @@ export function SecuritySection() {
                     icon: 'success',
                     title: 'Contraseña Actualizada',
                     text: 'Tu contraseña ha sido cambiada exitosamente.',
-                    background: '#1A1A1A',
-                    color: '#fff',
-                    confirmButtonColor: '#00FF85'
+                    background: 'hsl(var(--card))',
+                    color: 'hsl(var(--foreground))',
+                    confirmButtonColor: 'hsl(var(--primary))'
                 });
                 setPasswords({
                     current_password: '',
@@ -67,8 +67,8 @@ export function SecuritySection() {
                 icon: 'error',
                 title: 'Error',
                 text: msg,
-                background: '#1A1A1A',
-                color: '#fff'
+                background: 'hsl(var(--card))',
+                color: 'hsl(var(--foreground))'
             });
         } finally {
             setLoading(false);
@@ -142,17 +142,58 @@ export function SecuritySection() {
                 </form>
             </div>
 
-            {/* 2FA Placeholder */}
-            <div className="bg-card p-6 rounded-xl border border-border opacity-50 cursor-not-allowed">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                            <Lock className="w-5 h-5 text-primary" />
-                            Autenticación de Dos Factores (2FA)
-                        </h3>
-                        <p className="text-sm text-muted-foreground">Aumenta la seguridad de tu cuenta.</p>
+            {/* 2FA Placeholder - Diseño mejorado */}
+            <div className="bg-card p-6 rounded-xl border border-border">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Lock className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                                <Shield className="w-5 h-5 text-primary" />
+                                Autenticación de Dos Factores (2FA)
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                                Añade una capa adicional de seguridad a tu cuenta requiriendo un código de verificación además de tu contraseña.
+                            </p>
+                        </div>
                     </div>
-                    <div className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded">Próximamente</div>
+                    <div className="bg-amber-500/10 text-amber-500 text-xs px-3 py-1.5 rounded-full flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Próximamente
+                    </div>
+                </div>
+
+                {/* Características futuras */}
+                <div className="mt-6 pt-6 border-t border-border">
+                    <h4 className="text-sm font-medium text-foreground mb-3">Próximas características:</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Smartphone className="w-4 h-4 text-primary" />
+                            <span>Códigos por aplicación autenticadora</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <ShieldCheck className="w-4 h-4 text-primary" />
+                            <span>Verificación por SMS</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Key className="w-4 h-4 text-primary" />
+                            <span>Llaves de seguridad físicas</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <AlertCircle className="w-4 h-4 text-primary" />
+                            <span>Notificaciones de inicio de sesión</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Banner informativo */}
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">Nota:</strong> La autenticación de dos factores estará disponible en futuras actualizaciones.
+                        Mantén tu contraseña segura y no la compartas con nadie.
+                    </p>
                 </div>
             </div>
         </div>

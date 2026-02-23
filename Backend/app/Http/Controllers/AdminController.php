@@ -11,6 +11,7 @@ use App\Models\Project;
 use App\Models\Application;
 use App\Models\Message;
 use App\Models\Review;
+use App\Models\ActivityLog;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
@@ -23,12 +24,6 @@ class AdminController extends Controller
     public function createUser(Request $request): JsonResponse
     {
         try {
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Acceso no autorizado.'
-                ], 403);
-            }
 
             $validated = $request->validate([
                 'name' => 'required|string|max:255|regex:/^(?!\s)[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+(?<!\s)$/',
@@ -54,10 +49,19 @@ class AdminController extends Controller
                 'role' => $validated['user_type'],
             ]);
 
+            // Audit log
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'create_user',
+                'details' => 'Creó usuario: ' . $user->email . ' (tipo: ' . $user->user_type . ')',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Usuario creado exitosamente.',
-                'user' => $user->only(['id', 'name', 'lastname', 'email', 'user_type', 'created_at', 'email_verified_at']),
+                'user' => $user->only(['id', 'name', 'lastname', 'email', 'user_type', 'created_at', 'email_verified_at', 'banned_at']),
             ], 201);
         } catch (\Exception $e) {
             report($e);
@@ -74,19 +78,29 @@ class AdminController extends Controller
     public function getUsers(Request $request): JsonResponse
     {
         try {
-            // Verificar que el usuario autenticado sea admin
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Acceso no autorizado. Solo administradores pueden ver usuarios.'
-                ], 403);
-            }
 
             // Obtener usuarios con paginación opcional
-            $perPage = $request->get('per_page', 50);
-            $users = User::select('id', 'name', 'lastname', 'email', 'user_type', 'created_at', 'email_verified_at')
-                        ->orderBy('created_at', 'desc')
-                        ->paginate($perPage);
+            $perPage = min((int)$request->get('per_page', 25), 100);
+            $search = $request->get('search', '');
+            $userType = $request->get('user_type', '');
+
+            $query = User::select('id', 'name', 'lastname', 'email', 'user_type', 'created_at', 'email_verified_at');
+
+            // Apply search filter
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('lastname', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                });
+            }
+
+            // Apply user_type filter
+            if ($userType && in_array($userType, ['admin', 'company', 'programmer'])) {
+                $query->where('user_type', $userType);
+            }
+
+            $users = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
             return response()->json([
                 'success' => true,
@@ -114,13 +128,6 @@ class AdminController extends Controller
     public function getUser($id): JsonResponse
     {
         try {
-            // Verificar que el usuario autenticado sea admin
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Acceso no autorizado.'
-                ], 403);
-            }
 
             $user = User::find($id);
 
@@ -151,13 +158,6 @@ class AdminController extends Controller
     public function updateUser(Request $request, $id): JsonResponse
     {
         try {
-            // Verificar que el usuario autenticado sea admin
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Acceso no autorizado.'
-                ], 403);
-            }
 
             $user = User::find($id);
 
@@ -176,12 +176,25 @@ class AdminController extends Controller
                 'user_type' => 'sometimes|in:programmer,company,admin'
             ]);
 
+            if (isset($validated['user_type'])) {
+                $validated['role'] = $validated['user_type'];
+            }
+
             $user->update($validated);
+
+            // Audit log
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'update_user',
+                'details' => 'Actualizó usuario: ' . $user->email,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Usuario actualizado exitosamente.',
-                'user' => $user
+                'user' => $user->only(['id', 'name', 'lastname', 'email', 'user_type', 'created_at', 'email_verified_at', 'banned_at'])
             ]);
 
         } catch (\Exception $e) {
@@ -194,18 +207,74 @@ class AdminController extends Controller
     }
 
     /**
+     * Banear o desbanear un usuario
+     */
+    public function banUser($id): JsonResponse
+    {
+        try {
+
+            $user = User::find($id);
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado.'
+                ], 404);
+            }
+
+            // No se puede banear a un admin
+            if ($user->user_type === 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No puedes banear a un administrador.'
+                ], 403);
+            }
+
+            $banned = false;
+
+            if (is_null($user->banned_at)) {
+                // Banear
+                $user->banned_at = now();
+                $banned = true;
+            } else {
+                // Desbanear
+                $user->banned_at = null;
+                $banned = false;
+            }
+
+            $user->save();
+
+            // Audit log
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => $banned ? 'ban_user' : 'unban_user',
+                'details' => ($banned ? 'Baneó' : 'Desbaneó') . ' usuario: ' . $user->email,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $banned ? 'Usuario baneado exitosamente.' : 'Usuario desbaneado exitosamente.',
+                'banned'  => $banned,
+                'user'    => $user->only(['id', 'name', 'lastname', 'email', 'user_type', 'created_at', 'email_verified_at', 'banned_at'])
+            ]);
+
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al banear/desbanear usuario.'
+            ], 500);
+        }
+    }
+
+    /**
      * Eliminar un usuario
      */
     public function deleteUser($id): JsonResponse
     {
         try {
-            // Verificar que el usuario autenticado sea admin
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Acceso no autorizado.'
-                ], 403);
-            }
 
             $user = User::find($id);
 
@@ -226,6 +295,15 @@ class AdminController extends Controller
 
             $user->delete();
 
+            // Audit log
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'delete_user',
+                'details' => 'Eliminó usuario: ' . $user->email,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Usuario eliminado exitosamente.'
@@ -241,14 +319,59 @@ class AdminController extends Controller
     }
 
     /**
+     * Restaurar un usuario eliminado (soft delete)
+     */
+    public function restoreUser($id): JsonResponse
+    {
+        try {
+            $user = User::withTrashed()->find($id);
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado.'
+                ], 404);
+            }
+
+            if (!$user->trashed()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El usuario no está eliminado.'
+                ], 400);
+            }
+
+            $user->restore();
+
+            // Audit log
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'restore_user',
+                'details' => 'Restauró usuario: ' . $user->email,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario restaurado exitosamente.',
+                'user' => $user
+            ]);
+
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al restaurar usuario.'
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener todos los proyectos (incluyendo eliminados)
      */
     public function getProjects(Request $request): JsonResponse
     {
         try {
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json(['success' => false, 'message' => 'Acceso no autorizado.'], 403);
-            }
 
             $perPage = $request->get('per_page', 20);
             $query = Project::withTrashed()->with(['company:id,name,email', 'categories:id,name']);
@@ -294,9 +417,6 @@ class AdminController extends Controller
     public function updateProject(Request $request, $id): JsonResponse
     {
         try {
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json(['success' => false, 'message' => 'Acceso no autorizado.'], 403);
-            }
 
             $project = Project::withTrashed()->find($id);
 
@@ -333,9 +453,6 @@ class AdminController extends Controller
     public function deleteProject($id): JsonResponse
     {
         try {
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json(['success' => false, 'message' => 'Acceso no autorizado.'], 403);
-            }
 
             $project = Project::find($id);
 
@@ -344,6 +461,15 @@ class AdminController extends Controller
             }
 
             $project->delete();
+
+            // Audit log
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'delete_project',
+                'details' => 'Eliminó proyecto: ' . $project->title . ' (ID: ' . $project->id . ')',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -363,9 +489,6 @@ class AdminController extends Controller
     public function restoreProject($id): JsonResponse
     {
         try {
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json(['success' => false, 'message' => 'Acceso no autorizado.'], 403);
-            }
 
             $project = Project::withTrashed()->find($id);
 
@@ -378,6 +501,15 @@ class AdminController extends Controller
             }
 
             $project->restore();
+
+            // Audit log
+            ActivityLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'restore_project',
+                'details' => 'Restauró proyecto: ' . $project->title . ' (ID: ' . $project->id . ')',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -397,12 +529,6 @@ class AdminController extends Controller
     public function metrics(Request $request): JsonResponse
     {
         try {
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Acceso no autorizado.'
-                ], 403);
-            }
 
             $period = $this->sanitizePeriod($request->get('period', 'month'));
             $timeSeries = $this->buildTimeSeries($period);
@@ -432,13 +558,6 @@ class AdminController extends Controller
     public function getUserStats(): JsonResponse
     {
         try {
-            // Verificar que el usuario autenticado sea admin
-            if (!Auth::check() || Auth::user()->user_type !== 'admin') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Acceso no autorizado.'
-                ], 403);
-            }
 
             $stats = [
                 'total_users' => User::count(),
