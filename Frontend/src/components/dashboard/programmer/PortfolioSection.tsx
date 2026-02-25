@@ -194,17 +194,21 @@ export function PortfolioSection() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-white">Cargando portafolio...</div>;
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[300px]">
+        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Mi Portafolio</h1>
-          <p className="text-gray-300">
-            Showcases de mis mejores proyectos y trabajos realizados
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Mi Portafolio</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            {projects.length} proyecto{projects.length !== 1 ? 's' : ''} publicado{projects.length !== 1 ? 's' : ''}
           </p>
         </div>
 
@@ -217,11 +221,11 @@ export function PortfolioSection() {
                 resetForm();
               }}
             >
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="h-4 w-4 mr-2" />
               Agregar Proyecto
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] bg-[#1A1A1A] border-[#333333] text-white">
+          <DialogContent className="sm:max-w-[600px] bg-card border-border">
             <DialogHeader>
               <DialogTitle>{editingProject ? 'Editar Proyecto' : 'Agregar Nuevo Proyecto'}</DialogTitle>
             </DialogHeader>
@@ -232,7 +236,7 @@ export function PortfolioSection() {
                   <Input
                     id="title" name="title"
                     value={formData.title} onChange={handleInputChange}
-                    required className="bg-[#0D0D0D] border-[#333333]"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -240,7 +244,6 @@ export function PortfolioSection() {
                   <Input
                     id="client" name="client"
                     value={formData.client} onChange={handleInputChange}
-                    className="bg-[#0D0D0D] border-[#333333]"
                   />
                 </div>
               </div>
@@ -250,7 +253,7 @@ export function PortfolioSection() {
                 <Textarea
                   id="description" name="description"
                   value={formData.description} onChange={handleInputChange}
-                  required className="bg-[#0D0D0D] border-[#333333]"
+                  required
                 />
               </div>
 
@@ -260,7 +263,6 @@ export function PortfolioSection() {
                   <Input
                     id="project_url" name="project_url"
                     value={formData.project_url} onChange={handleInputChange}
-                    className="bg-[#0D0D0D] border-[#333333]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -336,7 +338,7 @@ export function PortfolioSection() {
                   name="featured"
                   checked={formData.featured}
                   onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
-                  className="rounded border-[#333333] bg-[#0D0D0D]"
+                  className="rounded border-border bg-background"
                 />
                 <Label htmlFor="featured">Destacar Proyecto</Label>
               </div>
@@ -354,36 +356,36 @@ export function PortfolioSection() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-[#1A1A1A] border-[#333333]">
-          <CardContent className="p-6 text-center">
-            <div className="text-2xl font-bold text-white">{projects.length}</div>
-            <div className="text-gray-400 text-sm">Proyectos Totales</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 text-center">
+            <div className="text-xl font-bold text-foreground">{projects.length}</div>
+            <div className="text-muted-foreground text-xs mt-0.5">Proyectos</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#1A1A1A] border-[#333333]">
-          <CardContent className="p-6 text-center">
-            <div className="text-2xl font-bold text-white">{featuredProjects.length}</div>
-            <div className="text-gray-400 text-sm">Proyectos Destacados</div>
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 text-center">
+            <div className="text-xl font-bold text-foreground">{featuredProjects.length}</div>
+            <div className="text-muted-foreground text-xs mt-0.5">Destacados</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#1A1A1A] border-[#333333]">
-          <CardContent className="p-6 text-center">
-            <div className="text-2xl font-bold text-white">
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 text-center">
+            <div className="text-xl font-bold text-foreground">
               {projects.reduce((sum, project) => sum + project.views, 0)}
             </div>
-            <div className="text-gray-400 text-sm">Visualizaciones</div>
+            <div className="text-muted-foreground text-xs mt-0.5">Visualizaciones</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#1A1A1A] border-[#333333]">
-          <CardContent className="p-6 text-center">
-            <div className="text-2xl font-bold text-white">
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 text-center">
+            <div className="text-xl font-bold text-foreground">
               {projects.reduce((sum, project) => sum + project.likes, 0)}
             </div>
-            <div className="text-gray-400 text-sm">Likes Totales</div>
+            <div className="text-muted-foreground text-xs mt-0.5">Likes</div>
           </CardContent>
         </Card>
       </div>
@@ -391,10 +393,10 @@ export function PortfolioSection() {
       {/* Featured Projects */}
       {featuredProjects.length > 0 && (
         <div>
-          <h2 className="text-xl font-bold text-white mb-6">Proyectos Destacados</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <h2 className="text-base font-semibold text-foreground mb-3">Proyectos Destacados</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             {featuredProjects.slice(0, 2).map((project) => (
-              <Card key={project.id} className="bg-[#1A1A1A] border-[#333333] hover-neon overflow-hidden">
+              <Card key={project.id} className="bg-card border-border hover-neon overflow-hidden">
                 <div className="relative">
                   <ImageWithFallback
                     src={project.image_url || "/placeholder-project.jpg"}
@@ -407,20 +409,20 @@ export function PortfolioSection() {
                   </div>
                 </div>
 
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg font-bold text-white">{project.title}</h3>
-                    <div className="flex space-x-2">
-                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white" onClick={() => handleEdit(project)}>
-                        <Edit className="h-4 w-4" />
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-base font-bold text-foreground">{project.title}</h3>
+                    <div className="flex space-x-1">
+                      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground h-7 w-7 p-0" onClick={() => handleEdit(project)}>
+                        <Edit className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-red-400" onClick={() => handleDelete(project.id)}>
-                        <Trash2 className="h-4 w-4" />
+                      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-red-400 h-7 w-7 p-0" onClick={() => handleDelete(project.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
 
-                  <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                  <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
                     {project.description}
                   </p>
 
@@ -458,7 +460,7 @@ export function PortfolioSection() {
 
                     <div className="flex space-x-2">
                       {project.github_url && (
-                        <Button size="sm" variant="outline" className="border-[#333333] text-white hover:bg-[#333333]" onClick={() => window.open(project.github_url, '_blank')}>
+                        <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-accent" onClick={() => window.open(project.github_url, '_blank')}>
                           <Github className="h-4 w-4 mr-1" />
                           Código
                         </Button>
@@ -480,13 +482,15 @@ export function PortfolioSection() {
 
       {/* All Projects */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-6">Todos los Proyectos</h2>
+        <h2 className="text-base font-semibold text-foreground mb-3">Todos los Proyectos</h2>
         {projects.length === 0 ? (
-          <p className="text-gray-400">No hay proyectos aún. ¡Agrega el primero!</p>
+          <div className="text-center py-10 border border-dashed border-border rounded-xl">
+            <p className="text-muted-foreground text-sm">No hay proyectos aún. ¡Agrega el primero!</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {projects.map((project) => (
-              <Card key={project.id} className="bg-[#1A1A1A] border-[#333333] hover-neon overflow-hidden">
+              <Card key={project.id} className="bg-card border-border hover-neon overflow-hidden">
                 <div className="relative">
                   <ImageWithFallback
                     src={project.image_url || "/placeholder-project.jpg"}
@@ -503,27 +507,27 @@ export function PortfolioSection() {
 
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-base font-bold text-white">{project.title}</h3>
+                    <h3 className="text-sm font-bold text-foreground">{project.title}</h3>
                     <div className="flex space-x-1">
-                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white p-1" onClick={() => handleEdit(project)}>
+                      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground p-1 h-6 w-6" onClick={() => handleEdit(project)}>
                         <Edit className="h-3 w-3" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-red-400 p-1" onClick={() => handleDelete(project.id)}>
+                      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-red-400 p-1 h-6 w-6" onClick={() => handleDelete(project.id)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
 
-                  <p className="text-gray-300 text-sm mb-3 line-clamp-2">
+                  <p className="text-muted-foreground text-xs mb-2 line-clamp-2">
                     {project.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-1 mb-3">
+                  <div className="flex flex-wrap gap-1 mb-2">
                     {getTechArray(project.technologies).slice(0, 3).map((tech, i) => (
                       <Badge
                         key={i}
                         variant="secondary"
-                        className="bg-[#0D0D0D] text-[#00C46A] text-xs"
+                        className="bg-primary/10 text-primary text-xs border-0"
                       >
                         {tech}
                       </Badge>
@@ -531,14 +535,14 @@ export function PortfolioSection() {
                     {getTechArray(project.technologies).length > 3 && (
                       <Badge
                         variant="secondary"
-                        className="bg-[#0D0D0D] text-gray-400 text-xs"
+                        className="bg-muted text-muted-foreground text-xs"
                       >
                         +{getTechArray(project.technologies).length - 3}
                       </Badge>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                     <span>{project.completion_date}</span>
                     <div className="flex items-center space-x-3">
                       <span className="flex items-center">

@@ -16,7 +16,9 @@ class DashboardController extends Controller
         $hired = Application::whereHas('project', fn($q)=>$q->where('company_id',$uid))
                   ->where('status','accepted')->count();
         $budget = Project::where('company_id',$uid)->sum(DB::raw('COALESCE(budget_max, budget_min)'));
-        $completion = 96; // placeholder: lógica real si agregas entregas
+        $total = Project::where('company_id',$uid)->whereNotIn('status',['draft'])->count();
+        $completed = Project::where('company_id',$uid)->where('status','completed')->count();
+        $completion = $total > 0 ? round(($completed / $total) * 100) : 0;
         return compact('active','hired','budget','completion');
     }
 

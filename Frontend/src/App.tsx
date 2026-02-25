@@ -14,6 +14,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { PageTransition, usePageTransition, LoadingIndicator } from './components/PageTransition';
 import { CodeAnimations } from './components/CodeAnimations';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { authService } from './services/authService';
 import { ForgotPasswordPage } from './components/ForgotPasswordPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { AuthCallbackPage } from './components/AuthCallbackPage';
@@ -112,15 +113,27 @@ function AppContent() {
 
   const handleNavigate = (page: string) => {
     try {
-      if (page === 'programmer-dashboard' || page === 'company-dashboard' || page === 'admin-dashboard') {
-        const userTypeMap: Record<string, UserType> = {
-          'programmer-dashboard': 'programmer',
-          'company-dashboard': 'company',
-          'admin-dashboard': 'admin'
-        };
-        setUserType(userTypeMap[page] || 'guest');
-        setCurrentPage(page as PageType);
-        localStorage.setItem('last_page', page);
+      const dashboardPages = ['programmer-dashboard', 'company-dashboard', 'admin-dashboard'];
+
+      if (dashboardPages.includes(page)) {
+        // Usar user del contexto, o fallback síncrono de localStorage
+        // (resuelve race condition: setUser es async, pero setStoredUser es sync)
+        const currentUser = user ?? authService.getStoredUser();
+
+        // Si no hay usuario autenticado, redirigir al login
+        if (!currentUser) {
+          setCurrentPage('login');
+          localStorage.setItem('last_page', 'login');
+          return;
+        }
+
+        // Verificar que el rol del usuario coincide con el dashboard solicitado
+        const allowedDashboard = dashboardByRole[currentUser.user_type as Exclude<UserType, 'guest'>];
+        const targetPage = allowedDashboard || 'home';
+
+        setUserType(currentUser.user_type as Exclude<UserType, 'guest'>);
+        setCurrentPage(targetPage as PageType);
+        localStorage.setItem('last_page', targetPage);
         return;
       }
 

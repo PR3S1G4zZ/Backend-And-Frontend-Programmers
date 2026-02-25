@@ -11,7 +11,8 @@ import {
   LogOut,
   Home,
   X,
-  Wallet
+  Wallet,
+  BarChart3
 } from "lucide-react";
 import type { User as AuthUser } from "../services/authService";
 
@@ -41,6 +42,7 @@ export function Sidebar({
     { id: 'projects', label: 'Proyectos Publicados', icon: Search },
     { id: 'profile', label: 'Mi Perfil', icon: User },
     { id: 'chat', label: 'Chat', icon: MessageSquare },
+    { id: 'wallet', label: 'Billetera & Cobros', icon: Wallet },
     { id: 'settings', label: 'Configuración', icon: Settings }
   ];
 
@@ -58,7 +60,7 @@ export function Sidebar({
     { id: 'dashboard', label: 'Dashboard Admin', icon: Home },
     { id: 'users', label: 'Gestión de Usuarios', icon: User },
     { id: 'projects', label: 'Todos los Proyectos', icon: FolderOpen },
-    { id: 'analytics', label: 'Analíticas', icon: Search },
+    { id: 'analytics', label: 'Analíticas', icon: BarChart3 },
     { id: 'settings', label: 'Configuración', icon: Settings }
   ];
 
@@ -159,13 +161,6 @@ export function Sidebar({
 
         {/* Bottom Actions */}
         <div className="p-4 border-t border-sidebar-border space-y-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <Settings className="h-5 w-5 mr-3" />
-            Configuración
-          </Button>
           <Button
             variant="ghost"
             className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

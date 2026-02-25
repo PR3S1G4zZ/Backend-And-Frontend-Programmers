@@ -45,13 +45,16 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
     rating: 0,
     verified: false
   });
-  const [showFilters, setShowFilters] = useState(true);
+  // En móvil, filtros colapsados por defecto para mejor UX
+  const [showFilters, setShowFilters] = useState(window.innerWidth >= 1024);
   const [sortBy, setSortBy] = useState('relevance');
   const [favorites, setFavorites] = useState<number[]>([]);
   const [developers, setDevelopers] = useState<DeveloperProfile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDeveloper, setSelectedDeveloper] = useState<DeveloperProfile | null>(null);
+  // Paginación: mostrar de a 12 developers con "Cargar más"
+  const [visibleCount, setVisibleCount] = useState(12);
   const { showAlert } = useSweetAlert();
 
   const allSkills = useMemo(() => Array.from(new Set(developers.flatMap(d => d.skills))).sort(), [developers]);
@@ -67,7 +70,17 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
           fetchFavorites()
         ]);
         if (!isMounted) return;
-        setDevelopers(devsResponse.data || []);
+        // Normalizar skills: la API puede devolver objetos {id, name} en vez de strings
+        const normalizedDevs = (devsResponse.data || []).map((dev: any) => ({
+          ...dev,
+          skills: (dev.skills || []).map((s: any) =>
+            typeof s === 'string' ? s : (s.name ?? String(s))
+          ),
+          languages: (dev.languages || []).map((l: any) =>
+            typeof l === 'string' ? l : (l.name ?? String(l))
+          ),
+        }));
+        setDevelopers(normalizedDevs);
         // Assuming fetchFavorites returns array of IDs
         setFavorites(favsResponse || []);
       } catch (error) {
@@ -88,6 +101,17 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
       isMounted = false;
     };
   }, []);
+
+  // Resetear paginación al cambiar filtros o búsqueda
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setVisibleCount(12);
+  };
+
+  const handleFiltersChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+    setVisibleCount(12);
+  };
 
   const filteredDevelopers = developers.filter(dev => {
     const matchesSearch = searchQuery === '' ||
@@ -224,7 +248,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
       case 'available': return 'text-green-400';
       case 'busy': return 'text-yellow-400';
       case 'unavailable': return 'text-red-400';
-      default: return 'text-gray-400';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -238,12 +262,12 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Buscar Desarrolladores</h1>
-        <p className="text-gray-300">
-          Encuentra el talento perfecto para tu proyecto en nuestra red de {developers.length}+ desarrolladores verificados
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Buscar Desarrolladores</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          {filteredDevelopers.length} de {developers.length} desarrolladores disponibles
         </p>
       </div>
 
@@ -253,30 +277,30 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
         </div>
       ) : null}
       {isLoading ? (
-        <div className="rounded-lg border border-[#333333] bg-[#1A1A1A] p-4 text-sm text-gray-300">
+        <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
           Cargando desarrolladores...
         </div>
       ) : null}
 
       {/* Search and Filters Bar */}
-      <Card className="bg-[#1A1A1A] border-[#333333]">
+      <Card className="bg-card border-border">
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Search Bar */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
               <div className="flex-1 relative group">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 transition-colors group-hover:text-primary" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 transition-colors group-hover:text-primary" />
                 <Input
                   placeholder="Buscar por nombre, habilidades, o especialización..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 bg-[#0D0D0D] border-[#333333] text-white h-12 transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/50"
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-12 bg-background border-border text-foreground h-12 transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/50"
                 />
               </div>
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className={`border-[#333333] text-white hover:bg-[#333333] h-12 px-6 md:self-stretch transition-all ${showFilters ? 'bg-[#333333] border-primary/30' : ''}`}
+                className={`border-border text-foreground hover:bg-accent h-12 px-6 md:self-stretch transition-all ${showFilters ? 'bg-accent border-primary/30' : ''}`}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
@@ -317,7 +341,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="text-gray-400 hover:text-white hover:bg-[#333333] h-6"
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent h-6"
                 >
                   Limpiar filtros
                 </Button>
@@ -327,7 +351,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Filters Sidebar */}
         <AnimatePresence>
           {showFilters && (
@@ -337,14 +361,14 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
               exit={{ opacity: 0, x: -20 }}
               className="lg:col-span-1"
             >
-              <Card className="bg-[#1A1A1A] border-[#333333] sticky top-4">
+              <Card className="bg-card border-border sticky top-4">
                 <CardHeader>
-                  <CardTitle className="text-white">Filtros</CardTitle>
+                  <CardTitle className="text-foreground">Filtros</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Skills Filter */}
                   <div>
-                    <label className="text-white font-medium mb-3 block">Habilidades</label>
+                    <label className="text-foreground font-medium mb-3 block">Habilidades</label>
                     <ScrollArea className="h-40">
                       <div className="space-y-2">
                         {allSkills.map(skill => (
@@ -354,7 +378,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                               checked={filters.skills.includes(skill)}
                               onCheckedChange={() => toggleSkillFilter(skill)}
                             />
-                            <label htmlFor={`skill-${skill}`} className="text-sm text-gray-300 cursor-pointer">
+                            <label htmlFor={`skill-${skill}`} className="text-sm text-muted-foreground cursor-pointer">
                               {skill}
                             </label>
                           </div>
@@ -363,11 +387,11 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                     </ScrollArea>
                   </div>
 
-                  <Separator className="bg-[#333333]" />
+                  <Separator className="bg-border" />
 
                   {/* Experience Filter */}
                   <div>
-                    <label className="text-white font-medium mb-3 block">
+                    <label className="text-foreground font-medium mb-3 block">
                       Experiencia: {filters.experience[0]}-{filters.experience[1]} años
                     </label>
                     <Slider
@@ -380,11 +404,11 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                     />
                   </div>
 
-                  <Separator className="bg-[#333333]" />
+                  <Separator className="bg-border" />
 
                   {/* Hourly Rate Filter */}
                   <div>
-                    <label className="text-white font-medium mb-3 block">
+                    <label className="text-foreground font-medium mb-3 block">
                       Tarifa por hora: €{filters.hourlyRate[0]}-€{filters.hourlyRate[1]}
                     </label>
                     <Slider
@@ -397,29 +421,29 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                     />
                   </div>
 
-                  <Separator className="bg-[#333333]" />
+                  <Separator className="bg-border" />
 
                   {/* Availability Filter */}
                   <div>
-                    <label className="text-white font-medium mb-3 block">Disponibilidad</label>
+                    <label className="text-foreground font-medium mb-3 block">Disponibilidad</label>
                     <Select onValueChange={(value) => setFilters(prev => ({ ...prev, availability: value }))}>
-                      <SelectTrigger className="bg-[#0D0D0D] border-[#333333] text-white">
+                      <SelectTrigger className="bg-background border-border text-foreground">
                         <SelectValue placeholder="Cualquiera" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#1A1A1A] border-[#333333]">
-                        <SelectItem value="any" className="text-white">Cualquiera</SelectItem>
-                        <SelectItem value="available" className="text-white">Disponible</SelectItem>
-                        <SelectItem value="busy" className="text-white">Ocupado</SelectItem>
-                        <SelectItem value="unavailable" className="text-white">No disponible</SelectItem>
+                      <SelectContent className="bg-card border-border">
+                        <SelectItem value="any" className="text-foreground">Cualquiera</SelectItem>
+                        <SelectItem value="available" className="text-foreground">Disponible</SelectItem>
+                        <SelectItem value="busy" className="text-foreground">Ocupado</SelectItem>
+                        <SelectItem value="unavailable" className="text-foreground">No disponible</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <Separator className="bg-[#333333]" />
+                  <Separator className="bg-border" />
 
                   {/* Rating Filter */}
                   <div>
-                    <label className="text-white font-medium mb-3 block">
+                    <label className="text-foreground font-medium mb-3 block">
                       Rating mínimo: {filters.rating} estrellas
                     </label>
                     <Slider
@@ -432,7 +456,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                     />
                   </div>
 
-                  <Separator className="bg-[#333333]" />
+                  <Separator className="bg-border" />
 
                   {/* Verified Filter */}
                   <div className="flex items-center space-x-2">
@@ -441,7 +465,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                       checked={filters.verified}
                       onCheckedChange={(checked) => setFilters(prev => ({ ...prev, verified: checked as boolean }))}
                     />
-                    <label htmlFor="verified" className="text-white font-medium cursor-pointer">
+                    <label htmlFor="verified" className="text-foreground font-medium cursor-pointer">
                       Solo verificados
                     </label>
                   </div>
@@ -454,13 +478,13 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
         {/* Results */}
         <div className={showFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
           {/* Results Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-white">
+              <p className="text-foreground">
                 <span className="font-semibold">{filteredDevelopers.length}</span> desarrolladores encontrados
               </p>
               {searchQuery && (
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Resultados para "<span className="text-primary">{searchQuery}</span>"
                 </p>
               )}
@@ -468,30 +492,30 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
 
             <div className="flex items-center space-x-4">
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48 bg-[#1A1A1A] border-[#333333] text-white">
+                <SelectTrigger className="w-48 bg-card border-border text-foreground">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A1A1A] border-[#333333]">
-                  <SelectItem value="relevance" className="text-white">Más relevante</SelectItem>
-                  <SelectItem value="rating" className="text-white">Mejor calificado</SelectItem>
-                  <SelectItem value="rate-low" className="text-white">Precio: menor a mayor</SelectItem>
-                  <SelectItem value="rate-high" className="text-white">Precio: mayor a menor</SelectItem>
-                  <SelectItem value="experience" className="text-white">Más experiencia</SelectItem>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="relevance" className="text-foreground">Más relevante</SelectItem>
+                  <SelectItem value="rating" className="text-foreground">Mejor calificado</SelectItem>
+                  <SelectItem value="rate-low" className="text-foreground">Precio: menor a mayor</SelectItem>
+                  <SelectItem value="rate-high" className="text-foreground">Precio: mayor a menor</SelectItem>
+                  <SelectItem value="experience" className="text-foreground">Más experiencia</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           {/* Developers Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {filteredDevelopers.map(developer => (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {filteredDevelopers.slice(0, visibleCount).map(developer => (
               <motion.div
                 key={developer.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="bg-[#1A1A1A] border-[#333333] hover:border-primary/50 transition-all duration-300 group overflow-hidden h-full flex flex-col relative">
+                <Card className="bg-card border-border hover:border-primary/50 transition-all duration-300 group overflow-hidden h-full flex flex-col relative">
                   {/* Premium details */}
                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <Code className="h-24 w-24 text-primary transform rotate-12 translate-x-8 -translate-y-8" />
@@ -501,23 +525,23 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="relative">
-                          <Avatar className="h-16 w-16 border-2 border-transparent group-hover:border-primary transition-colors duration-300 ring-2 ring-[#0D0D0D]">
+                          <Avatar className="h-16 w-16 border-2 border-transparent group-hover:border-primary transition-colors duration-300 ring-2 ring-background">
                             <AvatarImage src={developer.avatar} />
                             <AvatarFallback className="bg-gradient-to-br from-primary/80 to-purple-600/80 text-white text-lg font-bold">
                               {developer.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           {developer.isVerified && (
-                            <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-1 shadow-lg ring-2 ring-[#1A1A1A]">
+                            <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-1 shadow-lg ring-2 ring-card">
                               <Award className="h-3 w-3 text-white" />
                             </div>
                           )}
                         </div>
 
                         <div className="flex-1">
-                          <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors">{developer.name}</h3>
-                          <p className="text-sm text-gray-400 font-medium">{developer.title}</p>
-                          <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                          <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{developer.name}</h3>
+                          <p className="text-sm text-muted-foreground font-medium">{developer.title}</p>
+                          <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">
                             <span className="flex items-center">
                               <MapPin className="h-3 w-3 mr-1" />
                               {developer.location}
@@ -531,20 +555,20 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                       </div>
 
                       <div className="text-right z-10">
-                        <div className="flex items-center justify-end space-x-1 mb-1 bg-[#0D0D0D] px-2 py-1 rounded-full border border-[#333]">
+                        <div className="flex items-center justify-end space-x-1 mb-1 bg-background px-2 py-1 rounded-full border border-border">
                           <Star className="h-3.5 w-3.5 text-yellow-400 fill-current" />
-                          <span className="text-white font-bold text-sm">{developer.rating}</span>
-                          <span className="text-[10px] text-gray-500">({developer.reviewsCount})</span>
+                          <span className="text-foreground font-bold text-sm">{developer.rating}</span>
+                          <span className="text-[10px] text-muted-foreground">({developer.reviewsCount})</span>
                         </div>
                         <p className="text-xl font-bold text-primary mt-2">
-                          €{developer.hourlyRate}<span className="text-xs text-gray-500 font-normal">/h</span>
+                          €{developer.hourlyRate}<span className="text-xs text-muted-foreground font-normal">/h</span>
                         </p>
                       </div>
                     </div>
                   </CardHeader>
 
                   <CardContent className="space-y-5 flex-1 flex flex-col z-10">
-                    <p className="text-sm text-gray-300 line-clamp-2 leading-relaxed">
+                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                       {developer.bio}
                     </p>
 
@@ -552,33 +576,33 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                     <div>
                       <div className="flex flex-wrap gap-1.5">
                         {developer.skills.slice(0, 4).map(skill => (
-                          <Badge key={skill} variant="secondary" className="bg-[#0D0D0D] hover:bg-[#222] text-[#00C46A] border border-[#333333] text-xs px-2.5 py-0.5 transition-colors rounded-md">
+                          <Badge key={skill} variant="secondary" className="bg-background hover:bg-accent/50 text-primary border border-border text-xs px-2.5 py-0.5 transition-colors rounded-md">
                             {skill}
                           </Badge>
                         ))}
                         {developer.skills.length > 4 && (
-                          <Badge variant="secondary" className="bg-[#0D0D0D] text-gray-500 border border-[#333333] text-xs px-2 rounded-md">
+                          <Badge variant="secondary" className="bg-background text-muted-foreground border border-border text-xs px-2 rounded-md">
                             +{developer.skills.length - 4}
                           </Badge>
                         )}
                       </div>
                     </div>
 
-                    <Separator className="bg-[#333333]" />
+                    <Separator className="bg-border" />
 
                     {/* Stats Compact */}
                     <div className="grid grid-cols-3 gap-2 py-1">
                       <div className="text-center">
-                        <p className="text-white font-bold">{developer.completedProjects}</p>
-                        <p className="text-[10px] uppercase text-gray-500 tracking-wider">Proyectos</p>
+                        <p className="text-foreground font-bold">{developer.completedProjects}</p>
+                        <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Proyectos</p>
                       </div>
-                      <div className="text-center border-l border-[#333333]">
-                        <p className="text-white font-bold">{developer.experience ?? 0}+</p>
-                        <p className="text-[10px] uppercase text-gray-500 tracking-wider">Años</p>
+                      <div className="text-center border-l border-border">
+                        <p className="text-foreground font-bold">{developer.experience ?? 0}+</p>
+                        <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Años</p>
                       </div>
-                      <div className="text-center border-l border-[#333333]">
+                      <div className="text-center border-l border-border">
                         <p className="text-green-400 font-bold">100%</p>
-                        <p className="text-[10px] uppercase text-gray-500 tracking-wider">Éxito</p>
+                        <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Éxito</p>
                       </div>
                     </div>
 
@@ -592,7 +616,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                       </Button>
                       <Button
                         variant="outline"
-                        className="border-[#333333] bg-[#0D0D0D] text-white hover:bg-[#1A1A1A] hover:border-gray-500 transition-all"
+                        className="border-border bg-background text-foreground hover:bg-card hover:border-muted-foreground/30 transition-all"
                         onClick={() => setSelectedDeveloper(developer)}
                       >
                         <Eye className="h-4 w-4" />
@@ -600,9 +624,9 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                       <Button
                         variant="outline"
                         onClick={() => toggleFavorite(developer.id)}
-                        className={`border-[#333333] bg-[#0D0D0D] hover:bg-[#1A1A1A] transition-all ${favorites.includes(Number(developer.id))
+                        className={`border-border bg-background hover:bg-card transition-all ${favorites.includes(Number(developer.id))
                           ? 'text-red-500 border-red-500/30 bg-red-500/10'
-                          : 'text-gray-400 hover:text-red-400 hover:border-red-500/30'
+                          : 'text-muted-foreground hover:text-red-400 hover:border-red-500/30'
                           }`}
                       >
                         <Heart className={`h-4 w-4 ${favorites.includes(Number(developer.id)) ? 'fill-current animate-pulse-once' : ''}`} />
@@ -614,12 +638,26 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
             ))}
           </div>
 
+          {/* Botón "Cargar más" */}
+          {visibleCount < filteredDevelopers.length && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                className="border-border text-muted-foreground hover:border-primary/50 hover:text-primary gap-2"
+                onClick={() => setVisibleCount(prev => prev + 12)}
+              >
+                <ChevronDown className="h-4 w-4" />
+                Cargar más ({filteredDevelopers.length - visibleCount} restantes)
+              </Button>
+            </div>
+          )}
+
           {filteredDevelopers.length === 0 && (
-            <Card className="bg-[#1A1A1A] border-[#333333] p-12">
+            <Card className="bg-card border-border p-12">
               <div className="text-center">
-                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No se encontraron desarrolladores</h3>
-                <p className="text-gray-400 mb-4">
+                <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">No se encontraron desarrolladores</h3>
+                <p className="text-muted-foreground mb-4">
                   Intenta ajustar tus filtros o términos de búsqueda
                 </p>
                 <Button
@@ -643,4 +681,3 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
     </div >
   );
 }
-

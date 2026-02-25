@@ -224,13 +224,13 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
 
 
   return (
-    <div className="h-screen flex flex-col bg-[#050505] overflow-hidden font-sans selection:bg-primary/20">
+    <div className="h-screen flex flex-col bg-background overflow-hidden font-sans selection:bg-primary/20">
       <div className="flex-1 flex overflow-hidden">
 
         {/* Sidebar - Contact List */}
-        <div className={`w-full lg:w-96 flex flex-col border-r border-[#222] bg-[#0A0A0A] ${selectedContact && isMobileView ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="p-5 border-b border-[#222]">
-            <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Mensajes</h1>
+        <div className={`w-full lg:w-96 flex flex-col border-r border-border bg-card ${selectedContact && isMobileView ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="p-5 border-b border-border">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight mb-1">Mensajes</h1>
             <p className="text-xs text-gray-400 font-medium">
               {userType === 'programmer' ? 'Chats con Empresas' : 'Equipo & Devs'}
             </p>
@@ -240,7 +240,7 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
                 placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-[#151515] border-transparent focus:bg-[#1A1A1A] focus:border-primary/20 transition-all rounded-lg h-10 text-sm"
+                className="pl-9 bg-muted border-transparent focus:bg-accent focus:border-primary/20 transition-all rounded-lg h-10 text-sm"
               />
             </div>
           </div>
@@ -260,7 +260,7 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
                   }}
                   className={`w-full p-3 rounded-xl flex items-center gap-4 transition-all duration-200 group relative overflow-hidden ${selectedContact === contact.id
                     ? 'bg-gradient-to-r from-primary/10 to-transparent'
-                    : 'hover:bg-[#151515]'
+                    : 'hover:bg-accent'
                     }`}
                 >
                   {selectedContact === contact.id && (
@@ -271,15 +271,15 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
                   )}
 
                   <div className="relative shrink-0">
-                    <Avatar className="h-12 w-12 border-2 border-[#151515] shadow-sm">
+                    <Avatar className="h-12 w-12 border-2 border-border shadow-sm">
                       <AvatarImage src={contact.avatar} />
-                      <AvatarFallback className={`font-bold text-xs ${selectedContact === contact.id ? 'bg-primary text-primary-foreground' : 'bg-[#222] text-gray-400'
+                      <AvatarFallback className={`font-bold text-xs ${selectedContact === contact.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                         }`}>
                         {contact.name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     {contact.isOnline && (
-                      <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-[#0A0A0A] rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
+                      <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-card rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
                     )}
                   </div>
 
@@ -309,7 +309,7 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
         </div>
 
         {/* Main Chat Area */}
-        <div className={`flex-1 flex flex-col bg-[#050505] relative ${!selectedContact ? 'hidden lg:flex' : 'flex'} ${selectedContact && isMobileView ? 'fixed inset-0 z-50 lg:static' : ''}`}>
+        <div className={`flex-1 flex flex-col bg-background relative ${!selectedContact ? 'hidden lg:flex' : 'flex'} ${selectedContact && isMobileView ? 'fixed inset-0 z-50 lg:static' : ''}`}>
           {!selectedContact ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
               <div className="w-24 h-24 rounded-full bg-[#111] flex items-center justify-center mb-6 animate-pulse">
@@ -321,13 +321,13 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
           ) : (
             <>
               {/* Chat Header */}
-              <div className="h-[73px] border-b border-[#222] bg-[#0A0A0A]/80 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between px-6">
+              <div className="h-[73px] border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between px-6">
                 <div className="flex items-center gap-4">
                   <Button variant="ghost" size="icon" className="lg:hidden -ml-2 text-gray-400" onClick={() => setIsMobileView(false)}>
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
 
-                  <Avatar className="h-10 w-10 border border-[#222]">
+                  <Avatar className="h-10 w-10 border border-border">
                     <AvatarImage src={selectedContactData?.avatar} />
                     <AvatarFallback className="bg-primary/20 text-primary font-bold">
                       {selectedContactData?.name.substring(0, 2).toUpperCase()}
@@ -344,33 +344,33 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-[#1A1A1A] rounded-full hidden sm:flex">
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-full hidden sm:flex">
                     <Phone className="h-5 w-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-[#1A1A1A] rounded-full hidden sm:flex">
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-full hidden sm:flex">
                     <Video className="h-5 w-5" />
                   </Button>
-                  <Separator orientation="vertical" className="h-6 mx-2 bg-[#222] hidden sm:block" />
+                  <Separator orientation="vertical" className="h-6 mx-2 hidden sm:block" />
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-[#1A1A1A] rounded-full">
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground hover:bg-accent rounded-full">
                         <MoreVertical className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#111] border-[#222] text-gray-200">
+                    <DropdownMenuContent align="end" className="bg-card border-border text-foreground">
                       <DropdownMenuLabel>Opciones del Chat</DropdownMenuLabel>
-                      <DropdownMenuSeparator className="bg-[#222]" />
-                      <DropdownMenuItem className="hover:bg-[#222] cursor-pointer">
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="cursor-pointer">
                         <Search className="h-4 w-4 mr-2" /> Buscar en chat
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="hover:bg-[#222] cursor-pointer" onClick={handleClearChat}>
+                      <DropdownMenuItem className="cursor-pointer" onClick={handleClearChat}>
                         <div className="flex items-center text-orange-500">
                           <MessageSquare className="h-4 w-4 mr-2" /> Limpiar historial
                         </div>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-[#222]" />
-                      <DropdownMenuItem className="hover:bg-[#222] cursor-pointer text-red-500 focus:text-red-500" onClick={handleBlockUser}>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="cursor-pointer text-red-500 focus:text-red-500" onClick={handleBlockUser}>
                         Bloquear usuario
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -379,7 +379,7 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-hidden relative bg-[#050505]">
+              <div className="flex-1 overflow-hidden relative bg-background">
                 <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
                 <ScrollArea className="h-full px-4 py-6">
@@ -418,7 +418,7 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
                                         <MoreVertical className="h-3 w-3" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="bg-[#111] border-[#222]">
+                                    <DropdownMenuContent className="bg-card border-border">
                                       <DropdownMenuItem onClick={() => handleCopyMessage(message.content)}>Copiar</DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => setReplyingTo(message)}>Responder</DropdownMenuItem>
                                       <DropdownMenuItem className="text-red-500" onClick={() => handleDeleteMessage(message.id)}>Eliminar</DropdownMenuItem>
@@ -443,10 +443,10 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
               </div>
 
               {/* Input Area */}
-              <div className="p-4 bg-[#0A0A0A] border-t border-[#222]">
+              <div className="p-4 bg-card border-t border-border">
                 <div className="max-w-4xl mx-auto">
                   {replyingTo && (
-                    <div className="flex items-center justify-between bg-[#151515] p-2 rounded-t-lg border-x border-t border-[#222] mb-0 ml-4 mr-4 text-xs text-gray-400">
+                    <div className="flex items-center justify-between bg-muted p-2 rounded-t-lg border-x border-t border-border mb-0 ml-4 mr-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <div className="w-1 h-8 bg-primary rounded-full"></div>
                         <div>
@@ -461,8 +461,8 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
                     </div>
                   )}
 
-                  <div className="flex items-end gap-2 bg-[#121212] p-2 rounded-2xl border border-[#222] focus-within:border-primary/50 focus-within:bg-[#151515] transition-all shadow-lg">
-                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white rounded-xl h-10 w-10 shrink-0">
+                  <div className="flex items-end gap-2 bg-muted p-2 rounded-2xl border border-border focus-within:border-primary/50 focus-within:bg-accent transition-all shadow-sm">
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground rounded-xl h-10 w-10 shrink-0">
                       <Paperclip className="h-5 w-5" />
                     </Button>
 
@@ -482,8 +482,8 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim()}
                       className={`h-10 w-10 rounded-xl shrink-0 transition-all duration-200 ${newMessage.trim()
-                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_10px_rgba(34,197,94,0.3)]'
-                        : 'bg-[#222] text-gray-600'
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        : 'bg-muted text-muted-foreground'
                         }`}
                     >
                       <Send className="h-5 w-5 ml-0.5" />

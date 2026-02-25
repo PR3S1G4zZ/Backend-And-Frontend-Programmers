@@ -49,7 +49,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
     };
 
     return (
-        <div className="h-full flex flex-col p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col p-4 sm:p-6 space-y-4">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="sm" onClick={onBack}>
@@ -80,7 +80,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                     </div>
                 </div>
 
-                <div className="flex-1 mt-4 min-h-0 overflow-hidden">
+                <div className="flex-1 mt-4 min-h-0 overflow-x-auto">
                     <KanbanBoard projectId={projectId} refreshTrigger={refreshTrigger} onUpdate={handleUpdate} userType={userType} />
                 </div>
             </div>

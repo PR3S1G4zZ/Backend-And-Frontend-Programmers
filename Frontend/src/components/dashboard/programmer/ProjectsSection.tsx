@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Skeleton } from '../../ui/skeleton';
 import { Card, CardContent, CardHeader } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -294,38 +295,18 @@ export function ProjectsSection() {
   }, []);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
-      {/* Header con animación */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2 glow-text">
-              Proyectos Publicados
-            </h1>
-            <p className="text-muted-foreground">
-              Descubre oportunidades perfectas para tu perfil profesional
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-              className="bg-card border border-border rounded-lg p-4"
-            >
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{sortedProjects.length}</div>
-                <div className="text-xs text-muted-foreground">Proyectos activos</div>
-              </div>
-            </motion.div>
-          </div>
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+            Explorar Proyectos
+          </h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            {sortedProjects.length} oportunidades disponibles
+          </p>
         </div>
-      </motion.div>
+      </div>
 
       {error ? (
         <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
@@ -333,8 +314,28 @@ export function ProjectsSection() {
         </div>
       ) : null}
       {isLoading ? (
-        <div className="rounded-lg border border-[#333333] bg-[#1A1A1A] p-4 text-sm text-gray-300">
-          Cargando proyectos...
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="bg-card border-border">
+              <CardHeader className="space-y-2 pb-3">
+                <div className="flex justify-between items-start">
+                  <Skeleton className="h-5 w-24 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-6 w-3/4" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <div className="flex gap-2 pt-1">
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                </div>
+                <Skeleton className="h-9 w-full mt-2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : null}
 

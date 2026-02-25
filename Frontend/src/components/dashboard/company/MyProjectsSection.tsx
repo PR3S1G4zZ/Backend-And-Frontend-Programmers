@@ -124,7 +124,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
   const handleDelete = async (projectId: string) => {
     try {
       await deleteProject(projectId);
-      setProjects(projects.filter(p => p.id !== projectId));
+      setProjects(prev => prev.filter(p => p.id !== projectId));
       showAlert({
         title: 'Proyecto eliminado',
         text: 'El proyecto ha sido movido a la papelera.',

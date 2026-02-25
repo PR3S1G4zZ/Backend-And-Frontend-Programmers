@@ -14,14 +14,23 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
         
+        // Use Sanctum for stateful API authentication
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'auth' => \App\Http\Middleware\ApiAuthenticate::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // For API routes, return JSON instead of redirecting to web login
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'message' => 'No autenticado'
+                ], 401);
+            }
+        });
     })->create();

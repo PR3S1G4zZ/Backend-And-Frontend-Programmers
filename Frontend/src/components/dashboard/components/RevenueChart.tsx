@@ -7,6 +7,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useTheme } from "../../../contexts/ThemeContext";
 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
@@ -24,7 +25,7 @@ export function RevenueChart<TData extends Record<string, unknown>>({
   title,
   description,
   dataKey = "revenue",
-  color = "var(--emerald-green)",
+  color,
   formatter = (value) =>
     new Intl.NumberFormat("es-ES", {
       style: "currency",
@@ -32,6 +33,9 @@ export function RevenueChart<TData extends Record<string, unknown>>({
       maximumFractionDigits: 0,
     }).format(value),
 }: RevenueChartProps<TData>) {
+  const { accentColor } = useTheme();
+  const activeColor = color || accentColor;
+
   return (
     <Card className="bg-card border-border/50">
       <CardHeader>
@@ -47,12 +51,12 @@ export function RevenueChart<TData extends Record<string, unknown>>({
               <linearGradient id="revenue" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor={color}
+                  stopColor={activeColor}
                   stopOpacity={0.3}
                 />
                 <stop
                   offset="95%"
-                  stopColor={color}
+                  stopColor={activeColor}
                   stopOpacity={0}
                 />
               </linearGradient>
@@ -87,7 +91,7 @@ export function RevenueChart<TData extends Record<string, unknown>>({
             <Area
               type="monotone"
               dataKey={dataKey}
-              stroke={color}
+              stroke={activeColor}
               strokeWidth={2.5}
               fillOpacity={1}
               fill="url(#revenue)"

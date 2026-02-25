@@ -47,7 +47,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
   }, []);
 
   if (loading) {
-    return <div className="p-8 flex justify-center text-white"><Loader2 className="animate-spin h-8 w-8" /></div>;
+    return <div className="p-6 flex justify-center text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
   }
 
   // Fallback defaults if API fails or returns null
@@ -64,14 +64,16 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
   const recentActivity = data?.recent_activity || [];
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
           Hola, {user?.name || 'Usuario'} 👋
         </h1>
-        <p className="text-muted-foreground">
-          Aquí está tu espacio de desarrollo. Tienes {stats.active_projects} proyectos activos y nuevas oportunidades.
+        <p className="text-muted-foreground text-sm">
+          {stats.active_projects > 0
+            ? `Tienes ${stats.active_projects} proyecto${stats.active_projects !== 1 ? 's' : ''} activo${stats.active_projects !== 1 ? 's' : ''} en progreso.`
+            : 'Explora oportunidades disponibles y comienza tu próximo proyecto.'}
         </p>
       </div>
 
@@ -81,68 +83,70 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-card border-border hover-neon">
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Ganado este mes</p>
-                <p className="text-2xl font-bold text-foreground">€{stats.earnings_month.toLocaleString()}</p>
-                <p className={`text-sm flex items-center mt-1 ${stats.earnings_growth >= 0 ? 'text-primary' : 'text-red-500'}`}>
-                  <TrendingUp className={`h-4 w-4 mr-1 ${stats.earnings_growth < 0 ? 'rotate-180' : ''}`} />
-                  {stats.earnings_growth >= 0 ? '+' : ''}{stats.earnings_growth}% vs mes anterior
+                <p className="text-muted-foreground text-xs">Ganado este mes</p>
+                <p className="text-xl font-bold text-foreground">€{stats.earnings_month.toLocaleString()}</p>
+                <p className={`text-xs flex items-center mt-1 ${stats.earnings_growth >= 0 ? 'text-primary' : 'text-red-500'}`}>
+                  <TrendingUp className={`h-3 w-3 mr-1 ${stats.earnings_growth < 0 ? 'rotate-180' : ''}`} />
+                  {stats.earnings_growth >= 0 ? '+' : ''}{stats.earnings_growth}%
                 </p>
               </div>
-              <div className="bg-primary p-3 rounded-full">
-                <DollarSign className="h-6 w-6 text-primary-foreground" />
+              <div className="bg-primary/10 p-2.5 rounded-xl">
+                <DollarSign className="h-5 w-5 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border hover-neon">
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Proyectos activos</p>
-                <p className="text-2xl font-bold text-foreground">{stats.active_projects}</p>
-                <p className="text-green-500 text-sm">En progreso</p>
+                <p className="text-muted-foreground text-xs">Proyectos activos</p>
+                <p className="text-xl font-bold text-foreground">{stats.active_projects}</p>
+                <p className="text-green-500 text-xs">En progreso</p>
               </div>
-              <div className="bg-green-500/20 p-3 rounded-full">
-                <Clock className="h-6 w-6 text-green-500" />
+              <div className="bg-green-500/10 p-2.5 rounded-xl">
+                <Clock className="h-5 w-5 text-green-500" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border hover-neon">
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Rating promedio</p>
-                <p className="text-2xl font-bold text-foreground">{stats.rating}</p>
+                <p className="text-muted-foreground text-xs">Rating promedio</p>
+                <p className="text-xl font-bold text-foreground">{stats.rating || '—'}</p>
                 <div className="flex items-center mt-1">
-                  <Star className="h-4 w-4 text-primary fill-current" />
-                  <span className="text-muted-foreground text-sm ml-1">{stats.reviews_count} reviews</span>
+                  <Star className="h-3 w-3 text-primary fill-current" />
+                  <span className="text-muted-foreground text-xs ml-1">{stats.reviews_count} reviews</span>
                 </div>
               </div>
-              <div className="bg-primary p-3 rounded-full">
-                <Star className="h-6 w-6 text-primary-foreground" />
+              <div className="bg-primary/10 p-2.5 rounded-xl">
+                <Star className="h-5 w-5 text-primary" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border hover-neon">
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Mensajes sin leer</p>
-                <p className="text-2xl font-bold text-foreground">{stats.unread_messages}</p>
-                <p className="text-orange-400 text-sm">Requieren atención</p>
+                <p className="text-muted-foreground text-xs">Mensajes sin leer</p>
+                <p className="text-xl font-bold text-foreground">{stats.unread_messages}</p>
+                <p className="text-orange-400 text-xs">
+                  {stats.unread_messages > 0 ? 'Sin responder' : 'Al día'}
+                </p>
               </div>
-              <div className="bg-orange-500 p-3 rounded-full">
-                <MessageSquare className="h-6 w-6 text-white" />
+              <div className="bg-orange-500/10 p-2.5 rounded-xl">
+                <MessageSquare className="h-5 w-5 text-orange-400" />
               </div>
             </div>
           </CardContent>
@@ -150,19 +154,19 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Active Projects */}
         <div className="lg:col-span-2">
           <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-foreground">Proyectos Activos</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-foreground text-base">Proyectos Activos</CardTitle>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={() => onSectionChange('projects')}
-                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                onClick={() => onSectionChange('projects-active')}
+                className="text-primary hover:bg-primary/10 text-xs"
               >
-                Ver todos
+                Ver todos <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -210,8 +214,8 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
         {/* Recent Activity */}
         <div>
           <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">Actividad Reciente</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-foreground text-base">Actividad Reciente</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {recentActivity.length === 0 ? (
@@ -221,18 +225,18 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
                   <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-secondary transition-colors">
                     <div className="flex-shrink-0">
                       {activity.type === 'project_completed' && (
-                        <div className="bg-primary p-2 rounded-full">
-                          <CheckCircle className="h-4 w-4 text-primary-foreground" />
+                        <div className="bg-primary/20 p-2 rounded-lg">
+                          <CheckCircle className="h-4 w-4 text-primary" />
                         </div>
                       )}
                       {activity.type === 'new_message' && (
-                        <div className="bg-blue-600 p-2 rounded-full">
-                          <MessageSquare className="h-4 w-4 text-white" />
+                        <div className="bg-blue-600/20 p-2 rounded-lg">
+                          <MessageSquare className="h-4 w-4 text-blue-400" />
                         </div>
                       )}
                       {(activity.type === 'profile_view' || activity.type === 'application') && (
-                        <div className="bg-purple-600 p-2 rounded-full">
-                          <Eye className="h-4 w-4 text-white" />
+                        <div className="bg-purple-600/20 p-2 rounded-lg">
+                          <Eye className="h-4 w-4 text-purple-400" />
                         </div>
                       )}
                     </div>
@@ -264,44 +268,45 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
 
       {/* Quick Actions */}
       <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">Acciones Rápidas</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-foreground text-base">Acciones Rápidas</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Button
               onClick={() => onSectionChange('profile')}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 p-6 h-auto flex-col space-y-2"
+              className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border border-primary/20 h-auto flex-col gap-2 py-4"
+              variant="ghost"
             >
-              <User className="h-6 w-6" />
-              <span>Actualizar Perfil</span>
+              <User className="h-5 w-5" />
+              <span className="text-xs font-medium">Mi Perfil</span>
             </Button>
 
             <Button
               onClick={() => onSectionChange('portfolio')}
-              variant="outline"
-              className="border-border text-foreground hover:bg-secondary p-6 h-auto flex-col space-y-2"
+              variant="ghost"
+              className="border border-border text-foreground hover:bg-accent h-auto flex-col gap-2 py-4"
             >
-              <FolderOpen className="h-6 w-6" />
-              <span>Gestionar Portafolio</span>
+              <FolderOpen className="h-5 w-5" />
+              <span className="text-xs font-medium">Portafolio</span>
             </Button>
 
             <Button
               onClick={() => onSectionChange('projects')}
-              variant="outline"
-              className="border-border text-foreground hover:bg-secondary p-6 h-auto flex-col space-y-2"
+              variant="ghost"
+              className="border border-border text-foreground hover:bg-accent h-auto flex-col gap-2 py-4"
             >
-              <Search className="h-6 w-6" />
-              <span>Buscar Proyectos</span>
+              <Search className="h-5 w-5" />
+              <span className="text-xs font-medium">Explorar Proyectos</span>
             </Button>
 
             <Button
               onClick={() => onSectionChange('chat')}
-              variant="outline"
-              className="border-border text-foreground hover:bg-secondary p-6 h-auto flex-col space-y-2"
+              variant="ghost"
+              className="border border-border text-foreground hover:bg-accent h-auto flex-col gap-2 py-4"
             >
-              <MessageSquare className="h-6 w-6" />
-              <span>Revisar Mensajes</span>
+              <MessageSquare className="h-5 w-5" />
+              <span className="text-xs font-medium">Mensajes</span>
             </Button>
           </div>
         </CardContent>

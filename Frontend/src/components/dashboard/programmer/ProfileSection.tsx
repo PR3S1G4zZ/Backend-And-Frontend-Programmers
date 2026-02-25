@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -256,12 +256,11 @@ export function ProfileSection() {
     }
   };
 
-  // Calculate profile completion percentage dynamically
-  const calculateProfileCompletion = () => {
+  // Memoizado para evitar recálculo en cada render
+  const profileCompletion = useMemo(() => {
     let filledFields = 0;
-    const totalFields = 12; // Total de campos a evaluar
+    const totalFields = 12;
 
-    // Basic info fields
     if (profileData.name && profileData.name.trim() !== '') filledFields++;
     if (profileData.email && profileData.email.trim() !== '') filledFields++;
     if (profileData.phone && profileData.phone.trim() !== '') filledFields++;
@@ -269,24 +268,24 @@ export function ProfileSection() {
     if (profileData.title && profileData.title.trim() !== '') filledFields++;
     if (profileData.bio && profileData.bio.trim() !== '') filledFields++;
     if (profileData.hourlyRate && profileData.hourlyRate > 0) filledFields++;
-
-    // Profile picture
     if (profileData.profile_picture && profileData.profile_picture.trim() !== '') filledFields++;
-
-    // Social links (at least one)
     if ((profileData.website && profileData.website.trim() !== '') ||
       (profileData.github && profileData.github.trim() !== '') ||
       (profileData.linkedin && profileData.linkedin.trim() !== '') ||
       (profileData.twitter && profileData.twitter.trim() !== '')) filledFields++;
-
-    // Skills (at least one)
     if (skills && skills.length > 0) filledFields++;
-
-    // Languages (at least one)
     if (languages && languages.length > 0) filledFields++;
 
     return Math.round((filledFields / totalFields) * 100);
-  };
+  }, [
+    profileData.name, profileData.email, profileData.phone, profileData.location,
+    profileData.title, profileData.bio, profileData.hourlyRate, profileData.profile_picture,
+    profileData.website, profileData.github, profileData.linkedin, profileData.twitter,
+    skills, languages
+  ]);
+
+  // Para compatibilidad con llamadas existentes
+  const calculateProfileCompletion = () => profileCompletion;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
@@ -354,30 +353,57 @@ export function ProfileSection() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        <Card className="bg-card border-border hover:border-primary/20 transition-colors">
+        <Card className={`bg-card border-border hover:border-primary/20 transition-colors ${isEditing ? 'border-yellow-500/40' : ''}`}>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Completitud del Perfil</h3>
-                <p className="text-sm text-muted-foreground">Completa tu perfil para atraer más oportunidades</p>
+            {/* Indicador "cambios sin guardar" */}
+            {isEditing && (
+              <div className="flex items-center gap-2 mb-4 text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-md px-3 py-2">
+                <Edit className="h-3 w-3" />
+                <span>Tienes cambios sin guardar. Recuerda hacer clic en <strong>Guardar Cambios</strong>.</span>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-primary">{calculateProfileCompletion()}%</div>
-                <div className="text-xs text-muted-foreground">Completado</div>
+            )}
+
+            <div className="flex items-center gap-6">
+              {/* Progress Ring SVG */}
+              <div className="relative flex-shrink-0 w-20 h-20">
+                <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="8" className="text-border" />
+                  <circle
+                    cx="40" cy="40" r="34" fill="none" strokeWidth="8"
+                    stroke={profileCompletion === 100 ? '#10b981' : profileCompletion >= 70 ? '#3b82f6' : '#f59e0b'}
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 34}`}
+                    strokeDashoffset={`${2 * Math.PI * 34 * (1 - profileCompletion / 100)}`}
+                    className="transition-all duration-700"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm font-bold text-foreground">{profileCompletion}%</span>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-foreground">Completitud del Perfil</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {profileCompletion === 100
+                    ? '¡Perfil completo! Estás listo para atraer oportunidades.'
+                    : 'Completa tu perfil para atraer más oportunidades'}
+                </p>
+                <Progress value={profileCompletion} className="h-2" />
               </div>
             </div>
-            <Progress value={calculateProfileCompletion()} className="h-3" />
 
-            {calculateProfileCompletion() < 100 && (
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>Para completar tu perfil:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  {!profileData.title && <li>Añade un título profesional</li>}
-                  {!profileData.bio && <li>Escribe una biografía profesional</li>}
-                  {!profileData.profile_picture && <li>Sube una foto de perfil profesional</li>}
-                  {skills.length === 0 && <li>Añade habilidades técnicas</li>}
-                  {languages.length === 0 && <li>Agrega tus idiomas</li>}
-                  {!profileData.website && !profileData.github && !profileData.linkedin && <li>Agrega enlaces a tus redes profesionales</li>}
+            {profileCompletion < 100 && (
+              <div className="mt-4 text-sm text-muted-foreground border-t border-border pt-3">
+                <p className="font-medium mb-2">Para completar tu perfil:</p>
+                <ul className="space-y-1">
+                  {!profileData.title && <li className="flex items-center gap-1.5 text-yellow-400/80"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />Añade un título profesional</li>}
+                  {!profileData.bio && <li className="flex items-center gap-1.5 text-yellow-400/80"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />Escribe una biografía</li>}
+                  {!profileData.profile_picture && <li className="flex items-center gap-1.5 text-yellow-400/80"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />Sube una foto de perfil</li>}
+                  {skills.length === 0 && <li className="flex items-center gap-1.5 text-yellow-400/80"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />Añade habilidades técnicas</li>}
+                  {languages.length === 0 && <li className="flex items-center gap-1.5 text-yellow-400/80"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />Agrega tus idiomas</li>}
+                  {!profileData.website && !profileData.github && !profileData.linkedin && <li className="flex items-center gap-1.5 text-yellow-400/80"><span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />Agrega redes profesionales</li>}
                 </ul>
               </div>
             )}

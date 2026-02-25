@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, Settings as SettingsIcon } from 'lucide-react';
+import { WalletProvider } from '../contexts/WalletContext';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { Sidebar } from './Sidebar';
 import { WelcomeSection } from './dashboard/programmer/WelcomeSection';
 import { PortfolioSection } from './dashboard/programmer/PortfolioSection';
@@ -109,45 +112,60 @@ export function ProgrammerDashboard({ onLogout }: ProgrammerDashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <Sidebar
-        userType="programmer"
-        currentSection={currentSection}
-        onSectionChange={setCurrentSection}
-        onLogout={handleLogout}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        user={user}
-      />
-      <div className="flex-1 overflow-auto">
-        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
-          <button
-            type="button"
-            onClick={() => setIsSidebarOpen(true)}
-            className="rounded-md border border-[#333333] p-2 text-white hover:bg-[#1A1A1A]"
-            aria-label="Abrir menú"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div>
-            <p className="text-sm text-gray-400">Panel de desarrollador</p>
-            <p className="text-base font-semibold text-white">{sectionLabels[currentSection] || 'Mi Espacio'}</p>
+    <WalletProvider>
+      <div className="flex h-screen bg-background text-foreground">
+        <Sidebar
+          userType="programmer"
+          currentSection={currentSection}
+          onSectionChange={setCurrentSection}
+          onLogout={handleLogout}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          user={user}
+        />
+        <div className="flex-1 overflow-auto">
+          <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="rounded-md border border-[#333333] p-2 text-white hover:bg-[#1A1A1A]"
+              aria-label="Abrir menú"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div>
+              <p className="text-sm text-gray-400">Panel de desarrollador</p>
+              <p className="text-base font-semibold text-white">{sectionLabels[currentSection] || 'Mi Espacio'}</p>
+            </div>
           </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSection}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="h-full"
+            >
+              <ErrorBoundary sectionName={sectionLabels[currentSection] || currentSection}>
+                {renderSection()}
+              </ErrorBoundary>
+            </motion.div>
+          </AnimatePresence>
         </div>
-        {renderSection()}
+        <ConfirmDialog
+          cancelText="Cancelar"
+          confirmText="Sí, cerrar sesión"
+          description="¿Estás seguro de que quieres cerrar tu sesión?"
+          isOpen={isLogoutDialogOpen}
+          onCancel={() => setIsLogoutDialogOpen(false)}
+          onConfirm={() => {
+            setIsLogoutDialogOpen(false);
+            onLogout?.();
+          }}
+          title="¿Cerrar Sesión?"
+        />
       </div>
-      <ConfirmDialog
-        cancelText="Cancelar"
-        confirmText="Sí, cerrar sesión"
-        description="¿Estás seguro de que quieres cerrar tu sesión?"
-        isOpen={isLogoutDialogOpen}
-        onCancel={() => setIsLogoutDialogOpen(false)}
-        onConfirm={() => {
-          setIsLogoutDialogOpen(false);
-          onLogout?.();
-        }}
-        title="¿Cerrar Sesión?"
-      />
-    </div>
+    </WalletProvider>
   );
 }

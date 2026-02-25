@@ -13,7 +13,8 @@ use App\Http\Controllers\{
     PaymentMethodController,
     WalletController,
     FavoriteController,
-    ReviewController
+    ReviewController,
+    BackupController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -139,6 +140,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/system/settings', [\App\Http\Controllers\SettingsController::class, 'getSystemSettings']);
         Route::put('/system/settings', [\App\Http\Controllers\SettingsController::class, 'updateSystemSettings']);
         Route::get('/system/logs', [\App\Http\Controllers\SettingsController::class, 'getActivityLogs']);
+
+        // Database Backups
+        Route::prefix('backups')->group(function () {
+            Route::get('/', [BackupController::class, 'index']);
+            Route::post('/create', [BackupController::class, 'create']);
+            Route::post('/restore', [BackupController::class, 'restore']);
+            Route::get('/download/{filename}', [BackupController::class, 'download']);
+        });
     });
 
     // Milestones

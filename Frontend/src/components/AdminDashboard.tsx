@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { Sidebar } from './Sidebar';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { ActivityDashboard } from './dashboard/components/admin/ActivityDashboard';
@@ -9,11 +11,13 @@ import { ProjectsManagement } from './dashboard/components/admin/ProjectsManagem
 import { SatisfactionDashboard } from './dashboard/components/admin/SatisfactionDashboard';
 import { UserManagement } from './dashboard/components/UserManagement';
 import { AdminSettings } from './dashboard/components/admin/AdminSettings';
-import { Card, CardContent, CardHeader, CardTitle } from './dashboard/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './dashboard/components/ui/tabs';
-import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield, Menu } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield, Menu, Download } from 'lucide-react';
 import { fetchAdminMetrics, type AdminMetrics, type KPI } from '../services/adminMetricsService';
 import { useAuth } from '../contexts/AuthContext';
+import jsPDF from 'jspdf';
+import domtoimage from 'dom-to-image-more';
 
 interface AdminDashboardProps {
   onLogout?: () => void;
@@ -28,6 +32,9 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const { user } = useAuth();
 
@@ -92,6 +99,46 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const handleLogout = () => {
     setIsLogoutDialogOpen(true);
+  };
+
+  const downloadPDF = async () => {
+    if (!mainContentRef.current) return;
+
+    try {
+      setIsGeneratingPdf(true);
+
+      const element = mainContentRef.current;
+      const scale = 2;
+      const style = {
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        width: `${element.offsetWidth}px`,
+        height: `${element.offsetHeight}px`
+      };
+
+      const dataUrl = await domtoimage.toPng(element, {
+        height: element.offsetHeight * scale,
+        width: element.offsetWidth * scale,
+        style,
+        bgcolor: '#000000'
+      });
+
+      const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+
+      pdf.text(`Reporte - ${sectionLabels[currentSection] || 'Dashboard'}`, 20, 30);
+      pdf.setFontSize(10);
+      pdf.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 20, 45);
+
+      pdf.addImage(dataUrl, 'PNG', 20, 60, pdfWidth - 40, pdfHeight - 40);
+      pdf.save(`reporte-${currentSection}.pdf`);
+
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const renderSection = () => {
@@ -270,7 +317,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         user={user}
       />
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto relative" ref={mainContentRef}>
         {/* Mobile header */}
         <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-4 py-3 md:hidden">
           <button
@@ -287,7 +334,32 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           </div>
         </div>
 
-        {renderSection()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentSection}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            <ErrorBoundary sectionName={sectionLabels[currentSection] || currentSection}>
+              {renderSection()}
+            </ErrorBoundary>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Global PDF Export Button */}
+        <button
+          onClick={downloadPDF}
+          disabled={isGeneratingPdf}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all disabled:opacity-50"
+          title="Descargar Reporte PDF de esta sección"
+        >
+          <Download className="w-5 h-5" />
+          <span className="hidden md:inline font-medium">
+            {isGeneratingPdf ? 'Generando...' : 'Exportar a PDF'}
+          </span>
+        </button>
       </div>
 
       <ConfirmDialog

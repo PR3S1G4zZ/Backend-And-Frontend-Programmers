@@ -267,7 +267,7 @@ export function MilestoneTimeline({ projectId, refreshTrigger, onUpdate, userTyp
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-800">
                                         {/* Developer Actions */}
-                                        {userType === 'programmer' && milestone.progress_status !== 'completed' && milestone.progress_status !== 'review' && (
+                                        {userType === 'programmer' && milestone.progress_status === 'in_progress' && (
                                             <Button
                                                 size="sm"
                                                 variant="outline"

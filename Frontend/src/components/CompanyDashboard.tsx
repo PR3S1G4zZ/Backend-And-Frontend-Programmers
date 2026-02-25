@@ -1,3 +1,4 @@
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { WalletBalance } from './dashboard/wallet/WalletBalance';
 import { TransactionHistory } from './dashboard/wallet/TransactionHistory';
 import { WalletRecharge } from './dashboard/wallet/WalletRecharge';
@@ -5,6 +6,7 @@ import { WalletProvider } from '../contexts/WalletContext';
 
 // ... (existing imports)
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { WelcomeSection } from './dashboard/company/WelcomeSection';
@@ -27,7 +29,7 @@ interface CompanyDashboardProps {
 }
 
 export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
-  const [currentSection, setCurrentSection] = useState(() => { 
+  const [currentSection, setCurrentSection] = useState(() => {
     return localStorage.getItem('company_dashboard_section') || 'welcome';
   });
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -214,7 +216,20 @@ export function CompanyDashboard({ onLogout }: CompanyDashboardProps) {
               <p className="text-base font-semibold text-foreground">{sectionLabels[currentSection] || 'Dashboard'}</p>
             </div>
           </div>
-          {renderSection()}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSection}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="h-full"
+            >
+              <ErrorBoundary sectionName={sectionLabels[currentSection] || currentSection}>
+                {renderSection()}
+              </ErrorBoundary>
+            </motion.div>
+          </AnimatePresence>
         </div>
         <ConfirmDialog
           cancelText="Cancelar"

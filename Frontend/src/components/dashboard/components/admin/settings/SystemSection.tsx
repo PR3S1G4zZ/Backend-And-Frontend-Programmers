@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '../../../../../services/apiClient';
-import { Activity, Power, Search, Filter, FileText } from 'lucide-react';
+import { Activity, Power, Search, Filter, FileText, Database, Download, AlertTriangle } from 'lucide-react';
 import { cn } from '../../../../../components/ui/utils';
+import { useTheme } from '../../../../../contexts/ThemeContext';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
@@ -22,6 +23,11 @@ interface Log {
 }
 
 export function SystemSection() {
+    const { accentColor } = useTheme();
+    const [lastBackup, setLastBackup] = useState<any>(null);
+    const [isBackingUp, setIsBackingUp] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
+
     const [logs, setLogs] = useState<Log[]>([]);
     const [maintenanceMode, setMaintenanceMode] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -54,9 +60,10 @@ export function SystemSection() {
                 searchParams.append('search', debouncedSearch);
             }
 
-            const [logsRes, settingsRes] = await Promise.all([
+            const [logsRes, settingsRes, backupsRes] = await Promise.all([
                 apiRequest<any>(`/admin/system/logs?${searchParams.toString()}`),
-                apiRequest<any>('/admin/system/settings')
+                apiRequest<any>('/admin/system/settings'),
+                apiRequest<any>('/admin/backups')
             ]);
 
             if (logsRes.success) {
@@ -70,6 +77,10 @@ export function SystemSection() {
                     flatSettings[s.key] = s.value;
                 });
                 setMaintenanceMode(flatSettings.maintenance_mode === 'true');
+            }
+
+            if (backupsRes.success) {
+                setLastBackup(backupsRes.last_backup);
             }
         } catch (error) {
             console.error('Error fetching system data:', error);
@@ -88,11 +99,11 @@ export function SystemSection() {
                 : "La plataforma volverá a estar accesible para todos.",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: newValue ? 'hsl(var(--destructive))' : 'hsl(var(--primary))',
-            cancelButtonColor: 'hsl(var(--primary))',
+            confirmButtonColor: newValue ? '#ef4444' : accentColor,
+            cancelButtonColor: newValue ? accentColor : '#6b7280',
             confirmButtonText: newValue ? 'Sí, activar' : 'Sí, desactivar',
-            background: 'hsl(var(--card))',
-            color: 'hsl(var(--foreground))'
+            background: 'var(--card)',
+            color: 'var(--foreground)'
         });
 
         if (result.isConfirmed) {
@@ -114,14 +125,162 @@ export function SystemSection() {
                     position: 'top-end',
                     showConfirmButton: false,
                     timer: 3000,
-                    background: 'hsl(var(--card))',
-                    color: 'hsl(var(--foreground))'
+                    background: 'var(--card)',
+                    color: 'var(--foreground)'
                 });
             } catch (error) {
                 console.error('Error updating maintenance mode:', error);
             } finally {
                 setSaving(false);
             }
+        }
+    };
+
+    const handleDownloadBackup = async (filename: string) => {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+            const response = await fetch(`${baseUrl}/admin/backups/download/${filename}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Fallo al descargar');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error downloading backup:', error);
+            MySwal.fire({
+                title: 'Error de Descarga',
+                text: 'Hubo un problema al descargar el respaldo.',
+                icon: 'error',
+                background: 'var(--card)',
+                color: 'var(--foreground)'
+            });
+        }
+    };
+
+    const handleCreateBackup = async () => {
+        setIsBackingUp(true);
+        try {
+            const res = await apiRequest<any>('/admin/backups/create', { method: 'POST' });
+            if (res.success) {
+                MySwal.fire({
+                    title: 'Respaldo Completado',
+                    text: 'Se ha generado un nuevo respaldo de la base de datos. La descarga iniciará en unos segundos.',
+                    icon: 'success',
+                    background: 'var(--card)',
+                    color: 'var(--foreground)'
+                });
+                fetchData();
+
+                if (res.filename) {
+                    handleDownloadBackup(res.filename);
+                }
+            }
+        } catch (error) {
+            console.error('Error creating backup:', error);
+            MySwal.fire({
+                title: 'Error',
+                text: 'Hubo un problema al generar el respaldo.',
+                icon: 'error',
+                background: 'var(--card)',
+                color: 'var(--foreground)'
+            });
+        } finally {
+            setIsBackingUp(false);
+        }
+    };
+
+    const handleRestoreBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const result = await MySwal.fire({
+            title: '¿Restaurar Base de Datos?',
+            html: `
+                <div class="text-left">
+                    <p class="mb-4 text-red-500 font-bold flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        ¡ADVERTENCIA CRÍTICA!
+                    </p>
+                    <p>Vas a restaurar el archivo <strong>${file.name}</strong>.</p>
+                    <p class="mt-2 text-sm text-muted-foreground">Todos los datos actuales serán REEMPLAZADOS por los del respaldo. Los cambios realizados desde ese respado se perderán para siempre.</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: accentColor,
+            confirmButtonText: 'Sí, estoy absolutamente seguro',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--card)',
+            color: 'var(--foreground)'
+        });
+
+        if (result.isConfirmed) {
+            setIsRestoring(true);
+            try {
+                const formData = new FormData();
+                formData.append('backup_file', file);
+
+                const token = localStorage.getItem('auth_token');
+                const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+                const res = await fetch(`${baseUrl}/admin/backups/restore`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    MySwal.fire({
+                        title: 'Restauración Exitosa',
+                        text: 'La base de datos ha sido restaurada correctamente.',
+                        icon: 'success',
+                        background: 'var(--card)',
+                        color: 'var(--foreground)'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message || 'Error desconocido');
+                }
+            } catch (error: any) {
+                console.error('Error restoring backup:', error);
+                MySwal.fire({
+                    title: 'Error de Restauración',
+                    text: error.message || 'Hubo un problema al restaurar el respaldo.',
+                    icon: 'error',
+                    background: 'var(--card)',
+                    color: 'var(--foreground)'
+                });
+            } finally {
+                setIsRestoring(false);
+                event.target.value = '';
+            }
+        } else {
+            event.target.value = '';
         }
     };
 
@@ -163,6 +322,71 @@ export function SystemSection() {
                     >
                         {maintenanceMode ? 'Desactivar Mantenimiento' : 'Activar Mantenimiento'}
                     </button>
+                </div>
+            </div>
+
+            {/* Backups Management */}
+            <div className="bg-card p-6 rounded-xl border border-border">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center bg-blue-500/10 text-blue-500">
+                            <Database className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                                Gestión de Respaldos
+                                {lastBackup && (
+                                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                        Último: {new Date(lastBackup.date).toLocaleDateString()}
+                                    </span>
+                                )}</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Crea o restaura copias de seguridad de la base de datos completa.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* Download Last Backup */}
+                        {lastBackup && (
+                            <button
+                                onClick={() => handleDownloadBackup(lastBackup.name)}
+                                className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-sm font-medium"
+                                title="Descargar último respaldo"
+                            >
+                                <Download className="w-4 h-4" />
+                                {lastBackup.name}
+                            </button>
+                        )}
+
+                        {/* Create Backup */}
+                        <button
+                            onClick={handleCreateBackup}
+                            disabled={isBackingUp || isRestoring}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-bold disabled:opacity-50"
+                        >
+                            <Database className="w-4 h-4" />
+                            {isBackingUp ? 'Generando...' : 'Generar Respaldo'}
+                        </button>
+
+                        {/* Upload & Restore */}
+                        <div className="relative">
+                            <input
+                                type="file"
+                                accept=".sql"
+                                onChange={handleRestoreBackup}
+                                disabled={isRestoring || isBackingUp}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                title="Subir archivo .sql para restaurar"
+                            />
+                            <button
+                                disabled={isRestoring || isBackingUp}
+                                className="flex items-center gap-2 px-4 py-2 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg hover:bg-destructive hover:text-destructive-foreground transition-colors text-sm font-bold disabled:opacity-50"
+                            >
+                                <AlertTriangle className="w-4 h-4" />
+                                {isRestoring ? 'Restaurando...' : 'Restaurar Archivo'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
