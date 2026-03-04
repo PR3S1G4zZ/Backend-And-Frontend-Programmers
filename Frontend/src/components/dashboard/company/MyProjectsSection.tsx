@@ -89,8 +89,7 @@ const mapProject = (project: ProjectResponse): Project => {
     progress = 100;
   } else if (project.milestones_count && project.milestones_count > 0) {
     progress = Math.round((project.completed_milestones_count || 0) / project.milestones_count * 100);
-  } else if (status === 'in_progress') {
-    // Fallback if no milestones but in progress (e.g. just started or legacy)
+  } else {
     progress = 0;
   }
 

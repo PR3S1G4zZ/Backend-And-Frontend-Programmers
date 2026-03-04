@@ -37,7 +37,10 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
             if (userType === 'company' && selectedDeveloperId === null && data.applications) {
                 const acceptedApps = data.applications.filter((app: any) => app.status === 'accepted');
                 if (acceptedApps.length > 0) {
-                    setSelectedDeveloperId(acceptedApps[0].developer_id);
+                    const firstDevId = Number(acceptedApps[0].developer_id);
+                    if (!isNaN(firstDevId)) {
+                        setSelectedDeveloperId(firstDevId);
+                    }
                 }
             }
         } catch (error) {
@@ -185,9 +188,10 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                 <div className="flex items-center gap-2 mb-4 text-sm font-semibold text-muted-foreground">
                     <Clock className="h-4 w-4" />
                     Línea de Tiempo del Proyecto
+                    <span className="ml-4 text-[10px] font-normal opacity-50">Debug: pId:{projectId} devId:{selectedDeveloperId} MT:{typeof MilestoneTimeline} KB:{typeof KanbanBoard}</span>
                 </div>
                 {/* Only render if we have a developer selected (for company) or if it's a programmer */}
-                {(userType === 'programmer' || selectedDeveloperId) && (
+                {Boolean(userType === 'programmer' || userType === 'company') && (
                     <MilestoneTimeline
                         projectId={projectId}
                         refreshTrigger={refreshTrigger}
@@ -208,7 +212,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                 </div>
 
                 <div className="flex-1 mt-4 min-h-0 overflow-x-auto">
-                    {(userType === 'programmer' || selectedDeveloperId) && (
+                    {Boolean(userType === 'programmer' || selectedDeveloperId) && (
                         <KanbanBoard
                             projectId={projectId}
                             refreshTrigger={refreshTrigger}
