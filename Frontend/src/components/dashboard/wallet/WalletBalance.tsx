@@ -1,7 +1,4 @@
-import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { fetchWallet } from '../../../services/walletService';
-import type { WalletResponse } from '../../../services/walletService';
 import { Wallet, RefreshCw } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { useWallet } from '../../../contexts/WalletContext';

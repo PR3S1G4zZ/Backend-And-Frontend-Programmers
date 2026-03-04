@@ -74,6 +74,25 @@ class DeveloperController extends Controller
             })
             ->count();
 
+        // Get completed projects details
+        $completedProjectsList = $developer->applications()
+            ->whereHas('project', function ($builder) {
+                $builder->where('status', 'completed');
+            })
+            ->with(['project', 'project.company'])
+            ->get()
+            ->map(function ($application) {
+                return [
+                    'id' => $application->project->id,
+                    'title' => $application->project->title,
+                    'description' => $application->project->description,
+                    'budget_min' => $application->project->budget_min,
+                    'budget_max' => $application->project->budget_max,
+                    'company_name' => $application->project->company->name ?? 'Empresa',
+                    'completed_at' => $application->project->updated_at->format('Y-m-d'),
+                ];
+            });
+
         $data = [
             'id' => (string) $developer->id,
             'name' => $developer->name . ' ' . $developer->lastname,
@@ -84,6 +103,7 @@ class DeveloperController extends Controller
             'rating' => round($developer->reviews_received_avg_rating ?? 0, 1),
             'reviewsCount' => $developer->reviews_received_count ?? 0,
             'completedProjects' => $completedProjects,
+            'completedProjectsList' => $completedProjectsList,
             'availability' => $profile?->availability ?? 'available',
             'skills' => $profile?->skills ?? [],
             'experience' => $profile?->experience_years ?? null, // Note: The frontend expects array of objects for experience? logic in ProfileSection suggests so. Let's check ProfileSection again or the Model.
@@ -103,6 +123,46 @@ class DeveloperController extends Controller
         return response()->json([
             'success' => true,
             'data' => $data,
+        ]);
+    }
+
+    /**
+     * Obtener los proyectos completados del desarrollador autenticado
+     */
+    public function myCompletedProjects(Request $request): JsonResponse
+    {
+        $developer = $request->user();
+        
+        if ($developer->user_type !== 'programmer') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo los desarrolladores pueden ver sus proyectos completados'
+            ], 403);
+        }
+
+        $completedProjects = $developer->applications()
+            ->whereHas('project', function ($builder) {
+                $builder->where('status', 'completed');
+            })
+            ->with(['project', 'project.company'])
+            ->get()
+            ->map(function ($application) {
+                return [
+                    'id' => $application->project->id,
+                    'title' => $application->project->title,
+                    'description' => $application->project->description,
+                    'budget_min' => $application->project->budget_min,
+                    'budget_max' => $application->project->budget_max,
+                    'company_name' => $application->project->company->name ?? 'Empresa',
+                    'company_id' => $application->project->company_id,
+                    'completed_at' => $application->project->updated_at->format('Y-m-d'),
+                    'created_at' => $application->project->created_at->format('Y-m-d'),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $completedProjects,
         ]);
     }
 }

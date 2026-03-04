@@ -44,6 +44,10 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
       }
     };
     loadDashboard();
+
+    // Auto-refresh cada 30 segundos
+    const intervalId = setInterval(loadDashboard, 30000);
+    return () => clearInterval(intervalId);
   }, []);
 
   if (loading) {

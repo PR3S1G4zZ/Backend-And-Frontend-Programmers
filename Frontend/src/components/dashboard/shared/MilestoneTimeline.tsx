@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
-import { CheckCircle2, Circle, Clock, AlertCircle, Upload, ThumbsUp, ThumbsDown, Plus, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, AlertCircle, Upload, ThumbsUp, ThumbsDown, Plus, ChevronRight, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import apiClient from '../../../services/apiClient';
 import {
@@ -36,9 +36,10 @@ interface MilestoneTimelineProps {
     refreshTrigger?: number;
     onUpdate?: () => void;
     userType: 'programmer' | 'company';
+    developerId?: number | null;
 }
 
-export function MilestoneTimeline({ projectId, refreshTrigger, onUpdate, userType }: MilestoneTimelineProps) {
+export function MilestoneTimeline({ projectId, refreshTrigger, userType, developerId }: MilestoneTimelineProps) {
     const [milestones, setMilestones] = useState<Milestone[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -55,9 +56,9 @@ export function MilestoneTimeline({ projectId, refreshTrigger, onUpdate, userTyp
         projectId,
         onUpdate: () => {
             fetchMilestones();
-            onUpdate?.();
         },
-        userType
+        userType,
+        developerId
     });
 
     // Create Milestone State
@@ -76,7 +77,10 @@ export function MilestoneTimeline({ projectId, refreshTrigger, onUpdate, userTyp
         // Only show full loader if we have no data yet
         if (milestones.length === 0) setLoading(true);
         try {
-            const response = await apiClient.get<Milestone[]>(`/projects/${projectId}/milestones`);
+            const url = userType === 'company' && developerId
+                ? `/projects/${projectId}/milestones?developer_id=${developerId}`
+                : `/projects/${projectId}/milestones`;
+            const response = await apiClient.get<Milestone[]>(url);
             const data = Array.isArray(response) ? response : (response as any).data || [];
             setMilestones(data);
         } catch (error) {
@@ -113,7 +117,6 @@ export function MilestoneTimeline({ projectId, refreshTrigger, onUpdate, userTyp
             setIsCreateDialogOpen(false);
             setNewMilestone({ title: '', description: '', amount: '', due_date: '' });
             fetchMilestones();
-            onUpdate?.();
         } catch (error: any) {
             console.error(error);
             Swal.fire({
@@ -153,14 +156,25 @@ export function MilestoneTimeline({ projectId, refreshTrigger, onUpdate, userTyp
     return (
         <div className="relative py-4 px-2">
             {/* Header / Create Button */}
-            {userType === 'company' && (
-                <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-lg font-semibold text-gray-200">Hitos del Proyecto</h3>
-                    <Button size="sm" onClick={() => setIsCreateDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-white shadow-md transition-all hover:scale-105">
-                        <Plus className="h-4 w-4 mr-2" /> Nuevo Hito
+            <div className="flex justify-between items-center mb-8">
+                <h3 className="text-lg font-semibold text-gray-200">Línea de Tiempo</h3>
+                <div className="flex gap-2">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={fetchMilestones}
+                        className="border-border text-muted-foreground hover:text-foreground hover:bg-accent h-9"
+                        title="Recargar hitos"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                     </Button>
+                    {userType === 'company' && (
+                        <Button size="sm" onClick={() => setIsCreateDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-white shadow-md transition-all hover:scale-105 h-9">
+                            <Plus className="h-4 w-4 mr-2" /> Nuevo Hito
+                        </Button>
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* Dialog for Creating Milestone */}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

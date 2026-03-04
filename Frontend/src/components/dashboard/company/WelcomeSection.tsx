@@ -52,6 +52,10 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
     };
 
     fetchData();
+
+    // Auto-refresh cada 30 segundos
+    const intervalId = setInterval(fetchData, 30000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Calculate metrics from real data
@@ -133,7 +137,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
 
     return {
       title: project.title,
-      developer: project.applications?.find(a => a.developer)?.developer.name || 'Sin asignar',
+      developer: Array.isArray(project.applications) && project.applications.find(a => a.developer)?.developer.name || 'Sin asignar',
       progress,
       deadline: project.deadline ? new Date(project.deadline).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin deadline',
       budget: project.budget_min && project.budget_max

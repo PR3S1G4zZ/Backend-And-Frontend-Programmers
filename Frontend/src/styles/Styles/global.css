@@ -207,6 +207,13 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Chart Colors for Better Visibility */
+  --color-chart-1: var(--primary);
+  --color-chart-2: #10b981; /* Emerald 500 */
+  --color-chart-3: #3b82f6; /* Blue 500 */
+  --color-chart-4: #f59e0b; /* Amber 500 */
+  --color-chart-5: #ef4444; /* Red 500 */
+
   /* Programmers Brand Colors Mapped */
   --color-programmers-black: var(--programmers-black);
   --color-programmers-charcoal: var(--programmers-charcoal);

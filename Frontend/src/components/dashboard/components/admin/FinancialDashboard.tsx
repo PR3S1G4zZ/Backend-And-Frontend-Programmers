@@ -19,64 +19,6 @@ interface FinancialDashboardProps {
   isLoading?: boolean;
 }
 
-// Revenue sources data - remains relatively stable
-const revenueSourcesData = [
-  { name: "Comisión por Proyecto", value: 65, amount: 59800, color: "#00FF85" }, // Neon green
-  { name: "Suscripciones Premium", value: 25, amount: 23000, color: "#059669" }, // Emerald green
-  { name: "Publicidad", value: 7, amount: 6440, color: "#3B82F6" },            // Blue
-  { name: "Servicios Adicionales", value: 3, amount: 2760, color: "#8B5CF6" }    // Purple
-];
-
-// Removed unused `chartColors`
-
-const recentTransactions = [
-  {
-    id: "TXN001",
-    type: "Comisión",
-    description: "Proyecto E-commerce Platform",
-    amount: 250,
-    client: "TechCorp Inc.",
-    date: "2024-01-08",
-    status: "Completado"
-  },
-  {
-    id: "TXN002",
-    type: "Suscripción",
-    description: "Plan Premium - StartupXYZ",
-    amount: 99,
-    client: "StartupXYZ",
-    date: "2024-01-08",
-    status: "Completado"
-  },
-  {
-    id: "TXN003",
-    type: "Comisión",
-    description: "Mobile App iOS",
-    amount: 160,
-    client: "AppMakers Ltd",
-    date: "2024-01-07",
-    status: "Pendiente"
-  },
-  {
-    id: "TXN004",
-    type: "Publicidad",
-    description: "Banner Homepage - Q1",
-    amount: 500,
-    client: "AdTech Solutions",
-    date: "2024-01-07",
-    status: "Completado"
-  },
-  {
-    id: "TXN005",
-    type: "Comisión",
-    description: "Landing Page Design",
-    amount: 75,
-    client: "Marketing Pro",
-    date: "2024-01-06",
-    status: "Completado"
-  }
-];
-
 const getTransactionBadge = (status: string) => {
   switch (status) {
     case "Completado":
@@ -109,8 +51,8 @@ export function FinancialDashboard({ selectedPeriod, metrics, isLoading = false 
 
   const timeSeriesData = metrics?.timeSeries ?? [];
   const kpiData = metrics?.kpis ?? [];
-  const revenueSources = metrics?.revenueSources ?? revenueSourcesData;
-  const transactions = metrics?.recentTransactions ?? recentTransactions;
+  const revenueSources = metrics?.revenueSources ?? [];
+  const transactions = metrics?.recentTransactions ?? [];
 
   // Transform time series data for revenue chart
   const revenueData = timeSeriesData.map((item: TimeSeriesPoint) => ({
@@ -190,15 +132,17 @@ export function FinancialDashboard({ selectedPeriod, metrics, isLoading = false 
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'var(--color-card)',
-                      border: '1px solid var(--color-border)',
+                      backgroundColor: 'var(--card)',
+                      border: '1px solid var(--border)',
                       borderRadius: '8px',
-                      color: 'var(--color-foreground)',
+                      color: 'var(--foreground)',
                       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                     }}
+                    itemStyle={{ color: "var(--foreground)" }}
+                    labelStyle={{ color: "var(--foreground)" }}
                     formatter={(value, name) => {
                       const numericValue = typeof value === "number" ? value : Number(value ?? 0);
-                      const source = revenueSourcesData.find((item) => item.name === name);
+                      const source = revenueSources.find((item) => item.name === name);
                       const amountLabel = source ? `$${source.amount.toLocaleString()}` : "$0";
                       return [`${numericValue}% (${amountLabel})`, name];
                     }}
@@ -210,49 +154,51 @@ export function FinancialDashboard({ selectedPeriod, metrics, isLoading = false 
         </div>
 
         {/* Transactions Table */}
-        <Card className="bg-card border-border/50">
-          <CardHeader>
-            <CardTitle className="text-foreground">Transacciones Recientes</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Últimas transacciones procesadas
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Monto</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Estado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.id}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getTypeIcon(transaction.type)}
-                        <span>{transaction.type}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{transaction.description}</TableCell>
-                    <TableCell>{transaction.client}</TableCell>
-                    <TableCell className="font-medium text-primary">
-                      ${Number(transaction.amount).toLocaleString()}
-                    </TableCell>
-                    <TableCell>{transaction.date}</TableCell>
-                    <TableCell>{getTransactionBadge(transaction.status)}</TableCell>
+        {transactions.length > 0 && (
+          <Card className="bg-card border-border/50">
+            <CardHeader>
+              <CardTitle className="text-foreground">Transacciones Recientes</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Últimas transacciones procesadas
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Descripción</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Monto</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Estado</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">{transaction.id}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {getTypeIcon(transaction.type)}
+                          <span>{transaction.type}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{transaction.description}</TableCell>
+                      <TableCell>{transaction.client}</TableCell>
+                      <TableCell className="font-medium text-primary">
+                        ${Number(transaction.amount).toLocaleString()}
+                      </TableCell>
+                      <TableCell>{transaction.date}</TableCell>
+                      <TableCell>{getTransactionBadge(transaction.status)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

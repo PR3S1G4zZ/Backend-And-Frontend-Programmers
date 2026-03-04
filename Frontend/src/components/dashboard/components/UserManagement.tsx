@@ -862,7 +862,7 @@ export function UserManagement() {
 
       {/* Dialog editar usuario */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="bg-card border-border text-foreground max-w-xl">
+        <DialogContent aria-describedby={undefined} className="bg-card border-border text-foreground max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-primary flex items-center gap-2">
               <Edit className="w-5 h-5" />
@@ -935,7 +935,7 @@ export function UserManagement() {
 
       {/* Dialog de detalles del usuario */}
       <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-        <DialogContent className="bg-card border-border text-foreground max-w-sm">
+        <DialogContent aria-describedby={undefined} className="bg-card border-border text-foreground max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-primary flex items-center gap-1 text-base">
               <Users className="w-4 h-4" />

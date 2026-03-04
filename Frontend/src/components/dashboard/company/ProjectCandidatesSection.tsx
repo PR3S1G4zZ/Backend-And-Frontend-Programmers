@@ -5,8 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { Badge } from '../../ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../ui/tabs';
 import { useSweetAlert } from '../../ui/sweet-alert';
-import { fetchProjectApplications, acceptApplication, rejectApplication, fetchDeveloperProfile, type ProjectResponse } from '../../../services/projectService';
-import { ArrowLeft, CheckCircle, XCircle, User, Star, MapPin, Briefcase, Eye } from 'lucide-react';
+import { fetchProjectApplications, acceptApplication, rejectApplication, fetchDeveloperProfile, startProject, type ProjectResponse } from '../../../services/projectService';
+import { ArrowLeft, CheckCircle, XCircle, User, Star, MapPin, Briefcase, Eye, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DeveloperProfileModal } from './DeveloperProfileModal';
 
@@ -16,13 +16,14 @@ interface ProjectCandidatesSectionProps {
     onSectionChange?: (section: string, data?: any) => void;
 }
 
-export function ProjectCandidatesSection({ project, onBack, onSectionChange }: ProjectCandidatesSectionProps) {
+export function ProjectCandidatesSection({ project, onBack }: ProjectCandidatesSectionProps) {
     const [candidates, setCandidates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const { showAlert, Alert } = useSweetAlert();
     const [selectedDeveloper, setSelectedDeveloper] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
+    const [isStarting, setIsStarting] = useState(false);
 
     useEffect(() => {
         loadCandidates();
@@ -96,6 +97,49 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
         });
     };
 
+    const handleStartProject = async () => {
+        const acceptedCandidates = candidates.filter(c => c.status === 'accepted');
+        if (acceptedCandidates.length === 0) {
+            showAlert({
+                title: 'No hay desarrolladores aceptados',
+                text: 'Debes aceptar al menos un desarrollador antes de iniciar el proyecto.',
+                type: 'warning'
+            });
+            return;
+        }
+
+        showAlert({
+            title: '¿Iniciar proyecto?',
+            text: `Al iniciar el proyecto, se creará un chat grupo con los ${acceptedCandidates.length} desarrollador(es) aceptado(s) y el proyecto pasará a "En Progreso".`,
+            type: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, iniciar',
+            cancelButtonText: 'Cancelar',
+            onConfirm: async () => {
+                setIsStarting(true);
+                try {
+                    await startProject(Number(project.id));
+                    showAlert({
+                        title: '¡Proyecto iniciado!',
+                        text: 'El proyecto ha sido iniciado exitosamente. Puedes ver el progreso en la sección de Mis Proyectos.',
+                        type: 'success',
+                        timer: 3000
+                    });
+                    onBack();
+                } catch (error) {
+                    console.error('Error starting project', error);
+                    showAlert({
+                        title: 'Error',
+                        text: 'Hubo un problema al iniciar el proyecto.',
+                        type: 'error'
+                    });
+                } finally {
+                    setIsStarting(false);
+                }
+            }
+        });
+    };
+
     const handleReject = (candidate: any) => {
         showAlert({
             title: '¿Rechazar candidato?',
@@ -128,6 +172,9 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
     const pendingCount = candidates.filter(c => c.status === 'pending').length;
     const acceptedCount = candidates.filter(c => c.status === 'accepted').length;
     const rejectedCount = candidates.filter(c => c.status === 'rejected').length;
+
+    // Check if project can be started
+    const canStartProject = acceptedCount > 0 && project.status !== 'in_progress';
 
     const renderCandidateList = (filtered: any[]) => {
         if (filtered.length === 0) {
@@ -249,14 +296,27 @@ export function ProjectCandidatesSection({ project, onBack, onSectionChange }: P
     return (
         <div className="space-y-6 p-4 sm:p-6">
             {/* Header */}
-            <div className="flex items-center space-x-4">
-                <Button variant="ghost" onClick={onBack} className="text-gray-400 hover:text-white">
-                    <ArrowLeft className="h-6 w-6" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold text-white">Candidatos para {project.title}</h1>
-                    <p className="text-gray-400">Revisa y selecciona al mejor talento para tu proyecto</p>
+            <div className="flex items-center justify-between space-x-4">
+                <div className="flex items-center space-x-4">
+                    <Button variant="ghost" onClick={onBack} className="text-gray-400 hover:text-white">
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">Candidatos para {project.title}</h1>
+                        <p className="text-gray-400">Revisa y selecciona al mejor talento para tu proyecto</p>
+                    </div>
                 </div>
+
+                {canStartProject && (
+                    <Button
+                        className="bg-green-600 text-white hover:bg-green-700"
+                        onClick={handleStartProject}
+                        disabled={isStarting}
+                    >
+                        <Play className="h-4 w-4 mr-2" />
+                        {isStarting ? 'Iniciando...' : 'Iniciar Proyecto'}
+                    </Button>
+                )}
             </div>
 
             {loading ? (

@@ -10,7 +10,7 @@ const MySwal = withReactContent(Swal);
 
 export function MarketplaceSection() {
     const [settings, setSettings] = useState({
-        commission_rate: '10',
+        // commission_rate se calcula automáticamente en el backend (20% <$500, 15% >=$500)
         manual_approval: 'false',
     });
     const [categories, setCategories] = useState<Category[]>([]);
@@ -61,7 +61,7 @@ export function MarketplaceSection() {
                 method: 'PUT',
                 body: JSON.stringify({
                     settings: [
-                        { key: 'commission_rate', value: settings.commission_rate },
+                        // commission_rate ya no se configura aquí - se calcula automáticamente
                         { key: 'manual_approval', value: settings.manual_approval }
                     ]
                 })
@@ -201,20 +201,22 @@ export function MarketplaceSection() {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-sm text-muted-foreground mb-2">Comisión de la Plataforma (%)</label>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                value={settings.commission_rate}
-                                onChange={(e) => setSettings({ ...settings, commission_rate: e.target.value })}
-                                className="w-full bg-background border border-border rounded-lg p-3 text-foreground focus:border-primary outline-none pl-10"
-                                min="0"
-                                max="100"
-                            />
-                            <Percent className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                        <label className="block text-sm text-muted-foreground mb-2">Tasas de Comisión de la Plataforma</label>
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm">Proyectos menores a $500</span>
+                                <span className="font-bold text-green-500">20%</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm">Proyectos de $500 o más</span>
+                                <span className="font-bold text-green-500">15%</span>
+                            </div>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Porcentaje retenido por cada proyecto completado.</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Las tasas se calculan automáticamente según el monto del proyecto.
+                            Consulta el dashboard de Comisiones para ver los ingresos.
+                        </p>
                     </div>
 
                     <div>

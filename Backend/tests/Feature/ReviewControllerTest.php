@@ -44,12 +44,25 @@ class ReviewControllerTest extends TestCase
     {
         Sanctum::actingAs($this->developer);
 
-        // Crear reseñas para el developer
-        Review::factory()->count(5)->create([
-            'developer_id' => $this->developer->id,
-            'company_id' => $this->company->id,
-            'project_id' => $this->project->id,
-        ]);
+        // Crear reseñas para el developer (cada una con un proyecto diferente)
+        for ($i = 0; $i < 5; $i++) {
+            $project = Project::factory()->create([
+                'company_id' => $this->company->id,
+                'status' => 'completed',
+            ]);
+
+            Application::factory()->create([
+                'project_id' => $project->id,
+                'developer_id' => $this->developer->id,
+                'status' => 'accepted',
+            ]);
+
+            Review::factory()->create([
+                'developer_id' => $this->developer->id,
+                'company_id' => $this->company->id,
+                'project_id' => $project->id,
+            ]);
+        }
 
         $response = $this->getJson('/api/reviews');
 
@@ -57,32 +70,34 @@ class ReviewControllerTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
-                    '*' => [
-                        'id',
-                        'project_id',
-                        'company_id',
-                        'developer_id',
-                        'rating',
-                        'comment',
-                        'created_at',
-                        'project' => [
+                    'data' => [
+                        '*' => [
                             'id',
-                            'title',
-                        ],
-                        'company' => [
-                            'id',
-                            'name',
+                            'project_id',
+                            'company_id',
+                            'developer_id',
+                            'rating',
+                            'comment',
+                            'created_at',
+                            'project' => [
+                                'id',
+                                'title',
+                            ],
+                            'company' => [
+                                'id',
+                                'name',
+                            ],
                         ],
                     ],
+                    'current_page',
+                    'last_page',
+                    'per_page',
+                    'total',
                 ],
-                'current_page',
-                'last_page',
-                'per_page',
-                'total',
             ]);
 
         // Verificar que返回正确的评论数
-        $response->assertJsonCount(5, 'data');
+        $response->assertJsonCount(5, 'data.data');
     }
 
     /**
@@ -249,14 +264,42 @@ class ReviewControllerTest extends TestCase
     {
         $otherDeveloper = User::factory()->programmer()->create();
 
-        Review::factory()->count(3)->create([
-            'developer_id' => $this->developer->id,
+        // Crear reseñas para el developer actual (cada una con un proyecto diferente)
+        for ($i = 0; $i < 3; $i++) {
+            $project = Project::factory()->create([
+                'company_id' => $this->company->id,
+                'status' => 'completed',
+            ]);
+
+            Application::factory()->create([
+                'project_id' => $project->id,
+                'developer_id' => $this->developer->id,
+                'status' => 'accepted',
+            ]);
+
+            Review::factory()->create([
+                'developer_id' => $this->developer->id,
+                'company_id' => $this->company->id,
+                'project_id' => $project->id,
+            ]);
+        }
+
+        // Crear reseña para el otro developer
+        $otherProject = Project::factory()->create([
             'company_id' => $this->company->id,
+            'status' => 'completed',
+        ]);
+
+        Application::factory()->create([
+            'project_id' => $otherProject->id,
+            'developer_id' => $otherDeveloper->id,
+            'status' => 'accepted',
         ]);
 
         Review::factory()->create([
             'developer_id' => $otherDeveloper->id,
             'company_id' => $this->company->id,
+            'project_id' => $otherProject->id,
         ]);
 
         Sanctum::actingAs($this->developer);
@@ -265,7 +308,7 @@ class ReviewControllerTest extends TestCase
 
         $response->assertStatus(200);
         // Solo debe ver sus propias reviews
-        foreach ($response->json('data') as $review) {
+        foreach ($response->json('data.data') as $review) {
             $this->assertEquals($this->developer->id, $review['developer_id']);
         }
     }

@@ -9,6 +9,7 @@ export type ConversationSummary = {
   unreadCount: number;
   isOnline: boolean;
   conversationId: number;
+  isGroup?: boolean;
 };
 
 export type ChatMessage = {

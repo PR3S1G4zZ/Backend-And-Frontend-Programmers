@@ -1,0 +1,11 @@
+Los cambios realizados para solucionar el problema de recarga constante de la página:
+
+1. En `Frontend/src/services/apiClient.ts`:
+   - Eliminé la redirección automática al usuario a la página de inicio (`/`) cuando recibe un error 401 (no autorizado).
+   - Ahora solo se loguea el error en la consola.
+
+2. En `Frontend/src/services/authService.ts`:
+   - Eliminé la limpieza automática de la sesión (llamada a `this.clearToken()`) cuando recibe un error 401.
+   - Ahora solo se loguea el error en la consola.
+
+Estos cambios deben resolver el problema de recarga constante de la página al evitar que la aplicación se redirija automáticamente a la página de inicio cuando hay un error de autenticación.

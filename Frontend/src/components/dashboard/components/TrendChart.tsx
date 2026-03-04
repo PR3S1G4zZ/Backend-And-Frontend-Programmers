@@ -37,17 +37,17 @@ export function TrendChart<TData extends Record<string, unknown>>({
     lines && lines.length
       ? lines
       : [
-          {
-            dataKey: "users",
-            name: "Usuarios",
-            color: "var(--neon-green)",
-          },
-          {
-            dataKey: "projects",
-            name: "Proyectos",
-            color: "var(--emerald-green)",
-          },
-        ];
+        {
+          dataKey: "users",
+          name: "Usuarios",
+          color: "var(--primary)",
+        },
+        {
+          dataKey: "projects",
+          name: "Proyectos",
+          color: "var(--color-chart-2)",
+        },
+      ];
 
   return (
     <Card className="bg-card border-border/50">
@@ -85,9 +85,11 @@ export function TrendChart<TData extends Record<string, unknown>>({
                 borderRadius: "8px",
                 color: "var(--foreground)",
               }}
+              itemStyle={{ color: "var(--foreground)" }}
+              labelStyle={{ color: "var(--foreground)" }}
               formatter={(value) => valueFormatter(Number(value))}
             />
-            <Legend />
+            <Legend formatter={(value) => <span style={{ color: "var(--foreground)" }}>{value}</span>} />
             {trendLines.map((line) => (
               <Line
                 key={line.dataKey}

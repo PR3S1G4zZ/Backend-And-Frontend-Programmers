@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
-import { Play, Check, RotateCcw, ChevronDown } from 'lucide-react';
+import { Play, Check, RotateCcw, ChevronDown, RefreshCw } from 'lucide-react';
 import apiClient from '../../../services/apiClient';
 import { useMilestoneActions } from '../../../hooks/useMilestoneActions';
 import { SubmitMilestoneDialog } from './MilestoneActionDialogs';
@@ -21,6 +21,7 @@ interface KanbanBoardProps {
     onUpdate?: () => void;
     refreshTrigger?: number;
     userType: 'programmer' | 'company';
+    developerId?: number | null;
 }
 
 // Configuración de paginación
@@ -235,9 +236,10 @@ function ColumnWithPagination({
     );
 }
 
-export function KanbanBoard({ projectId, onUpdate, refreshTrigger, userType }: KanbanBoardProps) {
+export function KanbanBoard({ projectId, onUpdate, refreshTrigger, userType, developerId }: KanbanBoardProps) {
     const [milestones, setMilestones] = useState<Milestone[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const {
         openSubmitDialog,
@@ -251,24 +253,27 @@ export function KanbanBoard({ projectId, onUpdate, refreshTrigger, userType }: K
         updateStatusSimple
     } = useMilestoneActions({
         projectId,
-        onUpdate: () => {
-            fetchMilestones();
-            onUpdate?.();
-        },
-        userType
+        onUpdate: onUpdate, // Updated to directly use the onUpdate prop
+        userType,
+        developerId
     });
 
     const fetchMilestones = async () => {
         // Solo mostrar loader completo si no hay datos aún
         if (milestones.length === 0) setLoading(true);
+        setIsRefreshing(true);
         try {
-            const response = await apiClient.get<Milestone[]>(`/projects/${projectId}/milestones`);
+            const url = userType === 'company' && developerId
+                ? `/projects/${projectId}/milestones?developer_id=${developerId}`
+                : `/projects/${projectId}/milestones`;
+            const response = await apiClient.get<Milestone[]>(url);
             const data = Array.isArray(response) ? response : (response as any).data || [];
             setMilestones(data);
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
     };
 
@@ -333,6 +338,18 @@ export function KanbanBoard({ projectId, onUpdate, refreshTrigger, userType }: K
 
     return (
         <div className="w-full overflow-x-auto pb-2">
+            <div className="flex justify-end mb-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchMilestones}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-2"
+                >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+                </Button>
+            </div>
             <SubmitMilestoneDialog
                 open={isSubmitDialogOpen}
                 onOpenChange={setIsSubmitDialogOpen}

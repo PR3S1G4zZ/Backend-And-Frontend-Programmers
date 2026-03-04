@@ -46,6 +46,9 @@ export function MyActiveProjectsSection({ onWorkspaceSelect }: MyActiveProjectsS
 
     // Helper function to calculate progress (extracted to avoid repetition)
     const calculateProgress = (project: ProjectResponse): number => {
+        if (project.progress_percentage !== undefined) {
+            return project.progress_percentage;
+        }
         if (!project.milestones_count || project.milestones_count === 0) return 0;
         return Math.round((project.completed_milestones_count || 0) / project.milestones_count * 100);
     };

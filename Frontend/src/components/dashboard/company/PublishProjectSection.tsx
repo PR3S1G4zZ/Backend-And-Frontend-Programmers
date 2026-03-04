@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -13,7 +13,9 @@ import {
   DollarSign,
   Eye,
   Save,
-  Send
+  Send,
+  Loader2,
+  CheckCircle
 } from 'lucide-react';
 import { useSweetAlert } from '../../ui/sweet-alert';
 import { motion } from 'framer-motion';
@@ -34,6 +36,20 @@ interface PublishProjectSectionProps {
 
 export function PublishProjectSection({ onSectionChange, initialData, isEditing = false }: PublishProjectSectionProps) {
 
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    budgetType: 'fixed',
+    budget: '',
+    hoursPerDay: '8',
+    duration: '',
+    durationType: 'months',
+    experienceLevel: 'mid',
+    priority: 'medium',
+    teamSize: '1',
+    skills: [] as string[]
+  });
 
   const [skills, setSkills] = useState<Skill[]>([]);
   const [newSkill, setNewSkill] = useState('');
@@ -45,6 +61,69 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
   const [skillOptions, setSkillOptions] = useState<TaxonomyItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-guardado en localStorage
+  const autoSave = useCallback(() => {
+    if (isEditing) return; // No auto-guardar cuando se edita
+    setAutoSaveStatus('saving');
+    try {
+      localStorage.setItem('publishProject_draft', JSON.stringify({
+        formData,
+        skills,
+        deliverables,
+        requirements,
+        currentStep,
+        timestamp: Date.now()
+      }));
+      setTimeout(() => setAutoSaveStatus('saved'), 500);
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Error auto-guardando:', error);
+    }
+  }, [formData, skills, deliverables, requirements, currentStep, isEditing]);
+
+  // Efecto para auto-guardar cuando cambian los datos
+  useEffect(() => {
+    if (isEditing) return;
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    autoSaveTimeoutRef.current = setTimeout(autoSave, 2000); // Auto-guardar 2 segundos después de que el usuario deje de escribir
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [formData, skills, deliverables, requirements, currentStep, autoSave, isEditing]);
+
+  // Cargar borrador guardado al iniciar
+  useEffect(() => {
+    if (isEditing) return;
+    const savedDraft = localStorage.getItem('publishProject_draft');
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        // Solo cargar si el borrador tiene menos de 24 horas
+        if (Date.now() - draft.timestamp < 24 * 60 * 60 * 1000) {
+          setFormData(draft.formData);
+          setSkills(draft.skills || []);
+          setDeliverables(draft.deliverables || ['']);
+          setRequirements(draft.requirements || ['']);
+          setCurrentStep(draft.currentStep || 1);
+        }
+      } catch (error) {
+        console.error('Error cargando borrador:', error);
+      }
+    }
+  }, [isEditing]);
+
+  // Limpiar borrador al guardar/enviar exitosamente
+  const clearDraft = () => {
+    localStorage.removeItem('publishProject_draft');
+    setAutoSaveStatus('idle');
+  };
 
   const popularSkills = skillOptions.map((skill) => skill.name);
 
@@ -105,21 +184,6 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
       isMounted = false;
     };
   }, []);
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: '',
-    budgetType: 'fixed',
-    budget: '',
-    hoursPerDay: '8',
-    duration: '',
-    durationType: 'months',
-    experienceLevel: 'mid',
-    priority: 'medium',
-    teamSize: '1',
-    skills: [] as string[]
-  });
 
   const getEstimatedTotal = () => {
     if (formData.budgetType !== 'hourly' || !formData.budget || !formData.duration) return 0;
@@ -306,6 +370,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
       }
 
       if (onSectionChange) {
+        clearDraft(); // Limpiar borrador después de éxito
         setTimeout(() => {
           onSectionChange('my-projects');
         }, 1500);
@@ -768,15 +833,37 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">
-          {isEditing ? 'Editar Proyecto' : 'Publicar Nuevo Proyecto'}
-        </h1>
-        <p className="text-gray-300">
-          {isEditing
-            ? 'Actualiza la información de tu proyecto'
-            : 'Encuentra el talento perfecto para tu proyecto en nuestra red de desarrolladores'}
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {isEditing ? 'Editar Proyecto' : 'Publicar Nuevo Proyecto'}
+          </h1>
+          <p className="text-gray-300">
+            {isEditing
+              ? 'Actualiza la información de tu proyecto'
+              : 'Encuentra el talento perfecto para tu proyecto en nuestra red de desarrolladores'}
+          </p>
+        </div>
+        {/* Auto-save indicator */}
+        {!isEditing && (
+          <div className="flex items-center gap-2 text-sm">
+            {autoSaveStatus === 'saving' && (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                <span className="text-gray-400">Guardando...</span>
+              </>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <>
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <span className="text-green-500">Guardado</span>
+              </>
+            )}
+            {autoSaveStatus === 'idle' && formData.title && (
+              <span className="text-gray-500">Sin guardar</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Progress Steps */}

@@ -3,11 +3,11 @@ import { TrendChart } from "../TrendChart";
 import { GeographicMap } from "../GeographicMap";
 import { FunnelChart } from "../FunnelChart";
 import type { GrowthMetrics, TimeSeriesPoint } from "../../../../services/adminMetricsService";
-import { 
-  Users, 
-  UserPlus, 
-  Target, 
-  Repeat 
+import {
+  Users,
+  UserPlus,
+  Target,
+  Repeat
 } from "lucide-react";
 
 interface GrowthDashboardProps {
@@ -44,16 +44,16 @@ export function GrowthDashboard({ selectedPeriod, metrics, isLoading = false }: 
       kpi.title === "Nuevos Freelancers"
         ? <UserPlus className="w-5 h-5" />
         : kpi.title === "Nuevos Clientes"
-        ? <Users className="w-5 h-5" />
-        : kpi.title === "Tasa de Conversión"
-        ? <Target className="w-5 h-5" />
-        : <Repeat className="w-5 h-5" />,
+          ? <Users className="w-5 h-5" />
+          : kpi.title === "Tasa de Conversión"
+            ? <Target className="w-5 h-5" />
+            : <Repeat className="w-5 h-5" />,
     description:
       kpi.title === "Tasa de Conversión"
         ? "Visitante a contratación"
         : kpi.title === "Retención 30 días"
-        ? "Usuarios activos después de 30 días"
-        : `Registros este ${selectedPeriod === 'day' ? 'día' : selectedPeriod === 'week' ? 'semana' : selectedPeriod === 'year' ? 'año' : 'mes'}`,
+          ? "Usuarios activos después de 30 días"
+          : `Registros este ${selectedPeriod === 'day' ? 'día' : selectedPeriod === 'week' ? 'semana' : selectedPeriod === 'year' ? 'año' : 'mes'}`,
   }));
 
   return (
@@ -76,7 +76,7 @@ export function GrowthDashboard({ selectedPeriod, metrics, isLoading = false }: 
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <TrendChart 
+        <TrendChart
           data={newRegistrationsData.map(item => ({
             month: item.month,
             users: item.freelancers,
@@ -85,8 +85,8 @@ export function GrowthDashboard({ selectedPeriod, metrics, isLoading = false }: 
           title="Nuevos Registros por Tipo"
           description={`Freelancers vs Clientes por ${selectedPeriod === 'day' ? 'horas' : selectedPeriod === 'week' ? 'días' : selectedPeriod === 'year' ? 'años' : 'meses'}`}
           lines={[
-            { dataKey: "users", name: "Freelancers", color: "var(--color-neon-green)" },
-            { dataKey: "projects", name: "Clientes", color: "var(--color-emerald-green)" }
+            { dataKey: "users", name: "Freelancers", color: "var(--primary)" },
+            { dataKey: "projects", name: "Clientes", color: "var(--color-chart-2)" }
           ]}
         />
         <GeographicMap
@@ -103,7 +103,7 @@ export function GrowthDashboard({ selectedPeriod, metrics, isLoading = false }: 
           description="Del visitante al primer proyecto contratado"
           steps={funnelSteps}
         />
-        
+
         {/* Retention Cohorts Table - Simplified */}
         <div className="bg-card border border-border/50 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">Tabla de Retención por Cohortes</h3>

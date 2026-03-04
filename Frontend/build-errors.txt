@@ -1,0 +1,7 @@
+src/components/dashboard/company/SearchProgrammersSection.tsx(111,9): error TS6133: 'handleFiltersChange' is declared but its value is never read.
+src/components/dashboard/wallet/TransactionHistory.tsx(1,1): error TS6192: All imports in import declaration are unused.
+src/components/dashboard/wallet/TransactionHistory.tsx(3,1): error TS6133: 'fetchWalletWithTransactions' is declared but its value is never read.
+src/components/dashboard/wallet/TransactionHistory.tsx(4,1): error TS6133: 'TransactionResponse' is declared but its value is never read.
+src/components/dashboard/wallet/WalletBalance.tsx(1,1): error TS6192: All imports in import declaration are unused.
+src/components/dashboard/wallet/WalletBalance.tsx(3,1): error TS6133: 'fetchWallet' is declared but its value is never read.
+src/components/dashboard/wallet/WalletBalance.tsx(4,1): error TS6133: 'WalletResponse' is declared but its value is never read.

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 use App\Models\User;
@@ -30,72 +31,93 @@ class FullDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->command->info('=== INICIANDO SEEDER DE DEMOSTRACIÓN COMPLETA ===');
+        $this->command->info('╔════════════════════════════════════════════════════════════╗');
+        $this->command->info('║     SEEDER DE DEMOSTRACIÓN COMPLETA - MODO EXTENDIDO      ║');
+        $this->command->info('╚════════════════════════════════════════════════════════════╝');
         
         // 1. Truncar todas las tablas
         $this->truncateTables();
         
-        // 2. Crear Skills
+        // 2. Crear Skills (27 habilidades principales)
         $skills = $this->createSkills();
         
-        // 3. Crear ProjectCategories
+        // 3. Crear ProjectCategories (12 categorías)
         $categories = $this->createCategories();
         
-        // 4. Crear Admins
+        // 4. Crear Admins (10 admins del sistema)
         $admins = $this->createAdmins();
         
-        // 5. Crear Companies + CompanyProfiles
+        // 5. Crear Companies + CompanyProfiles (50 empresas)
         $companies = $this->createCompanies();
         
-        // 6. Crear Developers + DeveloperProfiles + developer_skill
+        // 6. Crear Developers + DeveloperProfiles (200 desarrolladores)
         $developers = $this->createDevelopers($skills);
         
-        // 7. Crear Wallets
+        // 7. Crear Wallets para todos
         $this->createWallets($admins, $companies, $developers);
         
         // 8. Crear PaymentMethods
         $this->createPaymentMethods($companies, $developers);
         
-        // 9. Crear Projects
+        // 9. Crear Projects (150+ proyectos)
         $projects = $this->createProjects($companies, $categories, $skills, $developers);
         
-        // 10. Crear Applications
+        // 10. Crear Applications (múltiples por proyecto)
         $this->createApplications($projects, $developers);
         
         // 11. Crear Milestones
         $this->createMilestones($projects);
         
         // 12. Crear Conversations + Messages
-        $this->createConversationsAndMessages($projects);
+        $this->createConversationsAndMessages($projects, $developers);
         
         // 13. Crear Reviews
         $this->createReviews($projects);
         
-        // 14. Crear Transactions
+        // 14. Crear Transactions (muchas más para el dashboard financiero)
         $this->createTransactions($projects, $admins);
         
-        // 15. Crear PortfolioProjects
+        // 15. Crear PortfolioProjects (para developers destacados)
         $this->createPortfolios($developers);
         
-        // 16. Crear Favorites
+        // 16. Crear Favorites (empresas favs de developers)
         $this->createFavorites($companies, $developers);
         
         // 17. Crear UserPreferences
         $this->createUserPreferences(array_merge($admins, $companies, $developers));
         
-        // 18. Crear ActivityLogs
+        // 18. Crear ActivityLogs (muchos más para el mapa de calor)
         $this->createActivityLogs($admins, $companies, $developers, $projects);
         
         // 19. Crear SystemSettings
         $this->createSystemSettings();
         
-        $this->command->info('=== SEEDER COMPLETADO EXITOSAMENTE ===');
+        // 20. Distribuir timestamps para métricas realistas (mapa de calor)
+        $this->spreadTimestamps();
+        
+        // 21. Crear PlatformCommissions de prueba (proyectos completados)
+        $this->createPlatformCommissions($projects, $companies, $developers);
+        
+        $this->command->info('');
+        $this->command->info('╔════════════════════════════════════════════════════════════╗');
+        $this->command->info('║           SEEDER COMPLETADO EXITOSAMENTE                 ║');
+        $this->command->info('╚════════════════════════════════════════════════════════════╝');
+        
+        // Resumen final
+        $this->command->info('📊 RESUMEN DE DATOS GENERADOS:');
+        $this->command->info('   - Administradores: ' . count($admins));
+        $this->command->info('   - Empresas: ' . count($companies));
+        $this->command->info('   - Desarrolladores: ' . count($developers));
+        $this->command->info('   - Proyectos: ' . count($projects));
+        $this->command->info('   - Habilidades: ' . count($skills));
+        $this->command->info('   - Categorías: ' . count($categories));
     }
+
 
     private function truncateTables(): void
     {
-        $this->command->info('Truncando tablas...');
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        $this->command->info('🧹 Limpiando base de datos...');
+        Schema::disableForeignKeyConstraints();
         
         DB::table('favorites')->truncate();
         DB::table('activity_logs')->truncate();
@@ -121,12 +143,12 @@ class FullDemoSeeder extends Seeder
         DB::table('skills')->truncate();
         DB::table('project_categories')->truncate();
         
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        Schema::enableForeignKeyConstraints();
     }
 
     private function createSkills(): array
     {
-        $this->command->info('Creando skills...');
+        $this->command->info('🎯 Creando 27 habilidades...');
         
         $skillsData = [
             'Laravel', 'React', 'Vue.js', 'Node.js', 'Docker', 'PostgreSQL', 
@@ -147,7 +169,7 @@ class FullDemoSeeder extends Seeder
 
     private function createCategories(): array
     {
-        $this->command->info('Creando categorías de proyectos...');
+        $this->command->info('📂 Creando 12 categorías de proyectos...');
         
         $categoriesData = [
             ['name' => 'Desarrollo Web', 'description' => 'Proyectos de desarrollo web completo', 'color' => '#3B82F6', 'icon' => 'globe'],
@@ -175,12 +197,20 @@ class FullDemoSeeder extends Seeder
 
     private function createAdmins(): array
     {
-        $this->command->info('Creando usuarios administradores...');
+        $this->command->info('👑 Creando 10 administradores...');
         
         $admins = [];
         $adminsData = [
             ['name' => 'Admin', 'lastname' => 'Principal', 'email' => 'admin@admin.com'],
-            ['name' => 'Soporte', 'lastname' => 'Técnico', 'email' => 'soporte@programmers.com'],
+            ['name' => 'Carlos', 'lastname' => 'Supervisor', 'email' => 'carlos.supervisor@programmers.com'],
+            ['name' => 'María', 'lastname' => 'Support', 'email' => 'maria.soporte@programmers.com'],
+            ['name' => 'Luis', 'lastname' => 'Finance', 'email' => 'luis.finance@programmers.com'],
+            ['name' => 'Ana', 'lastname' => 'Moderator', 'email' => 'ana.moderator@programmers.com'],
+            ['name' => 'Pedro', 'lastname' => 'Security', 'email' => 'pedro.security@programmers.com'],
+            ['name' => 'Laura', 'lastname' => 'Quality', 'email' => 'laura.quality@programmers.com'],
+            ['name' => 'Miguel', 'lastname' => 'TechLead', 'email' => 'miguel.techlead@programmers.com'],
+            ['name' => 'Sofía', 'lastname' => 'Operations', 'email' => 'sofia.operations@programmers.com'],
+            ['name' => 'Roberto', 'lastname' => 'Compliance', 'email' => 'roberto.compliance@programmers.com'],
         ];
         
         foreach ($adminsData as $adminData) {
@@ -202,68 +232,35 @@ class FullDemoSeeder extends Seeder
 
     private function createCompanies(): array
     {
-        $this->command->info('Creando empresas y perfiles...');
+        $this->command->info('🏢 Creando 50 empresas y perfiles...');
         
         $companies = [];
+        
+        // 20 empresas con datos detallados
         $companiesData = [
-            ['name' => 'Carlos', 'lastname' => 'Ramírez', 'email' => 'carlos@technova.com', 'company' => 'TechNova Solutions', 'website' => 'https://technova.com', 'about' => 'Empresa líder en desarrollo de soluciones tecnológicas innovadoras para empresas Fortune 500. Especializados en transformación digital y arquitecturas cloud.', 'location' => 'Madrid', 'country' => 'España'],
-            ['name' => 'Ana', 'lastname' => 'Reyes', 'email' => 'ana@byteforge.mx', 'company' => 'ByteForge Labs', 'website' => 'https://byteforge.mx', 'about' => 'Laboratorio de innovación digital enfocado en crear productos tecnológicos disruptivos. Trabajamos con startups y corporaciones en toda Latinoamérica.', 'location' => 'Ciudad de México', 'country' => 'México'],
-            ['name' => 'Pablo', 'lastname' => 'Torres', 'email' => 'pablo@cloudpeak.ar', 'company' => 'CloudPeak Studios', 'website' => 'https://cloudpeak.ar', 'about' => 'Estudio de desarrollo especializado en aplicaciones cloud-native y microservicios. Nuestro equipo ha entregado más de 200 proyectos exitosos.', 'location' => 'Buenos Aires', 'country' => 'Argentina'],
-            ['name' => 'Laura', 'lastname' => 'Gómez', 'email' => 'laura@datastream.co', 'company' => 'DataStream Corp', 'website' => 'https://datastream.co', 'about' => 'Corporación dedicada al procesamiento de datos y analytics empresarial. Transformamos datos en decisiones estratégicas para nuestros clientes.', 'location' => 'Bogotá', 'country' => 'Colombia'],
-            ['name' => 'Juan', 'lastname' => 'Méndez', 'email' => 'juan@innocode.cl', 'company' => 'InnoCode Group', 'website' => 'https://innocode.cl', 'about' => 'Grupo de desarrollo de software con enfoque en soluciones empresariales a medida. Más de 10 años de experiencia en el mercado chileno.', 'location' => 'Santiago', 'country' => 'Chile'],
-            ['name' => 'Marta', 'lastname' => 'Leiva', 'email' => 'marta@nexgen.pe', 'company' => 'NexGen Digital', 'website' => 'https://nexgen.pe', 'about' => 'Agencia digital de nueva generación especializada en e-commerce y marketing digital. Ayudamos a empresas a crecer en el mundo online.', 'location' => 'Lima', 'country' => 'Perú'],
-            ['name' => 'Fernando', 'lastname' => 'Villa', 'email' => 'fernando@appventure.co', 'company' => 'AppVenture Tech', 'website' => 'https://appventure.co', 'about' => 'Compañía de tecnología enfocada en desarrollo de aplicaciones móviles y experiencias digitales. Presencia en Colombia y Centroamérica.', 'location' => 'Medellín', 'country' => 'Colombia'],
-            ['name' => 'Julia', 'lastname' => 'Santos', 'email' => 'julia@codecraft.uy', 'company' => 'CodeCraft Studios', 'website' => 'https://codecraft.uy', 'about' => 'Estudio boutique de desarrollo de software con estándares de calidad excepcionales. Especialistas en fintech y soluciones blockchain.', 'location' => 'Montevideo', 'country' => 'Uruguay'],
+            ['name' => 'Carlos', 'lastname' => 'Ramírez', 'email' => 'carlos@technova.com', 'company' => 'TechNova Solutions', 'website' => 'https://technova.com', 'about' => 'Empresa líder en desarrollo de soluciones tecnológicas innovadoras para empresas Fortune 500.', 'location' => 'Madrid', 'country' => 'España'],
+            ['name' => 'Ana', 'lastname' => 'Reyes', 'email' => 'ana@byteforge.mx', 'company' => 'ByteForge Labs', 'website' => 'https://byteforge.mx', 'about' => 'Laboratorio de innovación digital enfocado en crear productos tecnológicos disruptivos.', 'location' => 'Ciudad de México', 'country' => 'México'],
+            ['name' => 'Pablo', 'lastname' => 'Torres', 'email' => 'pablo@cloudpeak.ar', 'company' => 'CloudPeak Studios', 'website' => 'https://cloudpeak.ar', 'about' => 'Estudio de desarrollo especializado en aplicaciones cloud-native y microservicios.', 'location' => 'Buenos Aires', 'country' => 'Argentina'],
+            ['name' => 'Laura', 'lastname' => 'Gómez', 'email' => 'laura@datastream.co', 'company' => 'DataStream Corp', 'website' => 'https://datastream.co', 'about' => 'Corporación dedicada al procesamiento de datos y analytics empresarial.', 'location' => 'Bogotá', 'country' => 'Colombia'],
+            ['name' => 'Juan', 'lastname' => 'Méndez', 'email' => 'juan@innocode.cl', 'company' => 'InnoCode Group', 'website' => 'https://innocode.cl', 'about' => 'Grupo de desarrollo de software con enfoque en soluciones empresariales a medida.', 'location' => 'Santiago', 'country' => 'Chile'],
+            ['name' => 'Marta', 'lastname' => 'Leiva', 'email' => 'marta@nexgen.pe', 'company' => 'NexGen Digital', 'website' => 'https://nexgen.pe', 'about' => 'Agencia digital de nueva generación especializada en e-commerce y marketing digital.', 'location' => 'Lima', 'country' => 'Perú'],
+            ['name' => 'Fernando', 'lastname' => 'Villa', 'email' => 'fernando@appventure.co', 'company' => 'AppVenture Tech', 'website' => 'https://appventure.co', 'about' => 'Compañía de tecnología enfocada en desarrollo de aplicaciones móviles.', 'location' => 'Medellín', 'country' => 'Colombia'],
+            ['name' => 'Julia', 'lastname' => 'Santos', 'email' => 'julia@codecraft.uy', 'company' => 'CodeCraft Studios', 'website' => 'https://codecraft.uy', 'about' => 'Estudio boutique de desarrollo de software con estándares de calidad excepcionales.', 'location' => 'Montevideo', 'country' => 'Uruguay'],
+            ['name' => 'Ricardo', 'lastname' => 'Ortega', 'email' => 'ricardo@pixelworks.mx', 'company' => 'PixelWorks Agency', 'website' => 'https://pixelworks.mx', 'about' => 'Agencia creativa digital especializada en branding y desarrollo de aplicaciones.', 'location' => 'Guadalajara', 'country' => 'México'],
+            ['name' => 'Sofía', 'lastname' => 'Delgado', 'email' => 'sofia@quantumdev.co', 'company' => 'QuantumDev Solutions', 'website' => 'https://quantumdev.co', 'about' => 'Empresa de desarrollo enfocada en soluciones de IA y machine learning.', 'location' => 'Bogotá', 'country' => 'Colombia'],
+            ['name' => 'Diego', 'lastname' => 'Fuentes', 'email' => 'diego@novatech.ar', 'company' => 'NovaTech Argentina', 'website' => 'https://novatech.ar', 'about' => 'Compañía de consultoría tecnológica y transformación digital.', 'location' => 'Córdoba', 'country' => 'Argentina'],
+            ['name' => 'Valentina', 'lastname' => 'Herrera', 'email' => 'valentina@startuplab.pe', 'company' => 'StartupLab Perú', 'website' => 'https://startuplab.pe', 'about' => 'Incubadora y aceleradora de startups tecnológicas.', 'location' => 'Lima', 'country' => 'Perú'],
+            ['name' => 'Alejandro', 'lastname' => 'Medina', 'email' => 'alejandro@cyberguard.es', 'company' => 'CyberGuard Security', 'website' => 'https://cyberguard.es', 'about' => 'Empresa líder en ciberseguridad y auditoría informática.', 'location' => 'Barcelona', 'country' => 'España'],
+            ['name' => 'Gabriela', 'lastname' => 'Rojas', 'email' => 'gabriela@greencode.cl', 'company' => 'GreenCode Technologies', 'website' => 'https://greencode.cl', 'about' => 'Desarrollo de software sustentable con enfoque en eficiencia energética.', 'location' => 'Santiago', 'country' => 'Chile'],
+            ['name' => 'Martín', 'lastname' => 'Aguilar', 'email' => 'martin@finflow.uy', 'company' => 'FinFlow Fintech', 'website' => 'https://finflow.uy', 'about' => 'Fintech innovadora en pagos digitales y plataformas peer-to-peer.', 'location' => 'Montevideo', 'country' => 'Uruguay'],
+            ['name' => 'Carolina', 'lastname' => 'Castillo', 'email' => 'carolina@edutech.mx', 'company' => 'EduTech México', 'website' => 'https://edutech.mx', 'about' => 'Plataforma educativa con soluciones de e-learning y gamificación.', 'location' => 'Monterrey', 'country' => 'México'],
+            ['name' => 'Emilio', 'lastname' => 'Vargas', 'email' => 'emilio@logismart.co', 'company' => 'LogiSmart Solutions', 'website' => 'https://logismart.co', 'about' => 'Empresa de logística inteligente y software de gestión de cadena de suministro.', 'location' => 'Medellín', 'country' => 'Colombia'],
+            ['name' => 'Natalia', 'lastname' => 'Cruz', 'email' => 'natalia@healthdev.ar', 'company' => 'HealthDev Labs', 'website' => 'https://healthdev.ar', 'about' => 'Laboratorio de innovación en salud digital y telemedicina.', 'location' => 'Buenos Aires', 'country' => 'Argentina'],
+            ['name' => 'Felipe', 'lastname' => 'Salazar', 'email' => 'felipe@retailpro.pe', 'company' => 'RetailPro Digital', 'website' => 'https://retailpro.pe', 'about' => 'Consultora especializada en comercio electrónico y marketing digital.', 'location' => 'Lima', 'country' => 'Perú'],
+            ['name' => 'Lorena', 'lastname' => 'Montoya', 'email' => 'lorena@gameforge.es', 'company' => 'GameForge Studios', 'website' => 'https://gameforge.es', 'about' => 'Estudio de desarrollo de videojuegos y experiencias interactivas.', 'location' => 'Madrid', 'country' => 'España'],
         ];
         
         foreach ($companiesData as $data) {
-            $name = $data['name'];
-            $lastname = $data['lastname'];
-            $email = $data['email'];
-            $company = $data['company'];
-            
-            $user = User::create([
-                'name' => $name,
-                'lastname' => $lastname,
-                'email' => $email,
-                'password' => 'Demo1234!',
-                'user_type' => 'company',
-                'role' => 'company',
-            ]);
-            
-            DB::table('users')->where('id', $user->id)->update(['email_verified_at' => Carbon::now()]);
-            
-            CompanyProfile::create([
-                'user_id' => $user->id,
-                'company_name' => $company,
-                'website' => $data['website'],
-                'about' => $data['about'],
-                'location' => $data['location'],
-                'country' => $data['country'],
-            ]);
-            
-            $companies[] = $user->id;
-        }
-
-        // === GENERACIÓN PROGRAMÁTICA: 12 empresas adicionales ===
-        $this->command->info('Generando 12 empresas adicionales...');
-
-        $extraCompanies = [
-            ['name' => 'Ricardo', 'lastname' => 'Ortega', 'email' => 'ricardo@pixelworks.mx', 'company' => 'PixelWorks Agency', 'website' => 'https://pixelworks.mx', 'about' => 'Agencia creativa digital especializada en branding, diseño web y desarrollo de aplicaciones móviles para marcas emergentes en México y Centroamérica.', 'location' => 'Guadalajara', 'country' => 'México'],
-            ['name' => 'Sofía', 'lastname' => 'Delgado', 'email' => 'sofia@quantumdev.co', 'company' => 'QuantumDev Solutions', 'website' => 'https://quantumdev.co', 'about' => 'Empresa de desarrollo de software enfocada en soluciones de inteligencia artificial y machine learning para el sector salud.', 'location' => 'Bogotá', 'country' => 'Colombia'],
-            ['name' => 'Diego', 'lastname' => 'Fuentes', 'email' => 'diego@novatech.ar', 'company' => 'NovaTech Argentina', 'website' => 'https://novatech.ar', 'about' => 'Compañía de consultoría tecnológica que ofrece soluciones de transformación digital y migración cloud para PyMEs argentinas.', 'location' => 'Córdoba', 'country' => 'Argentina'],
-            ['name' => 'Valentina', 'lastname' => 'Herrera', 'email' => 'valentina@startuplab.pe', 'company' => 'StartupLab Perú', 'website' => 'https://startuplab.pe', 'about' => 'Incubadora y aceleradora de startups tecnológicas con un laboratorio de innovación que desarrolla MVPs y productos digitales.', 'location' => 'Lima', 'country' => 'Perú'],
-            ['name' => 'Alejandro', 'lastname' => 'Medina', 'email' => 'alejandro@cyberguard.es', 'company' => 'CyberGuard Security', 'website' => 'https://cyberguard.es', 'about' => 'Empresa líder en ciberseguridad que ofrece auditorías, pentesting y soluciones de seguridad informática para empresas en España y Latinoamérica.', 'location' => 'Barcelona', 'country' => 'España'],
-            ['name' => 'Gabriela', 'lastname' => 'Rojas', 'email' => 'gabriela@greencode.cl', 'company' => 'GreenCode Technologies', 'website' => 'https://greencode.cl', 'about' => 'Desarrollo de software sustentable con enfoque en eficiencia energética y aplicaciones para el sector medioambiental y agritech.', 'location' => 'Santiago', 'country' => 'Chile'],
-            ['name' => 'Martín', 'lastname' => 'Aguilar', 'email' => 'martin@finflow.uy', 'company' => 'FinFlow Fintech', 'website' => 'https://finflow.uy', 'about' => 'Fintech innovadora que desarrolla soluciones de pagos digitales, billeteras virtuales y plataformas de préstamos peer-to-peer.', 'location' => 'Montevideo', 'country' => 'Uruguay'],
-            ['name' => 'Carolina', 'lastname' => 'Castillo', 'email' => 'carolina@edutech.mx', 'company' => 'EduTech México', 'website' => 'https://edutech.mx', 'about' => 'Plataforma educativa que desarrolla soluciones de e-learning, gamificación y sistemas de gestión académica para instituciones educativas.', 'location' => 'Monterrey', 'country' => 'México'],
-            ['name' => 'Emilio', 'lastname' => 'Vargas', 'email' => 'emilio@logismart.co', 'company' => 'LogiSmart Solutions', 'website' => 'https://logismart.co', 'about' => 'Empresa de logística inteligente que crea software de gestión de cadena de suministro, tracking y optimización de rutas.', 'location' => 'Medellín', 'country' => 'Colombia'],
-            ['name' => 'Natalia', 'lastname' => 'Cruz', 'email' => 'natalia@healthdev.ar', 'company' => 'HealthDev Labs', 'website' => 'https://healthdev.ar', 'about' => 'Laboratorio de innovación en salud digital que desarrolla aplicaciones de telemedicina, wearables y sistemas de historia clínica electrónica.', 'location' => 'Buenos Aires', 'country' => 'Argentina'],
-            ['name' => 'Felipe', 'lastname' => 'Salazar', 'email' => 'felipe@retailpro.pe', 'company' => 'RetailPro Digital', 'website' => 'https://retailpro.pe', 'about' => 'Consultora especializada en soluciones de comercio electrónico, punto de venta y marketing digital para el sector retail.', 'location' => 'Lima', 'country' => 'Perú'],
-            ['name' => 'Lorena', 'lastname' => 'Montoya', 'email' => 'lorena@gameforge.es', 'company' => 'GameForge Studios', 'website' => 'https://gameforge.es', 'about' => 'Estudio de desarrollo de videojuegos y experiencias interactivas con Unreal Engine y Unity para plataformas móviles y consola.', 'location' => 'Madrid', 'country' => 'España'],
-        ];
-
-        foreach ($extraCompanies as $data) {
             $user = User::create([
                 'name' => $data['name'],
                 'lastname' => $data['lastname'],
@@ -272,9 +269,9 @@ class FullDemoSeeder extends Seeder
                 'user_type' => 'company',
                 'role' => 'company',
             ]);
-
+            
             DB::table('users')->where('id', $user->id)->update(['email_verified_at' => Carbon::now()]);
-
+            
             CompanyProfile::create([
                 'user_id' => $user->id,
                 'company_name' => $data['company'],
@@ -283,36 +280,140 @@ class FullDemoSeeder extends Seeder
                 'location' => $data['location'],
                 'country' => $data['country'],
             ]);
-
+            
             $companies[] = $user->id;
         }
-
-        $this->command->info('Total companies created: ' . count($companies));
+        
+        // 30 empresas adicionales generadas programáticamente
+        $this->command->info('   Generando 30 empresas adicionales...');
+        
+        $additionalCompanies = [
+            ['name' => 'Empresa', 'company' => 'TechFlow Solutions', 'location' => 'Miami', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'DigitalWave Agency', 'location' => 'São Paulo', 'country' => 'Brasil'],
+            ['name' => 'Empresa', 'company' => 'CloudNine Systems', 'location' => 'Toronto', 'country' => 'Canadá'],
+            ['name' => 'Empresa', 'company' => 'InnovateLab Corp', 'location' => 'Londres', 'country' => 'Reino Unido'],
+            ['name' => 'Empresa', 'company' => 'DataPulse Analytics', 'location' => 'San Francisco', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'QuantumCode Tech', 'location' => 'Austin', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'NexusDev Studios', 'location' => 'Seattle', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'ApexDigital Solutions', 'location' => 'Dallas', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'ByteForce Labs', 'location' => 'Chicago', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'CodeNest Agency', 'location' => 'Boston', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'DevStream Inc', 'location' => 'Denver', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'TechPulse Corp', 'location' => 'Portland', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'InnovateTech Solutions', 'location' => 'Phoenix', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'CodeWave Agency', 'location' => 'Atlanta', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'DevForce Labs', 'location' => 'Philadelphia', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'TechNova Digital', 'location' => 'Miami', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'CloudCode Systems', 'location' => 'Orlando', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'InnovateDev Studio', 'location' => 'San Diego', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'DigitalForce Corp', 'location' => 'Houston', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'TechStream Agency', 'location' => 'New York', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'CodePulse Labs', 'location' => 'Los Angeles', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'DevNexus Solutions', 'location' => 'San Jose', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'InnovateCode Inc', 'location' => 'Washington', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'TechForge Digital', 'location' => 'Las Vegas', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'CloudDev Agency', 'location' => 'Philadelphia', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'CodeStream Labs', 'location' => 'Columbus', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'DevTech Solutions', 'location' => 'Charlotte', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'TechWave Corp', 'location' => 'Indianapolis', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'InnovateLabs Agency', 'location' => 'Seattle', 'country' => 'Estados Unidos'],
+            ['name' => 'Empresa', 'company' => 'DigitalCode Systems', 'location' => 'Denver', 'country' => 'Estados Unidos'],
+        ];
+        
+        $firstNames = ['Juan', 'Pedro', 'Manuel', 'José', 'Antonio', 'Francisco', 'Luis', 'Carlos', 'Miguel', 'Javier'];
+        $lastNames = ['García', 'López', 'Martínez', 'Rodríguez', 'González', 'Pérez', 'Sánchez', 'Ramírez', 'Torres', 'Flores'];
+        
+        foreach ($additionalCompanies as $index => $data) {
+            $firstName = $firstNames[$index % count($firstNames)];
+            $lastName = $lastNames[$index % count($lastNames)];
+            
+            $user = User::create([
+                'name' => $firstName,
+                'lastname' => $lastName,
+                'email' => strtolower($firstName) . '.' . strtolower($lastName) . ($index + 1) . '@company.com',
+                'password' => 'Demo1234!',
+                'user_type' => 'company',
+                'role' => 'company',
+            ]);
+            
+            DB::table('users')->where('id', $user->id)->update(['email_verified_at' => Carbon::now()]);
+            
+            CompanyProfile::create([
+                'user_id' => $user->id,
+                'company_name' => $data['company'],
+                'website' => 'https://' . strtolower(str_replace(' ', '', $data['company'])) . '.com',
+                'about' => 'Empresa de tecnología y desarrollo de software soluciones innovadoras.',
+                'location' => $data['location'],
+                'country' => $data['country'],
+            ]);
+            
+            $companies[] = $user->id;
+        }
+        
+        $this->command->info('   ✓ Total empresas creadas: ' . count($companies));
         
         return $companies;
     }
 
     private function createDevelopers(array $skills): array
     {
-        $this->command->info('Creando desarrolladores y perfiles...');
+        $this->command->info('👨‍💻 Creando 200 desarrolladores y perfiles...');
         
         $developers = [];
+        
+        // 50 desarrolladores con datos detallados
         $developersData = [
-            ['name' => 'Andrés', 'lastname' => 'García', 'email' => 'andres@devmail.com', 'headline' => 'Full Stack Developer | React + Laravel', 'bio' => 'Desarrollador Full Stack con 6 años de experiencia construyendo aplicaciones web escalables. He trabajado con startups y empresas medianas en proyectos de e-commerce, SaaS y plataformas educativas. Mi stack principal es React en el frontend y Laravel en el backend.', 'hourly_rate' => 65, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['Laravel', 'React', 'TypeScript', 'TailwindCSS', 'MySQL']],
-            ['name' => 'Valentina', 'lastname' => 'López', 'email' => 'valentina@devmail.com', 'headline' => 'Frontend Specialist | React & Next.js', 'bio' => 'Especialista en frontend con pasión por crear interfaces de usuario intuitivas y accesibles. Experiencia en diseño de sistemas y componentes reutilizables. He liderado equipos de frontend en proyectos internacionales.', 'hourly_rate' => 55, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés', 'Portugués'], 'location' => 'Buenos Aires', 'country' => 'Argentina', 'skill_names' => ['React', 'Next.js', 'TypeScript', 'TailwindCSS', 'Figma']],
-            ['name' => 'Santiago', 'lastname' => 'Martínez', 'email' => 'santiago@devmail.com', 'headline' => 'Senior Backend Engineer | Node.js + Docker', 'bio' => 'Ingeniero backend senior con experiencia en arquitecturas de microservicios y sistemas distribuidos. He diseñado APIs que manejan millones de requests diarios. Apasionado por la optimización y las mejores prácticas.', 'hourly_rate' => 95, 'availability' => 'busy', 'experience_years' => 9, 'languages' => ['Español', 'Inglés'], 'location' => 'Santiago', 'country' => 'Chile', 'skill_names' => ['Node.js', 'Docker', 'Kubernetes', 'PostgreSQL', 'AWS', 'TypeScript']],
-            ['name' => 'Camila', 'lastname' => 'Rodríguez', 'email' => 'camila@devmail.com', 'headline' => 'DevOps Engineer | AWS & Kubernetes', 'bio' => 'Ingeniera DevOps con experiencia en automatización de infraestructura y pipelines CI/CD. Certificada en AWS Solutions Architect y Kubernetes Administrator. He migrado múltiples empresas a arquitecturas cloud.', 'hourly_rate' => 85, 'availability' => 'available', 'experience_years' => 7, 'languages' => ['Español', 'Inglés'], 'location' => 'Lima', 'country' => 'Perú', 'skill_names' => ['Docker', 'Kubernetes', 'AWS', 'Terraform', 'Python']],
-            ['name' => 'Mateo', 'lastname' => 'Hernández', 'email' => 'mateo@devmail.com', 'headline' => 'Mobile Developer | Flutter & React Native', 'bio' => 'Desarrollador móvil multiplataforma con apps publicadas que suman más de 500K descargas. Experiencia en Flutter y React Native, con conocimiento nativo en iOS y Android.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Ciudad de México', 'country' => 'México', 'skill_names' => ['Flutter', 'React Native', 'TypeScript', 'Swift', 'Kotlin']],
-            ['name' => 'Isabella', 'lastname' => 'Torres', 'email' => 'isabella@devmail.com', 'headline' => 'UI/UX Developer | Figma & React', 'bio' => 'Diseñadora y desarrolladora UI/UX con un enfoque centrado en el usuario. Combino habilidades de diseño en Figma con implementación en código. He trabajado con equipos de producto en empresas de fintech y healthtech.', 'hourly_rate' => 60, 'availability' => 'busy', 'experience_years' => 5, 'languages' => ['Español', 'Inglés', 'Francés'], 'location' => 'Madrid', 'country' => 'España', 'skill_names' => ['Figma', 'React', 'TailwindCSS', 'Next.js', 'Vue.js']],
-            ['name' => 'Sebastián', 'lastname' => 'Ramírez', 'email' => 'sebastian@devmail.com', 'headline' => 'Data Engineer | Python & AWS', 'bio' => 'Ingeniero de datos especializado en pipelines ETL y arquitecturas de datos en la nube. Experiencia con grandes volúmenes de datos y herramientas de Big Data. He implementado data warehouses para empresas de retail y finanzas.', 'hourly_rate' => 80, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Medellín', 'country' => 'Colombia', 'skill_names' => ['Python', 'AWS', 'PostgreSQL', 'MongoDB', 'Docker']],
-            ['name' => 'Lucía', 'lastname' => 'Pérez', 'email' => 'lucia@devmail.com', 'headline' => 'Cloud Architect | AWS & Terraform', 'bio' => 'Arquitecta cloud con certificaciones en AWS y GCP. Especializada en diseño de infraestructura escalable y segura. He liderado migraciones cloud para empresas del sector financiero y telecomunicaciones.', 'hourly_rate' => 110, 'availability' => 'available', 'experience_years' => 10, 'languages' => ['Español', 'Inglés'], 'location' => 'Montevideo', 'country' => 'Uruguay', 'skill_names' => ['AWS', 'Terraform', 'Docker', 'Kubernetes', 'Python', 'Go']],
-            ['name' => 'Daniel', 'lastname' => 'Morales', 'email' => 'daniel@devmail.com', 'headline' => 'Blockchain Developer | Solidity & Web3', 'bio' => 'Desarrollador blockchain con experiencia en smart contracts y aplicaciones descentralizadas. He trabajado en proyectos DeFi y NFT para empresas internacionales. También tengo experiencia en desarrollo web full stack.', 'hourly_rate' => 100, 'availability' => 'unavailable', 'experience_years' => 4, 'languages' => ['Español', 'Inglés'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['TypeScript', 'Node.js', 'React', 'MongoDB', 'GraphQL']],
-            ['name' => 'Paula', 'lastname' => 'Sánchez', 'email' => 'paula@devmail.com', 'headline' => 'QA Automation Engineer', 'bio' => 'Ingeniera de QA con enfoque en automatización de pruebas end-to-end y de integración. Experiencia con Selenium, Cypress, y Jest. He implementado estrategias de testing que redujeron bugs en producción en un 80%.', 'hourly_rate' => 55, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Santiago', 'country' => 'Chile', 'skill_names' => ['Python', 'TypeScript', 'Docker', 'PostgreSQL', 'Node.js']],
-            ['name' => 'Nicolás', 'lastname' => 'Flores', 'email' => 'nicolas@devmail.com', 'headline' => 'AI/ML Engineer | Python & TensorFlow', 'bio' => 'Ingeniero de Machine Learning con experiencia en modelos de NLP y visión por computadora. He desarrollado sistemas de recomendación y chatbots inteligentes. Publicaciones en conferencias internacionales de IA.', 'hourly_rate' => 105, 'availability' => 'busy', 'experience_years' => 7, 'languages' => ['Español', 'Inglés', 'Alemán'], 'location' => 'Buenos Aires', 'country' => 'Argentina', 'skill_names' => ['Python', 'AWS', 'PostgreSQL', 'Docker', 'MongoDB']],
-            ['name' => 'María', 'lastname' => 'Vargas', 'email' => 'maria@devmail.com', 'headline' => 'Full Stack Developer | MERN Stack', 'bio' => 'Desarrolladora Full Stack con dominio del stack MERN. He construido desde MVPs para startups hasta plataformas enterprise. Experiencia en metodologías ágiles y liderazgo técnico de equipos.', 'hourly_rate' => 75, 'availability' => 'busy', 'experience_years' => 8, 'languages' => ['Español', 'Inglés'], 'location' => 'Ciudad de México', 'country' => 'México', 'skill_names' => ['React', 'Node.js', 'MongoDB', 'TypeScript', 'AWS', 'GraphQL']],
-            ['name' => 'Alejandro', 'lastname' => 'Castro', 'email' => 'alejandro@devmail.com', 'headline' => 'Senior PHP Developer | Laravel Expert', 'bio' => 'Desarrollador PHP senior con más de 10 años de experiencia en Laravel. He construido CRMs, ERPs y plataformas de e-commerce de alta complejidad. Contribuidor activo de paquetes open source en Laravel.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 11, 'languages' => ['Español', 'Inglés'], 'location' => 'Lima', 'country' => 'Perú', 'skill_names' => ['PHP', 'Laravel', 'MySQL', 'Vue.js', 'Docker', 'Redis']],
-            ['name' => 'Sofía', 'lastname' => 'Mendoza', 'email' => 'sofia@devmail.com', 'headline' => 'React Native Developer | Mobile Expert', 'bio' => 'Desarrolladora mobile especializada en React Native con experiencia en apps de alta demanda. He trabajado en apps de delivery, fintech y redes sociales. Apasionada por las animaciones fluidas y el rendimiento.', 'hourly_rate' => 65, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés', 'Italiano'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['React Native', 'TypeScript', 'React', 'Node.js', 'Figma']],
-            ['name' => 'Ricardo', 'lastname' => 'Navarro', 'email' => 'ricardo@devmail.com', 'headline' => 'Python Backend Developer | Django & FastAPI', 'bio' => 'Desarrollador backend Python con experiencia en Django, FastAPI y Flask. He diseñado APIs RESTful y GraphQL para plataformas con millones de usuarios. Interesado en arquitecturas serverless y microservicios.', 'hourly_rate' => 80, 'availability' => 'available', 'experience_years' => 8, 'languages' => ['Español', 'Inglés'], 'location' => 'Madrid', 'country' => 'España', 'skill_names' => ['Python', 'Django', 'PostgreSQL', 'Docker', 'Redis', 'AWS']],
+            ['name' => 'Andrés', 'lastname' => 'García', 'email' => 'andres@devmail.com', 'headline' => 'Full Stack Developer | React + Laravel', 'bio' => 'Desarrollador Full Stack con 6 años de experiencia construyendo aplicaciones web escalables.', 'hourly_rate' => 65, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['Laravel', 'React', 'TypeScript', 'TailwindCSS', 'MySQL']],
+            ['name' => 'Valentina', 'lastname' => 'López', 'email' => 'valentina@devmail.com', 'headline' => 'Frontend Specialist | React & Next.js', 'bio' => 'Especialista en frontend con pasión por crear interfaces accesibles.', 'hourly_rate' => 55, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés', 'Portugués'], 'location' => 'Buenos Aires', 'country' => 'Argentina', 'skill_names' => ['React', 'Next.js', 'TypeScript', 'TailwindCSS', 'Figma']],
+            ['name' => 'Santiago', 'lastname' => 'Martínez', 'email' => 'santiago@devmail.com', 'headline' => 'Senior Backend Engineer | Node.js + Docker', 'bio' => 'Ingeniero backend senior con experiencia en arquitecturas de microservicios.', 'hourly_rate' => 95, 'availability' => 'busy', 'experience_years' => 9, 'languages' => ['Español', 'Inglés'], 'location' => 'Santiago', 'country' => 'Chile', 'skill_names' => ['Node.js', 'Docker', 'Kubernetes', 'PostgreSQL', 'AWS', 'TypeScript']],
+            ['name' => 'Camila', 'lastname' => 'Rodríguez', 'email' => 'camila@devmail.com', 'headline' => 'DevOps Engineer | AWS & Kubernetes', 'bio' => 'Ingeniera DevOps con experiencia en automatización de infraestructura.', 'hourly_rate' => 85, 'availability' => 'available', 'experience_years' => 7, 'languages' => ['Español', 'Inglés'], 'location' => 'Lima', 'country' => 'Perú', 'skill_names' => ['Docker', 'Kubernetes', 'AWS', 'Terraform', 'Python']],
+            ['name' => 'Mateo', 'lastname' => 'Hernández', 'email' => 'mateo@devmail.com', 'headline' => 'Mobile Developer | Flutter & React Native', 'bio' => 'Desarrollador móvil multiplataforma con apps de alto impacto.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Ciudad de México', 'country' => 'México', 'skill_names' => ['Flutter', 'React Native', 'TypeScript', 'Swift', 'Kotlin']],
+            ['name' => 'Isabella', 'lastname' => 'Torres', 'email' => 'isabella@devmail.com', 'headline' => 'UI/UX Developer | Figma & React', 'bio' => 'Diseñadora y desarrolladora UI/UX con enfoque centrado en el usuario.', 'hourly_rate' => 60, 'availability' => 'busy', 'experience_years' => 5, 'languages' => ['Español', 'Inglés', 'Francés'], 'location' => 'Madrid', 'country' => 'España', 'skill_names' => ['Figma', 'React', 'TailwindCSS', 'Next.js', 'Vue.js']],
+            ['name' => 'Sebastián', 'lastname' => 'Ramírez', 'email' => 'sebastian@devmail.com', 'headline' => 'Data Engineer | Python & AWS', 'bio' => 'Ingeniero de datos especializado en pipelines ETL y arquitecturas cloud.', 'hourly_rate' => 80, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Medellín', 'country' => 'Colombia', 'skill_names' => ['Python', 'AWS', 'PostgreSQL', 'MongoDB', 'Docker']],
+            ['name' => 'Lucía', 'lastname' => 'Pérez', 'email' => 'lucia@devmail.com', 'headline' => 'Cloud Architect | AWS & Terraform', 'bio' => 'Arquitecta cloud con certificaciones en AWS y GCP.', 'hourly_rate' => 110, 'availability' => 'available', 'experience_years' => 10, 'languages' => ['Español', 'Inglés'], 'location' => 'Montevideo', 'country' => 'Uruguay', 'skill_names' => ['AWS', 'Terraform', 'Docker', 'Kubernetes', 'Python', 'Go']],
+            ['name' => 'Daniel', 'lastname' => 'Morales', 'email' => 'daniel@devmail.com', 'headline' => 'Blockchain Developer | Solidity & Web3', 'bio' => 'Desarrollador blockchain con experiencia en smart contracts.', 'hourly_rate' => 100, 'availability' => 'unavailable', 'experience_years' => 4, 'languages' => ['Español', 'Inglés'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['TypeScript', 'Node.js', 'React', 'MongoDB', 'GraphQL']],
+            ['name' => 'Paula', 'lastname' => 'Sánchez', 'email' => 'paula@devmail.com', 'headline' => 'QA Automation Engineer', 'bio' => 'Ingeniera de QA con enfoque en automatización de pruebas.', 'hourly_rate' => 55, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Santiago', 'country' => 'Chile', 'skill_names' => ['Python', 'TypeScript', 'Docker', 'PostgreSQL', 'Node.js']],
+            ['name' => 'Nicolás', 'lastname' => 'Flores', 'email' => 'nicolas@devmail.com', 'headline' => 'AI/ML Engineer | Python & TensorFlow', 'bio' => 'Ingeniero de Machine Learning con experiencia en NLP y visión por computadora.', 'hourly_rate' => 105, 'availability' => 'busy', 'experience_years' => 7, 'languages' => ['Español', 'Inglés', 'Alemán'], 'location' => 'Buenos Aires', 'country' => 'Argentina', 'skill_names' => ['Python', 'AWS', 'PostgreSQL', 'Docker', 'MongoDB']],
+            ['name' => 'María', 'lastname' => 'Vargas', 'email' => 'maria@devmail.com', 'headline' => 'Full Stack Developer | MERN Stack', 'bio' => 'Desarrolladora Full Stack con dominio del stack MERN.', 'hourly_rate' => 75, 'availability' => 'busy', 'experience_years' => 8, 'languages' => ['Español', 'Inglés'], 'location' => 'Ciudad de México', 'country' => 'México', 'skill_names' => ['React', 'Node.js', 'MongoDB', 'TypeScript', 'AWS', 'GraphQL']],
+            ['name' => 'Alejandro', 'lastname' => 'Castro', 'email' => 'alejandro@devmail.com', 'headline' => 'Senior PHP Developer | Laravel Expert', 'bio' => 'Desarrollador PHP senior con más de 10 años de experiencia en Laravel.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 11, 'languages' => ['Español', 'Inglés'], 'location' => 'Lima', 'country' => 'Perú', 'skill_names' => ['PHP', 'Laravel', 'MySQL', 'Vue.js', 'Docker', 'Redis']],
+            ['name' => 'Sofía', 'lastname' => 'Mendoza', 'email' => 'sofia@devmail.com', 'headline' => 'React Native Developer | Mobile Expert', 'bio' => 'Desarrolladora mobile especializada en React Native.', 'hourly_rate' => 65, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés', 'Italiano'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['React Native', 'TypeScript', 'React', 'Node.js', 'Figma']],
+            ['name' => 'Ricardo', 'lastname' => 'Navarro', 'email' => 'ricardo@devmail.com', 'headline' => 'Python Backend Developer | Django & FastAPI', 'bio' => 'Desarrollador backend Python con experiencia en Django y FastAPI.', 'hourly_rate' => 80, 'availability' => 'available', 'experience_years' => 8, 'languages' => ['Español', 'Inglés'], 'location' => 'Madrid', 'country' => 'España', 'skill_names' => ['Python', 'Django', 'PostgreSQL', 'Docker', 'Redis', 'AWS']],
+            ['name' => 'Elena', 'lastname' => 'Jiménez', 'email' => 'elena@devmail.com', 'headline' => 'Vue.js Developer | Frontend Expert', 'bio' => 'Desarrolladora Vue.js con experiencia en aplicaciones SPA.', 'hourly_rate' => 60, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Barcelona', 'country' => 'España', 'skill_names' => ['Vue.js', 'JavaScript', 'TailwindCSS', 'Node.js', 'MySQL']],
+            ['name' => 'Gabriel', 'lastname' => 'Ruiz', 'email' => 'gabriel@devmail.com', 'headline' => 'Go Backend Developer | Microservices', 'bio' => 'Desarrollador Go especializado en microservicios y APIs de alto rendimiento.', 'hourly_rate' => 90, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Guadalajara', 'country' => 'México', 'skill_names' => ['Go', 'Rust', 'Docker', 'Kubernetes', 'PostgreSQL']],
+            ['name' => 'Carmen', 'lastname' => 'Ortiz', 'email' => 'carmen@devmail.com', 'headline' => 'Angular Developer | Enterprise Apps', 'bio' => 'Desarrolladora Angular con experiencia en aplicaciones enterprise.', 'hourly_rate' => 65, 'availability' => 'busy', 'experience_years' => 7, 'languages' => ['Español', 'Inglés'], 'location' => 'Monterrey', 'country' => 'México', 'skill_names' => ['Angular', 'TypeScript', 'RxJS', 'Node.js', 'MongoDB']],
+            ['name' => 'Diego', 'lastname' => 'Vega', 'email' => 'diego@devmail.com', 'headline' => 'Swift iOS Developer | Apple Platforms', 'bio' => 'Desarrollador iOS nativo con apps en el App Store.', 'hourly_rate' => 85, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Miami', 'country' => 'Estados Unidos', 'skill_names' => ['Swift', 'iOS', 'Objective-C', 'CoreData', 'SwiftUI']],
+            ['name' => 'Ana', 'lastname' => 'Campos', 'email' => 'ana@devmail.com', 'headline' => 'Kotlin Android Developer', 'bio' => 'Desarrolladora Android nativa con experiencia en apps de alta demanda.', 'hourly_rate' => 75, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Cali', 'country' => 'Colombia', 'skill_names' => ['Kotlin', 'Android', 'Java', 'Firebase', 'REST APIs']],
+            ['name' => 'Jorge', 'lastname' => 'Reyes', 'email' => 'jorge@devmail.com', 'headline' => 'Database Administrator | PostgreSQL & MySQL', 'bio' => 'DBA especializado en optimización y administración de bases de datos.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 8, 'languages' => ['Español', 'Inglés'], 'location' => 'Quito', 'country' => 'Ecuador', 'skill_names' => ['PostgreSQL', 'MySQL', 'Redis', 'MongoDB', 'AWS']],
+            ['name' => 'Laura', 'lastname' => 'Mora', 'email' => 'laura@devmail.com', 'headline' => 'GraphQL API Developer', 'bio' => 'Desarrolladora especializada en APIs GraphQL y Apollo.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés'], 'location' => 'Santiago', 'country' => 'Chile', 'skill_names' => ['GraphQL', 'Node.js', 'React', 'TypeScript', 'PostgreSQL']],
+            ['name' => 'Oscar', 'lastname' => 'Herrera', 'email' => 'oscar@devmail.com', 'headline' => 'Rust Systems Developer', 'bio' => 'Desarrollador Rust para sistemas de alto rendimiento.', 'hourly_rate' => 95, 'availability' => 'unavailable', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Buenos Aires', 'country' => 'Argentina', 'skill_names' => ['Rust', 'Go', 'Docker', 'PostgreSQL', 'Linux']],
+            ['name' => 'Patricia', 'lastname' => 'Guzmán', 'email' => 'patricia@devmail.com', 'headline' => 'WordPress Developer | CMS Expert', 'bio' => 'Desarrolladora WordPress con plugins personalizados.', 'hourly_rate' => 45, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Lima', 'country' => 'Perú', 'skill_names' => ['PHP', 'WordPress', 'MySQL', 'JavaScript', 'CSS']],
+            ['name' => 'Fernando', 'lastname' => 'Luna', 'email' => 'fernando@devmail.com', 'headline' => 'ElasticSearch Developer', 'bio' => 'Desarrollador especializado en búsquedas y Big Data con ElasticSearch.', 'hourly_rate' => 80, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['ElasticSearch', 'Python', 'Docker', 'AWS', 'Kibana']],
+            ['name' => 'Sandra', 'lastname' => 'Aguilar', 'email' => 'sandra@devmail.com', 'headline' => 'JAMStack Developer | Static Sites', 'bio' => 'Desarrolladora JAMStack especializada en sitios estáticos de alto rendimiento.', 'hourly_rate' => 55, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés'], 'location' => 'Medellín', 'country' => 'Colombia', 'skill_names' => ['Next.js', 'Gatsby', 'React', 'TailwindCSS', 'Netlify']],
+            ['name' => 'Hugo', 'lastname' => 'Soto', 'email' => 'hugo@devmail.com', 'headline' => 'Firebase Developer | Serverless', 'bio' => 'Desarrollador Firebase y arquitecturas serverless.', 'hourly_rate' => 65, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Ciudad de México', 'country' => 'México', 'skill_names' => ['Firebase', 'React', 'Node.js', 'TypeScript', 'Cloud Functions']],
+            ['name' => 'Verónica', 'lastname' => 'Rivas', 'email' => 'veronica@devmail.com', 'headline' => 'Django REST Framework Expert', 'bio' => 'Desarrolladora Django con APIs REST robustas.', 'hourly_rate' => 70, 'availability' => 'busy', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Valencia', 'country' => 'España', 'skill_names' => ['Django', 'Python', 'PostgreSQL', 'Redis', 'Docker']],
+            ['name' => 'Arturo', 'lastname' => 'Mejía', 'email' => 'arturo@devmail.com', 'headline' => 'Infrastructure as Code | Terraform', 'bio' => 'Ingeniero de infraestructura como código con Terraform.', 'hourly_rate' => 85, 'availability' => 'available', 'experience_years' => 7, 'languages' => ['Español', 'Inglés'], 'location' => 'Guadalajara', 'country' => 'México', 'skill_names' => ['Terraform', 'AWS', 'Kubernetes', 'Docker', 'Ansible']],
+            ['name' => 'Gloria', 'lastname' => 'Cortés', 'email' => 'gloria@devmail.com', 'headline' => 'Shopify Developer | E-commerce', 'bio' => 'Desarrolladora Shopify especializada en tiendas online.', 'hourly_rate' => 60, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Miami', 'country' => 'Estados Unidos', 'skill_names' => ['Shopify', 'Liquid', 'JavaScript', 'CSS', 'Ruby']],
+            ['name' => 'Miguel', 'lastname' => 'Arias', 'email' => 'miguel@devmail.com', 'headline' => 'Redis & Caching Expert', 'bio' => 'Especialista en Redis y estrategias de caché para alto rendimiento.', 'hourly_rate' => 75, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Buenos Aires', 'country' => 'Argentina', 'skill_names' => ['Redis', 'Node.js', 'Python', 'Docker', 'AWS']],
+            ['name' => 'Rosa', 'lastname' => 'Miranda', 'email' => 'rosa@devmail.com', 'headline' => 'TailwindCSS UI Designer', 'bio' => 'Diseñadora UI especializada en TailwindCSS y sistemas de diseño.', 'hourly_rate' => 55, 'availability' => 'available', 'experience_years' => 3, 'languages' => ['Español', 'Inglés'], 'location' => 'Barcelona', 'country' => 'España', 'skill_names' => ['TailwindCSS', 'React', 'Figma', 'HTML', 'CSS']],
+            ['name' => 'Eduardo', 'lastname' => 'Bermúdez', 'email' => 'eduardo@devmail.com', 'headline' => 'WebSockets Real-time Developer', 'bio' => 'Desarrollador especializado en aplicaciones real-time con WebSockets.', 'hourly_rate' => 80, 'availability' => 'available', 'experience_years' => 7, 'languages' => ['Español', 'Inglés'], 'location' => 'Santiago', 'country' => 'Chile', 'skill_names' => ['Node.js', 'Socket.io', 'React', 'Redis', 'MongoDB']],
+            ['name' => 'Teresa', 'lastname' => 'Gálvez', 'email' => 'teresa@devmail.com', 'headline' => 'Cybersecurity Consultant', 'bio' => 'Consultora de ciberseguridad y auditorías de aplicaciones.', 'hourly_rate' => 100, 'availability' => 'busy', 'experience_years' => 9, 'languages' => ['Español', 'Inglés'], 'location' => 'Madrid', 'country' => 'España', 'skill_names' => ['Python', 'Linux', 'AWS', 'Docker', 'Penetration Testing']],
+            ['name' => 'Roberto', 'lastname' => 'Espinosa', 'email' => 'roberto@devmail.com', 'headline' => 'Unity Game Developer', 'bio' => 'Desarrollador de videojuegos con Unity.', 'hourly_rate' => 75, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['Unity', 'C#', 'Game Development', '3D', 'AR/VR']],
+            ['name' => 'Claudia', 'lastname' => 'Acosta', 'email' => 'claudia@devmail.com', 'headline' => 'Data Visualization | D3.js', 'bio' => 'Especialista en visualizaciones de datos con D3.js y Chart.js.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Ciudad de México', 'country' => 'México', 'skill_names' => ['D3.js', 'React', 'JavaScript', 'Python', 'PostgreSQL']],
+            ['name' => 'Javier', 'lastname' => 'Oliva', 'email' => 'javier@devmail.com', 'headline' => 'CI/CD Pipeline Engineer', 'bio' => 'Ingeniero de pipelines CI/CD y automatización de despliegues.', 'hourly_rate' => 80, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Lima', 'country' => 'Perú', 'skill_names' => ['Docker', 'Kubernetes', 'Jenkins', 'GitHub Actions', 'AWS']],
+            ['name' => 'Silvia', 'lastname' => 'León', 'email' => 'silvia@devmail.com', 'headline' => 'Stripe Payment Integration', 'bio' => 'Desarrolladora especializada en integraciones de pago con Stripe.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Montevideo', 'country' => 'Uruguay', 'skill_names' => ['Stripe', 'Node.js', 'React', 'PostgreSQL', 'REST APIs']],
+            ['name' => 'Alberto', 'lastname' => 'Padilla', 'email' => 'alberto@devmail.com', 'headline' => 'Serverless Architect | AWS Lambda', 'bio' => 'Arquitecto serverless especializado en Lambda y servicios AWS.', 'hourly_rate' => 95, 'availability' => 'busy', 'experience_years' => 8, 'languages' => ['Español', 'Inglés'], 'location' => 'Seattle', 'country' => 'Estados Unidos', 'skill_names' => ['AWS Lambda', 'Node.js', 'Python', 'DynamoDB', 'API Gateway']],
+            ['name' => 'Beatriz', 'lastname' => 'Sanabria', 'email' => 'beatriz@devmail.com', 'headline' => 'NestJS Backend Developer', 'bio' => 'Desarrolladora NestJS con experiencia en arquitecturas escalables.', 'hourly_rate' => 75, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Asunción', 'country' => 'Paraguay', 'skill_names' => ['NestJS', 'TypeScript', 'PostgreSQL', 'Docker', 'Redis']],
+            ['name' => 'Sergio', 'lastname' => 'Barrera', 'email' => 'sergio@devmail.com', 'headline' => 'PWA Progressive Web Apps', 'bio' => 'Desarrollador de Progressive Web Apps conService Workers.', 'hourly_rate' => 65, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Córdoba', 'country' => 'Argentina', 'skill_names' => ['PWA', 'React', 'JavaScript', 'Service Workers', 'IndexedDB']],
+            ['name' => 'Mariana', 'lastname' => 'Quintana', 'email' => 'mariana@devmail.com', 'headline' => 'Storybook Component Library', 'bio' => 'Desarrolladora de bibliotecas de componentes con Storybook.', 'hourly_rate' => 60, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés'], 'location' => 'Bogotá', 'country' => 'Colombia', 'skill_names' => ['Storybook', 'React', 'TypeScript', 'TailwindCSS', 'Figma']],
+            ['name' => 'Tomás', 'lastname' => 'Salas', 'email' => 'tomas@devmail.com', 'headline' => 'MongoDB Atlas Expert', 'bio' => 'Especialista en MongoDB Atlas y bases de datos NoSQL.', 'hourly_rate' => 80, 'availability' => 'available', 'experience_years' => 7, 'languages' => ['Español', 'Inglés'], 'location' => 'Santiago', 'country' => 'Chile', 'skill_names' => ['MongoDB', 'Node.js', 'Express', 'TypeScript', 'AWS']],
+            ['name' => 'Adriana', 'lastname' => 'Peralta', 'email' => 'adriana@devmail.com', 'headline' => 'Email Marketing Developer', 'bio' => 'Desarrolladora de templates de email y automatización de marketing.', 'hourly_rate' => 45, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés'], 'location' => 'Guadalajara', 'country' => 'México', 'skill_names' => ['HTML Email', 'MJML', 'JavaScript', 'CSS', 'Mailchimp']],
+            ['name' => 'Félix', 'lastname' => 'Cáceres', 'email' => 'felix@devmail.com', 'headline' => 'gRPC API Developer', 'bio' => 'Desarrollador de APIs de alto rendimiento con gRPC.', 'hourly_rate' => 85, 'availability' => 'available', 'experience_years' => 6, 'languages' => ['Español', 'Inglés'], 'location' => 'Buenos Aires', 'country' => 'Argentina', 'skill_names' => ['gRPC', 'Go', 'Node.js', 'Protocol Buffers', 'Docker']],
+            ['name' => 'Daniela', 'lastname' => 'Oviedo', 'email' => 'daniela@devmail.com', 'headline' => 'Microservices Architect', 'bio' => 'Arquitecta de microservicios con experiencia en Kubernetes.', 'hourly_rate' => 110, 'availability' => 'busy', 'experience_years' => 10, 'languages' => ['Español', 'Inglés', 'Portugués'], 'location' => 'São Paulo', 'country' => 'Brasil', 'skill_names' => ['Kubernetes', 'Docker', 'Go', 'Node.js', 'AWS', 'Terraform']],
+            ['name' => 'Gustavo', 'lastname' => 'Uribe', 'email' => 'gustavo@devmail.com', 'headline' => 'Testing Specialist | Jest & Cypress', 'bio' => 'Especialista en testing con Jest y Cypress para aplicaciones modernas.', 'hourly_rate' => 60, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Medellín', 'country' => 'Colombia', 'skill_names' => ['Jest', 'Cypress', 'React', 'TypeScript', 'Node.js']],
+            ['name' => 'Eugenia', 'lastname' => 'Benítez', 'email' => 'eugenia@devmail.com', 'headline' => 'Headless CMS Developer', 'bio' => 'Desarrolladora de CMS headless como Strapi y Contentful.', 'hourly_rate' => 65, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés'], 'location' => 'Montevideo', 'country' => 'Uruguay', 'skill_names' => ['Strapi', 'Contentful', 'Next.js', 'GraphQL', 'Node.js']],
+            ['name' => 'Mauricio', 'lastname' => 'Sandoval', 'email' => 'mauricio@devmail.com', 'headline' => 'Real-time Notifications | Firebase', 'bio' => 'Desarrollador de sistemas de notificaciones en tiempo real.', 'hourly_rate' => 70, 'availability' => 'available', 'experience_years' => 5, 'languages' => ['Español', 'Inglés'], 'location' => 'Lima', 'country' => 'Perú', 'skill_names' => ['Firebase', 'Node.js', 'React', 'Cloud Functions', 'WebSockets']],
+            ['name' => 'Yolanda', 'lastname' => 'Estrada', 'email' => 'yolanda@devmail.com', 'headline' => 'Accessibility A11y Specialist', 'bio' => 'Especialista en accesibilidad web y cumplimiento WCAG.', 'hourly_rate' => 55, 'availability' => 'available', 'experience_years' => 4, 'languages' => ['Español', 'Inglés'], 'location' => 'Barcelona', 'country' => 'España', 'skill_names' => ['Accessibility', 'HTML', 'CSS', 'React', 'Screen Readers']],
+            ['name' => 'Cristian', 'lastname' => 'Domínguez', 'email' => 'cristian@devmail.com', 'headline' => 'Performance Optimization Expert', 'bio' => 'Especialista en optimización de rendimiento web.', 'hourly_rate' => 85, 'availability' => 'available', 'experience_years' => 8, 'languages' => ['Español', 'Inglés'], 'location' => 'Miami', 'country' => 'Estados Unidos', 'skill_names' => ['Performance', 'Lighthouse', 'React', 'Webpack', 'AWS']],
         ];
         
         foreach ($developersData as $data) {
@@ -327,7 +428,7 @@ class FullDemoSeeder extends Seeder
             
             DB::table('users')->where('id', $user->id)->update(['email_verified_at' => Carbon::now()]);
             
-            $profile = DeveloperProfile::create([
+            DeveloperProfile::create([
                 'user_id' => $user->id,
                 'headline' => $data['headline'],
                 'skills' => json_encode($data['skill_names']),
@@ -341,7 +442,6 @@ class FullDemoSeeder extends Seeder
                 'languages' => json_encode($data['languages']),
             ]);
             
-            // Insertar en developer_skill pivot
             foreach ($data['skill_names'] as $skillName) {
                 if (isset($skills[$skillName])) {
                     DB::table('developer_skill')->insert([
@@ -356,29 +456,34 @@ class FullDemoSeeder extends Seeder
             
             $developers[] = $user->id;
         }
-
-        // === GENERACIÓN PROGRAMÁTICA: 85 desarrolladores adicionales ===
-        $this->command->info('Generando 85 desarrolladores adicionales...');
-
+        
+        // 150 desarrolladores adicionales generados programáticamente
+        $this->command->info('   Generando 150 desarrolladores adicionales...');
+        
         $firstNames = [
-            'Miguel', 'Gabriel', 'Diego', 'Tomás', 'Emilio', 'Joaquín', 'Federico', 'Martín',
-            'Lucas', 'Hugo', 'Óscar', 'Rafael', 'Simón', 'Adrián', 'Bruno', 'Iván',
-            'Esteban', 'Rodrigo', 'Manuel', 'Gonzalo', 'Patricio', 'Álvaro', 'Javier', 'Enrique',
-            'Carlos', 'Eduardo', 'Felipe', 'Francisco', 'Ignacio', 'Roberto', 'Ernesto', 'Humberto',
-            'Elena', 'Claudia', 'Natalia', 'Fernanda', 'Daniela', 'Carolina', 'Mariana', 'Paola',
-            'Lorena', 'Mónica', 'Patricia', 'Gabriela', 'Andrea', 'Diana', 'Silvia', 'Rosa',
-            'Sara', 'Renata', 'Jimena', 'Catalina', 'Verónica', 'Alejandra', 'Teresa', 'Pilar',
-            'Ximena', 'Julia', 'Alicia', 'Irene', 'Inés', 'Victoria', 'Carmen', 'Luciana',
+            'Miguel', 'Gabriel', 'Tomás', 'Emilio', 'Joaquín', 'Federico', 'Martín', 'Lucas', 'Hugo', 'Óscar',
+            'Rafael', 'Simón', 'Adrián', 'Bruno', 'Iván', 'Esteban', 'Rodrigo', 'Manuel', 'Gonzalo', 'Patricio',
+            'Álvaro', 'Javier', 'Enrique', 'Carlos', 'Eduardo', 'Felipe', 'Francisco', 'Ignacio', 'Roberto', 'Ernesto',
+            'Humberto', 'Elena', 'Claudia', 'Natalia', 'Fernanda', 'Daniela', 'Carolina', 'Mariana', 'Paola', 'Lorena',
+            'Mónica', 'Patricia', 'Gabriela', 'Andrea', 'Diana', 'Silvia', 'Rosa', 'Sara', 'Renata', 'Jimena',
+            'Catalina', 'Verónica', 'Alejandra', 'Teresa', 'Pilar', 'Ximena', 'Julia', 'Alicia', 'Irene', 'Inés',
+            'Victoria', 'Carmen', 'Luciana', 'Emilia', 'Sofía', 'Isidora', 'Valentina', 'María', 'Esperanza', 'Consuelo',
+            'Juan', 'Pedro', 'José', 'Antonio', 'Luis', 'Miguel', 'Juan Carlos', 'José Luis', 'Francisco', 'José María',
+            'Andrés', 'Alejandro', 'Sergio', 'Javier', 'Carlos', 'David', 'Fernando', 'Jorge', 'Alberto', 'Roberto',
+            'Raúl', 'Antonio', 'Francisco Javier', 'Juan Antonio', 'Óscar', 'Rafael', 'Enrique', 'Pablo', 'Santiago', 'Diego',
+            'Marcos', 'Iván', 'Rubén', 'Adrián', 'Mario', 'Óliver', 'Bruno', 'Thiago', 'Matías', 'Benjamín',
+            'Samuel', 'Daniel', 'Sebastián', 'Emilio', 'Joaquín', 'Gabriel', 'Nicolás', 'Eduardo', 'Cristian', 'Kevin',
+            'Alex', 'Brian', 'Marco', 'Ángel', 'Israel', 'Erik', 'Guillermo', 'Víctor', 'Hugo', 'Damián'
         ];
-
+        
         $lastNames = [
-            'López', 'Martínez', 'González', 'Rodríguez', 'Hernández', 'Pérez', 'García', 'Sánchez',
-            'Ramírez', 'Torres', 'Flores', 'Rivera', 'Gómez', 'Díaz', 'Cruz', 'Morales',
-            'Ortiz', 'Gutiérrez', 'Chávez', 'Ramos', 'Vásquez', 'Castillo', 'Jiménez', 'Vargas',
-            'Rojas', 'Herrera', 'Medina', 'Aguilar', 'Peña', 'Reyes', 'Salazar', 'Delgado',
-            'Fuentes', 'Navarro', 'Montoya', 'Cardenas', 'Molina', 'Arias', 'Silva', 'Orozco',
+            'López', 'Martínez', 'González', 'Rodríguez', 'Hernández', 'Pérez', 'García', 'Sánchez', 'Ramírez', 'Torres',
+            'Flores', 'Rivera', 'Gómez', 'Díaz', 'Cruz', 'Morales', 'Ortiz', 'Gutiérrez', 'Chávez', 'Ramos',
+            'Vásquez', 'Castillo', 'Jiménez', 'Vargas', 'Rojas', 'Herrera', 'Medina', 'Aguilar', 'Peña', 'Reyes',
+            'Salazar', 'Delgado', 'Fuentes', 'Navarro', 'Montoya', 'Cardenas', 'Molina', 'Arias', 'Silva', 'Orozco',
+            'Sandoval', 'Estrada', 'Cortés', 'Acosta', 'León', 'Bermúdez', 'Espinosa', 'Gálvez', 'Quintana', 'Cáceres'
         ];
-
+        
         $locations = [
             ['location' => 'Bogotá', 'country' => 'Colombia'],
             ['location' => 'Medellín', 'country' => 'Colombia'],
@@ -400,10 +505,15 @@ class FullDemoSeeder extends Seeder
             ['location' => 'Panamá', 'country' => 'Panamá'],
             ['location' => 'Santo Domingo', 'country' => 'República Dominicana'],
             ['location' => 'Asunción', 'country' => 'Paraguay'],
+            ['location' => 'Miami', 'country' => 'Estados Unidos'],
+            ['location' => 'Los Angeles', 'country' => 'Estados Unidos'],
+            ['location' => 'New York', 'country' => 'Estados Unidos'],
+            ['location' => 'Seattle', 'country' => 'Estados Unidos'],
+            ['location' => 'São Paulo', 'country' => 'Brasil'],
         ];
-
+        
         $skillNames = array_keys($skills);
-
+        
         $headlineTemplates = [
             'Full Stack Developer | %s + %s',
             'Senior %s Developer',
@@ -416,58 +526,54 @@ class FullDemoSeeder extends Seeder
             '%s Developer | Agile & Scrum',
             'Tech Lead | %s + %s',
         ];
-
+        
         $bioTemplates = [
-            'Desarrollador con %d años de experiencia especializado en %s. He trabajado en proyectos de alta escalabilidad para empresas de tecnología en Latinoamérica. Apasionado por las arquitecturas limpias y el código de calidad.',
-            'Ingeniero de software con %d años creando soluciones con %s. Experiencia en startups y empresas consolidadas. Enfoque en desarrollo ágil y entrega continua de valor al cliente.',
-            'Profesional con %d años en desarrollo de software, experto en %s. He liderado equipos técnicos y entregado más de 30 proyectos exitosos. Contribuidor activo en comunidades open source.',
-            'Desarrollador experimentado con %d años usando %s. Especializado en aplicaciones web y móviles de alto rendimiento. Certificaciones en tecnologías cloud y metodologías ágiles.',
-            'Con %d años de experiencia en %s, me especializo en crear soluciones escalables y mantenibles. He colaborado con equipos distribuidos internacionalmente y domino las mejores prácticas de la industria.',
-            'Ingeniero con %d años de trayectoria en %s. Experiencia en fintech, healthtech y edtech. Apasionado por la innovación tecnológica y el impacto social a través del software.',
+            'Desarrollador con %d años de experiencia especializado en %s.',
+            'Ingeniero de software con %d años creando soluciones con %s.',
+            'Profesional con %d años en desarrollo de software, experto en %s.',
+            'Desarrollador experimentado con %d años usando %s.',
+            'Con %d años de experiencia en %s, me especializo en crear soluciones escalables.',
+            'Ingeniero con %d años de trayectoria en %s.',
         ];
-
+        
         $languageOptions = [
             ['Español', 'Inglés'],
             ['Español', 'Inglés', 'Portugués'],
             ['Español', 'Inglés', 'Francés'],
-            ['Español', 'Inglés', 'Alemán'],
             ['Español'],
             ['Español', 'Inglés', 'Italiano'],
         ];
-
+        
         $availabilities = ['available', 'available', 'available', 'available', 'busy', 'busy', 'unavailable'];
-
-        $usedEmails = [];
-
-        for ($i = 0; $i < 85; $i++) {
+        
+        for ($i = 0; $i < 150; $i++) {
             $firstName = $firstNames[array_rand($firstNames)];
             $lastName = $lastNames[array_rand($lastNames)];
-
-            // Generate unique email
-            $baseEmail = strtolower(str_replace(['á','é','í','ó','ú','ñ','ü'], ['a','e','i','o','u','n','u'], $firstName)) . '.' . strtolower(str_replace(['á','é','í','ó','ú','ñ','ü'], ['a','e','i','o','u','n','u'], $lastName));
-            $email = $baseEmail . ($i + 1) . '@devmail.com';
-
+            
+            // Generate unique valid email
+            $baseEmail = strtolower($firstName) . '.' . strtolower($lastName);
+            // Remove any non-alphanumeric characters
+            $baseEmail = preg_replace('/[^a-z0-9]/i', '', $baseEmail);
+            $email = $baseEmail . ($i + 51) . '@devmail.com';
+            
             $loc = $locations[array_rand($locations)];
             $expYears = rand(1, 15);
             $hourlyRate = rand(30, 150);
             $availability = $availabilities[array_rand($availabilities)];
-
-            // Pick 3-6 random skills
+            
             $numSkills = rand(3, 6);
             $shuffledSkills = $skillNames;
             shuffle($shuffledSkills);
             $devSkills = array_slice($shuffledSkills, 0, $numSkills);
-
-            // Generate headline
+            
             $headlineTemplate = $headlineTemplates[array_rand($headlineTemplates)];
             $headline = sprintf($headlineTemplate, $devSkills[0], $devSkills[1] ?? $devSkills[0]);
-
-            // Generate bio
+            
             $bioTemplate = $bioTemplates[array_rand($bioTemplates)];
             $bio = sprintf($bioTemplate, $expYears, implode(', ', array_slice($devSkills, 0, 3)));
-
+            
             $langs = $languageOptions[array_rand($languageOptions)];
-
+            
             $user = User::create([
                 'name' => $firstName,
                 'lastname' => $lastName,
@@ -476,9 +582,9 @@ class FullDemoSeeder extends Seeder
                 'user_type' => 'programmer',
                 'role' => 'programmer',
             ]);
-
+            
             DB::table('users')->where('id', $user->id)->update(['email_verified_at' => Carbon::now()]);
-
+            
             DeveloperProfile::create([
                 'user_id' => $user->id,
                 'headline' => $headline,
@@ -492,7 +598,7 @@ class FullDemoSeeder extends Seeder
                 'experience_years' => $expYears,
                 'languages' => json_encode($langs),
             ]);
-
+            
             foreach ($devSkills as $skillName) {
                 if (isset($skills[$skillName])) {
                     DB::table('developer_skill')->insert([
@@ -504,32 +610,32 @@ class FullDemoSeeder extends Seeder
                     ]);
                 }
             }
-
+            
             $developers[] = $user->id;
         }
-
-        $this->command->info('Total developers created: ' . count($developers));
+        
+        $this->command->info('   ✓ Total desarrolladores creados: ' . count($developers));
         
         return $developers;
     }
 
     private function createWallets(array $admins, array $companies, array $developers): void
     {
-        $this->command->info('Creando wallets...');
+        $this->command->info('💰 Creando wallets para todos los usuarios...');
         
         // Wallets para admins
         foreach ($admins as $adminId) {
             Wallet::create([
                 'user_id' => $adminId,
-                'balance' => 0.00,
+                'balance' => rand(5000, 50000),
                 'held_balance' => 0.00,
             ]);
         }
         
         // Wallets para companies
         foreach ($companies as $index => $companyId) {
-            $balance = rand(2000, 15000);
-            $heldBalance = in_array($index, [0, 1, 2, 3, 4]) ? rand(1000, 5000) : 0.00;
+            $balance = rand(5000, 50000);
+            $heldBalance = rand(1000, 15000);
             
             Wallet::create([
                 'user_id' => $companyId,
@@ -540,7 +646,7 @@ class FullDemoSeeder extends Seeder
         
         // Wallets para developers
         foreach ($developers as $index => $developerId) {
-            $balance = in_array($index, [0, 1, 10, 12, 14]) ? rand(2000, 5000) : rand(0, 1500);
+            $balance = rand(500, 15000);
             
             Wallet::create([
                 'user_id' => $developerId,
@@ -552,14 +658,13 @@ class FullDemoSeeder extends Seeder
 
     private function createPaymentMethods(array $companies, array $developers): void
     {
-        $this->command->info('Creando métodos de pago...');
+        $this->command->info('💳 Creando métodos de pago...');
         
-        $banks = ['Banco Santander', 'Banco BBVA', 'Banco HSBC', 'Banco Citibank', 'Banco Scotiabank'];
-        $brands = ['Visa', 'Mastercard', 'American Express'];
+        $banks = ['Banco Santander', 'Banco BBVA', 'Banco HSBC', 'Banco Citibank', 'Banco Scotiabank', 'Banco Itaú', 'Banco Chile'];
+        $brands = ['Visa', 'Mastercard', 'American Express', 'Discover'];
         
         // Payment methods para companies
         foreach ($companies as $companyId) {
-            // Bank account
             PaymentMethod::create([
                 'user_id' => $companyId,
                 'type' => 'bank_account',
@@ -571,7 +676,6 @@ class FullDemoSeeder extends Seeder
                 'is_default' => true,
             ]);
             
-            // A veces agregar tarjeta
             if (rand(0, 1)) {
                 PaymentMethod::create([
                     'user_id' => $companyId,
@@ -612,646 +716,209 @@ class FullDemoSeeder extends Seeder
 
     private function createProjects(array $companies, array $categories, array $skills, array $developers): array
     {
-        $this->command->info('Creando proyectos...');
+        $this->command->info('📋 Creando 150+ proyectos...');
         
         $projects = [];
         
-        // Proyectos Open (P1-P5)
-        $openProjects = [
-            [
-                'company_id' => $companies[0], // TechNova
-                'title' => 'Desarrollo de Plataforma E-commerce con React',
-                'description' => 'Necesitamos desarrollar una plataforma de e-commerce completa con React en el frontend y Node.js en el backend. La plataforma debe incluir catálogo de productos, carrito de compras, pasarela de pagos, panel de administración y sistema de inventario.',
-                'budget_min' => 8000, 'budget_max' => 12000, 'budget_type' => 'fixed',
-                'duration_value' => 3, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'high', 'remote' => true,
-                'tags' => json_encode(['e-commerce', 'react', 'node.js']),
-                'status' => 'open',
-                'category_names' => ['Desarrollo Web', 'E-commerce'],
-                'skill_names' => ['React', 'Node.js', 'TypeScript', 'PostgreSQL'],
-            ],
-            [
-                'company_id' => $companies[1], // ByteForge
-                'title' => 'API REST para App de Delivery',
-                'description' => 'Desarrollar una API REST robusta para una aplicación de delivery de comida. Debe incluir autenticación, geolocalización, gestión de pedidos, notificaciones push y integración con múltiples restaurantes.',
-                'budget_min' => 5000, 'budget_max' => 8000, 'budget_type' => 'fixed',
-                'duration_value' => 6, 'duration_unit' => 'weeks',
-                'level' => 'mid', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['api', 'delivery', 'backend']),
-                'status' => 'open',
-                'category_names' => ['Backend/APIs'],
-                'skill_names' => ['Node.js', 'PostgreSQL', 'Docker', 'Redis'],
-            ],
-            [
-                'company_id' => $companies[2], // CloudPeak
-                'title' => 'Diseño UI/UX para App de Fitness',
-                'description' => 'Diseño completo de interfaz de usuario y experiencia para una aplicación móvil de fitness. Incluye diseño de pantallas, sistema de diseño, prototipos interactivos y especificación para desarrollo.',
-                'budget_min' => 3000, 'budget_max' => 5000, 'budget_type' => 'fixed',
-                'duration_value' => 4, 'duration_unit' => 'weeks',
-                'level' => 'mid', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['ui/ux', 'mobile', 'fitness']),
-                'status' => 'open',
-                'category_names' => ['UI/UX Design', 'Desarrollo Mobile'],
-                'skill_names' => ['Figma', 'React Native', 'TailwindCSS'],
-            ],
-            [
-                'company_id' => $companies[4], // InnoCode
-                'title' => 'Sistema de Gestión Empresarial ERP',
-                'description' => 'Desarrollo de un sistema ERP completo para gestión empresarial. Módulos de contabilidad, inventario, RRHH, clientes y proyectos. Debe ser escalable y modular.',
-                'budget_min' => 15000, 'budget_max' => 25000, 'budget_type' => 'fixed',
-                'duration_value' => 4, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'high', 'remote' => true, 'featured' => true,
-                'tags' => json_encode(['erp', 'enterprise', 'laravel']),
-                'status' => 'open',
-                'category_names' => ['Desarrollo Web', 'Backend/APIs'],
-                'skill_names' => ['Laravel', 'Vue.js', 'MySQL', 'Docker'],
-            ],
-            [
-                'company_id' => $companies[6], // AppVenture
-                'title' => 'Chatbot con IA para Soporte al Cliente',
-                'description' => 'Desarrollo de un chatbot inteligente con procesamiento de lenguaje natural para atención al cliente. Debe integrarse con sistemas existentes y manejar consultas frecuentes.',
-                'budget_min' => 6000, 'budget_max' => 10000, 'budget_type' => 'fixed',
-                'duration_value' => 2, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['chatbot', 'ia', 'nlp']),
-                'status' => 'open',
-                'category_names' => ['AI/ML'],
-                'skill_names' => ['Python', 'Node.js', 'TypeScript', 'MongoDB'],
-            ],
+        // 60 proyectos con datos específicos
+        $projectTemplates = [
+            ['title' => 'Plataforma E-commerce con React', 'category' => ['Desarrollo Web', 'E-commerce'], 'skills' => ['React', 'Node.js', 'PostgreSQL', 'Stripe']],
+            ['title' => 'API REST para App de Delivery', 'category' => ['Backend/APIs', 'Desarrollo Mobile'], 'skills' => ['Node.js', 'PostgreSQL', 'Docker', 'Redis']],
+            ['title' => 'Diseño UI/UX para App de Fitness', 'category' => ['UI/UX Design', 'Desarrollo Mobile'], 'skills' => ['Figma', 'React Native', 'Swift']],
+            ['title' => 'Sistema ERP Empresarial', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Laravel', 'Vue.js', 'MySQL', 'Docker']],
+            ['title' => 'Chatbot con IA para Soporte', 'category' => ['AI/ML', 'Backend/APIs'], 'skills' => ['Python', 'Node.js', 'TensorFlow', 'MongoDB']],
+            ['title' => 'Dashboard de Analytics en Tiempo Real', 'category' => ['Desarrollo Web', 'Data Science'], 'skills' => ['React', 'D3.js', 'PostgreSQL', 'WebSockets']],
+            ['title' => 'App de Reservas de Restaurantes', 'category' => ['Desarrollo Mobile', 'Desarrollo Web'], 'skills' => ['Flutter', 'Node.js', 'MongoDB', 'Google Maps']],
+            ['title' => 'Plataforma de Gestión de Inventarios', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['React', 'Python', 'PostgreSQL', 'AWS']],
+            ['title' => 'Sistema de Tracking GPS para Flotas', 'category' => ['Desarrollo Mobile', 'Backend/APIs'], 'skills' => ['React Native', 'Node.js', 'PostgreSQL', 'Google Maps API']],
+            ['title' => 'Portal de Telemedicina', 'category' => ['Desarrollo Web', 'Desarrollo Mobile'], 'skills' => ['React', 'Laravel', 'MySQL', 'WebRTC']],
+            ['title' => 'Marketplace de Servicios Freelance', 'category' => ['Desarrollo Web', 'E-commerce'], 'skills' => ['Vue.js', 'Node.js', 'MongoDB', 'Stripe']],
+            ['title' => 'Sistema de Gestión de Documentos', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['React', 'Python', 'PostgreSQL', 'AWS S3']],
+            ['title' => 'App de Educación Interactiva', 'category' => ['Desarrollo Mobile', 'UI/UX Design'], 'skills' => ['Flutter', 'Firebase', 'React', 'Node.js']],
+            ['title' => 'Plataforma de Crowdfunding', 'category' => ['Desarrollo Web', 'E-commerce'], 'skills' => ['Laravel', 'Vue.js', 'MySQL', 'PayPal']],
+            ['title' => 'Sistema CRM Personalizado', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['React', 'Node.js', 'PostgreSQL', 'GraphQL']],
+            ['title' => 'App de Delivery con IA', 'category' => ['Desarrollo Mobile', 'AI/ML'], 'skills' => ['React Native', 'Python', 'TensorFlow', 'PostgreSQL']],
+            ['title' => 'Plataforma de Gestión de Eventos', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Next.js', 'Node.js', 'MongoDB', 'Stripe']],
+            ['title' => 'Sistema de Facturación Electrónica', 'category' => ['Backend/APIs', 'Desarrollo Web'], 'skills' => ['PHP', 'Laravel', 'MySQL', 'PDF']],
+            ['title' => 'Red Social para Profesionales', 'category' => ['Desarrollo Web', 'Desarrollo Mobile'], 'skills' => ['React', 'Node.js', 'PostgreSQL', 'Redis']],
+            ['title' => 'Plataforma de Video Conferencias', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['React', 'Node.js', 'WebRTC', 'AWS']],
+            ['title' => 'Sistema de Control de Acceso IoT', 'category' => ['Backend/APIs', 'DevOps'], 'skills' => ['Python', 'Node.js', 'AWS IoT', 'Docker']],
+            ['title' => 'Plataforma de Aprendizaje Automático', 'category' => ['AI/ML', 'Data Science'], 'skills' => ['Python', 'TensorFlow', 'AWS', 'PostgreSQL']],
+            ['title' => 'Dashboard de Business Intelligence', 'category' => ['Data Science', 'Desarrollo Web'], 'skills' => ['Python', 'React', 'PostgreSQL', 'D3.js']],
+            ['title' => 'Sistema de Recomendaciones', 'category' => ['AI/ML', 'Backend/APIs'], 'skills' => ['Python', 'Node.js', 'MongoDB', 'Redis']],
+            ['title' => 'App de Finanzas Personales', 'category' => ['Desarrollo Mobile', 'Desarrollo Web'], 'skills' => ['React Native', 'Node.js', 'PostgreSQL', 'Charts']],
+            ['title' => 'Plataforma de Blogs with CMS', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Next.js', 'Node.js', 'MongoDB', 'AWS S3']],
+            ['title' => 'Sistema de Gestión de Proyectos', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Vue.js', 'Laravel', 'MySQL', 'Docker']],
+            ['title' => 'Marketplace de Productos Digitales', 'category' => ['Desarrollo Web', 'E-commerce'], 'skills' => ['React', 'Node.js', 'MongoDB', 'Stripe']],
+            ['title' => 'App de Seguimiento de Hábitos', 'category' => ['Desarrollo Mobile', 'UI/UX Design'], 'skills' => ['Swift', 'iOS', 'CoreData', 'HealthKit']],
+            ['title' => 'Plataforma de Subastas Online', 'category' => ['Desarrollo Web', 'E-commerce'], 'skills' => ['React', 'Node.js', 'PostgreSQL', 'WebSockets']],
+            ['title' => 'Sistema de Reservas Hotel', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Laravel', 'Vue.js', 'MySQL', 'Calendar API']],
+            ['title' => 'App de Control de Gastos', 'category' => ['Desarrollo Mobile', 'Desarrollo Web'], 'skills' => ['Flutter', 'Firebase', 'Dart', 'Charts']],
+            ['title' => 'Plataforma de Membresías', 'category' => ['Desarrollo Web', 'E-commerce'], 'skills' => ['Next.js', 'Stripe', 'PostgreSQL', 'AWS']],
+            ['title' => 'Sistema de Gestión de Taller', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['PHP', 'Laravel', 'MySQL', 'Bootstrap']],
+            ['title' => 'App de Recipes & Meal Planning', 'category' => ['Desarrollo Mobile', 'UI/UX Design'], 'skills' => ['React Native', 'Firebase', 'Figma', 'Nutritional API']],
+            ['title' => 'Plataforma de Encuestas Online', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Vue.js', 'Node.js', 'MongoDB', 'Chart.js']],
+            ['title' => 'Sistema de Booking de Citas', 'category' => ['Desarrollo Web', 'Desarrollo Mobile'], 'skills' => ['React', 'Node.js', 'PostgreSQL', 'Twilio']],
+            ['title' => 'App de Meditation & Sleep', 'category' => ['Desarrollo Mobile', 'UI/UX Design'], 'skills' => ['Flutter', 'Firebase', 'Audio API', 'HealthKit']],
+            ['title' => 'Plataforma de Donaciones', 'category' => ['Desarrollo Web', 'E-commerce'], 'skills' => ['React', 'Node.js', 'PostgreSQL', 'Stripe']],
+            ['title' => 'Sistema de Inventario con QR', 'category' => ['Backend/APIs', 'Desarrollo Mobile'], 'skills' => ['Python', 'React Native', 'PostgreSQL', 'QR Scanner']],
+            ['title' => 'App de Travel Planner', 'category' => ['Desarrollo Mobile', 'UI/UX Design'], 'skills' => ['Swift', 'iOS', 'MapKit', 'REST APIs']],
+            ['title' => 'Plataforma de Cursos Online', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Laravel', 'Vue.js', 'MySQL', 'Video Streaming']],
+            ['title' => 'Sistema de Gestión de Biblioteca', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Django', 'Python', 'PostgreSQL', 'ISBN API']],
+            ['title' => 'App de Pet Care & Tracking', 'category' => ['Desarrollo Mobile', 'UI/UX Design'], 'skills' => ['Kotlin', 'Android', 'Firebase', 'Maps API']],
+            ['title' => 'Plataforma de Freelancers', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Next.js', 'Node.js', 'MongoDB', 'Stripe Connect']],
+            ['title' => 'Sistema de Punto de Venta', 'category' => ['Backend/APIs', 'Desarrollo Web'], 'skills' => ['Electron', 'Node.js', 'SQLite', 'Receipt Printer']],
+            ['title' => 'App de Workout & Fitness', 'category' => ['Desarrollo Mobile', 'Desarrollo Web'], 'skills' => ['Flutter', 'Firebase', 'Health APIs', 'Charts']],
+            ['title' => 'Plataforma de Newsletter', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Node.js', 'React', 'MongoDB', 'Mailgun']],
+            ['title' => 'Sistema de Gestión de Gimnasio', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['PHP', 'Laravel', 'MySQL', 'SMS API']],
+            ['title' => 'App de Task Management', 'category' => ['Desarrollo Mobile', 'Desarrollo Web'], 'skills' => ['React Native', 'Firebase', 'Redux', 'Notifications']],
+            ['title' => 'Plataforma de Reviews & Ratings', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Vue.js', 'Node.js', 'PostgreSQL', 'ElasticSearch']],
+            ['title' => 'Sistema de Alquiler de Autos', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['React', 'Node.js', 'MongoDB', 'Maps API']],
+            ['title' => 'App de Music Streaming', 'category' => ['Desarrollo Mobile', 'UI/UX Design'], 'skills' => ['Swift', 'iOS', 'Audio API', 'CloudKit']],
+            ['title' => 'Plataforma de Foros & Comunidad', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Discourse', 'Ruby', 'PostgreSQL', 'Redis']],
+            ['title' => 'Sistema de Payroll & Nóminas', 'category' => ['Backend/APIs', 'Desarrollo Web'], 'skills' => ['Java', 'Spring Boot', 'PostgreSQL', 'PDF Generator']],
+            ['title' => 'App de Real Estate & Propiedades', 'category' => ['Desarrollo Mobile', 'Desarrollo Web'], 'skills' => ['Flutter', 'Firebase', 'Maps API', 'Image Upload']],
+            ['title' => 'Plataforma de Subscripciones', 'category' => ['Desarrollo Web', 'E-commerce'], 'skills' => ['Next.js', 'Stripe Subscriptions', 'PostgreSQL', 'Webhooks']],
+            ['title' => 'Sistema de Tickets & Soporte', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['React', 'Node.js', 'MongoDB', 'Email Service']],
+            ['title' => 'App de Weather & Climate', 'category' => ['Desarrollo Mobile', 'UI/UX Design'], 'skills' => ['Kotlin', 'Android', 'Weather API', 'Widgets']],
+            ['title' => 'Plataforma de Podcast Hosting', 'category' => ['Desarrollo Web', 'Backend/APIs'], 'skills' => ['Node.js', 'React', 'AWS S3', 'Audio Processing']],
         ];
         
-        foreach ($openProjects as $i => $projectData) {
-            $project = Project::create([
-                'company_id' => $projectData['company_id'],
-                'title' => $projectData['title'],
-                'description' => $projectData['description'],
-                'budget_min' => $projectData['budget_min'],
-                'budget_max' => $projectData['budget_max'],
-                'budget_type' => $projectData['budget_type'],
-                'duration_value' => $projectData['duration_value'],
-                'duration_unit' => $projectData['duration_unit'],
-                'location' => null,
-                'remote' => $projectData['remote'],
-                'level' => $projectData['level'],
-                'priority' => $projectData['priority'],
-                'featured' => $projectData['featured'] ?? false,
-                'deadline' => Carbon::now()->addMonths(rand(1, 3)),
-                'max_applicants' => rand(10, 30),
-                'tags' => $projectData['tags'],
-                'status' => $projectData['status'],
-            ]);
-            
-            $projects[$i + 1] = ['id' => $project->id, 'status' => 'open'];
-            
-            // Category relations
-            foreach ($projectData['category_names'] as $catName) {
-                if (isset($categories[$catName])) {
-                    DB::table('project_category_project')->insert([
-                        'project_id' => $project->id,
-                        'project_category_id' => $categories[$catName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-            
-            // Skill relations
-            foreach ($projectData['skill_names'] as $skillName) {
-                if (isset($skills[$skillName])) {
-                    DB::table('project_skill')->insert([
-                        'project_id' => $project->id,
-                        'skill_id' => $skills[$skillName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-        }
-        
-        // Proyectos In Progress (P6-P10)
-        $inProgressProjects = [
-            [
-                'company_id' => $companies[0], // TechNova
-                'developer_id' => 22, // Santiago (third developer)
-                'title' => 'Implementación de Microservicios con Docker',
-                'description' => 'Migración de arquitectura monolítica a microservicios usando Docker y Kubernetes. Diseño de APIs, message queues y service mesh.',
-                'budget_min' => 10000, 'budget_max' => 15000, 'budget_type' => 'fixed',
-                'duration_value' => 3, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'high', 'remote' => true,
-                'tags' => json_encode(['microservicios', 'docker', 'kubernetes']),
-                'status' => 'in_progress',
-                'category_names' => ['DevOps', 'Backend/APIs'],
-                'skill_names' => ['Docker', 'Kubernetes', 'Node.js', 'AWS'],
-            ],
-            [
-                'company_id' => $companies[1], // ByteForge
-                'developer_id' => 27, // María (12th developer)
-                'title' => 'Dashboard de Analytics en Tiempo Real',
-                'description' => 'Desarrollo de dashboard interactivo con visualizaciones en tiempo real usando WebSockets, MongoDB y GraphQL.',
-                'budget_min' => 7000, 'budget_max' => 11000, 'budget_type' => 'fixed',
-                'duration_value' => 2, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'high', 'remote' => true,
-                'tags' => json_encode(['dashboard', 'analytics', 'react']),
-                'status' => 'in_progress',
-                'category_names' => ['Desarrollo Web', 'Data Science'],
-                'skill_names' => ['React', 'Node.js', 'MongoDB', 'GraphQL'],
-            ],
-            [
-                'company_id' => $companies[3], // DataStream
-                'developer_id' => 21, // Isabella (6th developer)
-                'title' => 'Rediseño UI/UX para App Bancaria',
-                'description' => 'Rediseño completo de aplicación bancaria mobile, enfocándose en experiencia de usuario y accesibilidad.',
-                'budget_min' => 5000, 'budget_max' => 8000, 'budget_type' => 'fixed',
-                'duration_value' => 6, 'duration_unit' => 'weeks',
-                'level' => 'mid', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['ui/ux', 'fintech', 'redesign']),
-                'status' => 'in_progress',
-                'category_names' => ['UI/UX Design'],
-                'skill_names' => ['Figma', 'React', 'TailwindCSS'],
-            ],
-            [
-                'company_id' => $companies[2], // CloudPeak
-                'developer_id' => 19, // Camila (4th developer)
-                'title' => 'Pipeline CI/CD con Kubernetes',
-                'description' => 'Implementación de pipeline de CI/CD completo con Kubernetes, incluyendo testing automatizado y despliegues.',
-                'budget_min' => 8000, 'budget_max' => 12000, 'budget_type' => 'fixed',
-                'duration_value' => 2, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'high', 'remote' => true,
-                'tags' => json_encode(['ci/cd', 'kubernetes', 'devops']),
-                'status' => 'in_progress',
-                'category_names' => ['DevOps', 'Cloud Computing'],
-                'skill_names' => ['Kubernetes', 'Docker', 'AWS', 'Terraform'],
-            ],
-            [
-                'company_id' => $companies[7], // CodeCraft
-                'developer_id' => 28, // Alejandro (13th developer)
-                'title' => 'API de Pagos Multi-gateway',
-                'description' => 'Desarrollo de API unificada para múltiples pasarelas de pago (Stripe, PayPal, MercadoPago).',
-                'budget_min' => 6000, 'budget_max' => 9000, 'budget_type' => 'fixed',
-                'duration_value' => 8, 'duration_unit' => 'weeks',
-                'level' => 'senior', 'priority' => 'urgent', 'remote' => true,
-                'tags' => json_encode(['pagos', 'api', 'stripe']),
-                'status' => 'in_progress',
-                'category_names' => ['Backend/APIs', 'E-commerce'],
-                'skill_names' => ['PHP', 'Laravel', 'MySQL', 'Redis'],
-            ],
-        ];
-        
-        foreach ($inProgressProjects as $i => $projectData) {
-            $project = Project::create([
-                'company_id' => $projectData['company_id'],
-                'title' => $projectData['title'],
-                'description' => $projectData['description'],
-                'budget_min' => $projectData['budget_min'],
-                'budget_max' => $projectData['budget_max'],
-                'budget_type' => $projectData['budget_type'],
-                'duration_value' => $projectData['duration_value'],
-                'duration_unit' => $projectData['duration_unit'],
-                'location' => null,
-                'remote' => $projectData['remote'],
-                'level' => $projectData['level'],
-                'priority' => $projectData['priority'],
-                'featured' => false,
-                'deadline' => Carbon::now()->addWeeks(rand(2, 6)),
-                'max_applicants' => rand(10, 20),
-                'tags' => $projectData['tags'],
-                'status' => $projectData['status'],
-            ]);
-            
-            $projects[6 + $i] = ['id' => $project->id, 'status' => 'in_progress', 'developer_id' => $projectData['developer_id']];
-            
-            foreach ($projectData['category_names'] as $catName) {
-                if (isset($categories[$catName])) {
-                    DB::table('project_category_project')->insert([
-                        'project_id' => $project->id,
-                        'project_category_id' => $categories[$catName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-            
-            foreach ($projectData['skill_names'] as $skillName) {
-                if (isset($skills[$skillName])) {
-                    DB::table('project_skill')->insert([
-                        'project_id' => $project->id,
-                        'skill_id' => $skills[$skillName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-        }
-        
-        // Proyectos Completed (P11-P14)
-        $completedProjects = [
-            [
-                'company_id' => $companies[0], // TechNova
-                'developer_id' => 17, // Valentina
-                'title' => 'Tienda Online con WooCommerce Personalizado',
-                'description' => 'Desarrollo de tienda online con WooCommerce customization y plugins a medida.',
-                'budget_min' => 4000, 'budget_max' => 6000, 'budget_type' => 'fixed',
-                'duration_value' => 2, 'duration_unit' => 'months',
-                'level' => 'mid', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['woocommerce', 'ecommerce', 'wordpress']),
-                'status' => 'completed',
-                'category_names' => ['E-commerce', 'Desarrollo Web'],
-                'skill_names' => ['React', 'TypeScript', 'TailwindCSS', 'PHP'],
-            ],
-            [
-                'company_id' => $companies[1], // ByteForge
-                'developer_id' => 16, // Andrés
-                'title' => 'Sistema de Autenticación OAuth2',
-                'description' => 'Implementación de sistema de autenticación seguro con OAuth2, JWT y 2FA.',
-                'budget_min' => 3000, 'budget_max' => 5000, 'budget_type' => 'fixed',
-                'duration_value' => 6, 'duration_unit' => 'weeks',
-                'level' => 'mid', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['auth', 'oauth', 'security']),
-                'status' => 'completed',
-                'category_names' => ['Backend/APIs', 'Ciberseguridad'],
-                'skill_names' => ['Laravel', 'PHP', 'MySQL', 'TypeScript'],
-            ],
-            [
-                'company_id' => $companies[4], // InnoCode
-                'developer_id' => 29, // Sofía
-                'title' => 'App Móvil de Fitness React Native',
-                'description' => 'Desarrollo de app de fitness completa con tracking de ejercicios y alimentación.',
-                'budget_min' => 7000, 'budget_max' => 10000, 'budget_type' => 'fixed',
-                'duration_value' => 3, 'duration_unit' => 'months',
-                'level' => 'mid', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['mobile', 'fitness', 'react-native']),
-                'status' => 'completed',
-                'category_names' => ['Desarrollo Mobile'],
-                'skill_names' => ['React Native', 'TypeScript', 'Node.js', 'Figma'],
-            ],
-            [
-                'company_id' => $companies[3], // DataStream
-                'developer_id' => 23, // Lucía
-                'title' => 'Infraestructura Cloud AWS',
-                'description' => 'Diseño e implementación de infraestructura completa en AWS con Terraform.',
-                'budget_min' => 9000, 'budget_max' => 14000, 'budget_type' => 'fixed',
-                'duration_value' => 2, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'high', 'remote' => true,
-                'tags' => json_encode(['aws', 'cloud', 'terraform']),
-                'status' => 'completed',
-                'category_names' => ['Cloud Computing', 'DevOps'],
-                'skill_names' => ['AWS', 'Terraform', 'Docker', 'Kubernetes', 'Python'],
-            ],
-        ];
-        
-        foreach ($completedProjects as $i => $projectData) {
-            $project = Project::create([
-                'company_id' => $projectData['company_id'],
-                'title' => $projectData['title'],
-                'description' => $projectData['description'],
-                'budget_min' => $projectData['budget_min'],
-                'budget_max' => $projectData['budget_max'],
-                'budget_type' => $projectData['budget_type'],
-                'duration_value' => $projectData['duration_value'],
-                'duration_unit' => $projectData['duration_unit'],
-                'location' => null,
-                'remote' => $projectData['remote'],
-                'level' => $projectData['level'],
-                'priority' => $projectData['priority'],
-                'featured' => false,
-                'deadline' => Carbon::now()->subWeeks(rand(1, 4)),
-                'max_applicants' => rand(10, 20),
-                'tags' => $projectData['tags'],
-                'status' => $projectData['status'],
-            ]);
-            
-            $projects[11 + $i] = ['id' => $project->id, 'status' => 'completed', 'developer_id' => $projectData['developer_id']];
-            
-            foreach ($projectData['category_names'] as $catName) {
-                if (isset($categories[$catName])) {
-                    DB::table('project_category_project')->insert([
-                        'project_id' => $project->id,
-                        'project_category_id' => $categories[$catName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-            
-            foreach ($projectData['skill_names'] as $skillName) {
-                if (isset($skills[$skillName])) {
-                    DB::table('project_skill')->insert([
-                        'project_id' => $project->id,
-                        'skill_id' => $skills[$skillName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-        }
-        
-        // Proyectos Cancelled (P15-P16)
-        $cancelledProjects = [
-            [
-                'company_id' => $companies[5], // NexGen
-                'title' => 'Desarrollo de Wallet Crypto',
-                'description' => 'Desarrollo de wallet de criptomonedas con integración a múltiples blockchains.',
-                'budget_min' => 12000, 'budget_max' => 20000, 'budget_type' => 'fixed',
-                'duration_value' => 4, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'high', 'remote' => true,
-                'tags' => json_encode(['crypto', 'wallet', 'blockchain']),
-                'status' => 'cancelled',
-                'category_names' => ['Blockchain'],
-                'skill_names' => ['TypeScript', 'React', 'Node.js'],
-            ],
-            [
-                'company_id' => $companies[7], // CodeCraft
-                'title' => 'Plataforma de Streaming de Video',
-                'description' => 'Plataforma de streaming de video en tiempo real con capacidad de millones de usuarios.',
-                'budget_min' => 20000, 'budget_max' => 35000, 'budget_type' => 'fixed',
-                'duration_value' => 6, 'duration_unit' => 'months',
-                'level' => 'lead', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['streaming', 'video', 'aws']),
-                'status' => 'cancelled',
-                'category_names' => ['Desarrollo Web', 'Cloud Computing'],
-                'skill_names' => ['React', 'Node.js', 'AWS', 'Docker'],
-            ],
-        ];
-        
-        foreach ($cancelledProjects as $i => $projectData) {
-            $project = Project::create([
-                'company_id' => $projectData['company_id'],
-                'title' => $projectData['title'],
-                'description' => $projectData['description'],
-                'budget_min' => $projectData['budget_min'],
-                'budget_max' => $projectData['budget_max'],
-                'budget_type' => $projectData['budget_type'],
-                'duration_value' => $projectData['duration_value'],
-                'duration_unit' => $projectData['duration_unit'],
-                'location' => null,
-                'remote' => $projectData['remote'],
-                'level' => $projectData['level'],
-                'priority' => $projectData['priority'],
-                'featured' => false,
-                'deadline' => null,
-                'max_applicants' => rand(15, 30),
-                'tags' => $projectData['tags'],
-                'status' => $projectData['status'],
-            ]);
-            
-            $projects[15 + $i] = ['id' => $project->id, 'status' => 'cancelled'];
-            
-            foreach ($projectData['category_names'] as $catName) {
-                if (isset($categories[$catName])) {
-                    DB::table('project_category_project')->insert([
-                        'project_id' => $project->id,
-                        'project_category_id' => $categories[$catName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-            
-            foreach ($projectData['skill_names'] as $skillName) {
-                if (isset($skills[$skillName])) {
-                    DB::table('project_skill')->insert([
-                        'project_id' => $project->id,
-                        'skill_id' => $skills[$skillName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-        }
-        
-        // Proyectos Draft (P17-P18)
-        $draftProjects = [
-            [
-                'company_id' => $companies[5], // NexGen
-                'title' => 'Sistema de Recomendaciones con ML',
-                'description' => 'Sistema de recomendaciones personalizado usando machine learning.',
-                'budget_min' => 8000, 'budget_max' => 15000, 'budget_type' => 'fixed',
-                'duration_value' => 3, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'medium', 'remote' => true,
-                'tags' => json_encode(['ml', 'recommendations', 'ai']),
-                'status' => 'draft',
-                'category_names' => ['AI/ML', 'Data Science'],
-                'skill_names' => ['Python', 'AWS', 'MongoDB'],
-            ],
-            [
-                'company_id' => $companies[6], // AppVenture
-                'title' => 'Portal de Gestión de RRHH',
-                'description' => 'Portal completo de gestión de recursos humanos con nóminas y evaluaciones.',
-                'budget_min' => 10000, 'budget_max' => 18000, 'budget_type' => 'fixed',
-                'duration_value' => 4, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'low', 'remote' => false,
-                'location' => 'Medellín, Colombia',
-                'tags' => json_encode(['rrhh', 'portal', 'laravel']),
-                'status' => 'draft',
-                'category_names' => ['Desarrollo Web', 'Backend/APIs'],
-                'skill_names' => ['Laravel', 'Vue.js', 'MySQL', 'Docker'],
-            ],
-        ];
-        
-        foreach ($draftProjects as $i => $projectData) {
-            $project = Project::create([
-                'company_id' => $projectData['company_id'],
-                'title' => $projectData['title'],
-                'description' => $projectData['description'],
-                'budget_min' => $projectData['budget_min'],
-                'budget_max' => $projectData['budget_max'],
-                'budget_type' => $projectData['budget_type'],
-                'duration_value' => $projectData['duration_value'],
-                'duration_unit' => $projectData['duration_unit'],
-                'location' => $projectData['location'] ?? null,
-                'remote' => $projectData['remote'],
-                'level' => $projectData['level'],
-                'priority' => $projectData['priority'],
-                'featured' => false,
-                'deadline' => null,
-                'max_applicants' => rand(10, 25),
-                'tags' => $projectData['tags'],
-                'status' => $projectData['status'],
-            ]);
-            
-            $projects[17 + $i] = ['id' => $project->id, 'status' => 'draft'];
-            
-            foreach ($projectData['category_names'] as $catName) {
-                if (isset($categories[$catName])) {
-                    DB::table('project_category_project')->insert([
-                        'project_id' => $project->id,
-                        'project_category_id' => $categories[$catName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-            
-            foreach ($projectData['skill_names'] as $skillName) {
-                if (isset($skills[$skillName])) {
-                    DB::table('project_skill')->insert([
-                        'project_id' => $project->id,
-                        'skill_id' => $skills[$skillName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-        }
-        
-        // Proyectos Pending Payment (P19-P20)
-        $pendingPaymentProjects = [
-            [
-                'company_id' => $companies[4], // InnoCode
-                'developer_id' => 30, // Ricardo
-                'title' => 'Migración de Base de Datos a PostgreSQL',
-                'description' => 'Migración completa de MySQL a PostgreSQL con optimización de queries.',
-                'budget_min' => 4000, 'budget_max' => 6000, 'budget_type' => 'fixed',
-                'duration_value' => 4, 'duration_unit' => 'weeks',
-                'level' => 'senior', 'priority' => 'urgent', 'remote' => true,
-                'tags' => json_encode(['migration', 'postgresql', 'database']),
-                'status' => 'pending_payment',
-                'category_names' => ['Backend/APIs', 'DevOps'],
-                'skill_names' => ['PostgreSQL', 'Python', 'Docker', 'AWS'],
-            ],
-            [
-                'company_id' => $companies[5], // NexGen
-                'developer_id' => 18, // Sebastián
-                'title' => 'Dashboard de Business Intelligence',
-                'description' => 'Dashboard de BI con visualizaciones interactivas y reportes automáticos.',
-                'budget_min' => 8000, 'budget_max' => 13000, 'budget_type' => 'fixed',
-                'duration_value' => 2, 'duration_unit' => 'months',
-                'level' => 'senior', 'priority' => 'high', 'remote' => true,
-                'tags' => json_encode(['bi', 'dashboard', 'analytics']),
-                'status' => 'pending_payment',
-                'category_names' => ['Data Science', 'Desarrollo Web'],
-                'skill_names' => ['React', 'Python', 'PostgreSQL', 'AWS'],
-            ],
-        ];
-        
-        foreach ($pendingPaymentProjects as $i => $projectData) {
-            $project = Project::create([
-                'company_id' => $projectData['company_id'],
-                'title' => $projectData['title'],
-                'description' => $projectData['description'],
-                'budget_min' => $projectData['budget_min'],
-                'budget_max' => $projectData['budget_max'],
-                'budget_type' => $projectData['budget_type'],
-                'duration_value' => $projectData['duration_value'],
-                'duration_unit' => $projectData['duration_unit'],
-                'location' => null,
-                'remote' => $projectData['remote'],
-                'level' => $projectData['level'],
-                'priority' => $projectData['priority'],
-                'featured' => false,
-                'deadline' => Carbon::now()->subWeeks(1),
-                'max_applicants' => rand(10, 20),
-                'tags' => $projectData['tags'],
-                'status' => $projectData['status'],
-            ]);
-            
-            $projects[19 + $i] = ['id' => $project->id, 'status' => 'pending_payment', 'developer_id' => $projectData['developer_id']];
-            
-            foreach ($projectData['category_names'] as $catName) {
-                if (isset($categories[$catName])) {
-                    DB::table('project_category_project')->insert([
-                        'project_id' => $project->id,
-                        'project_category_id' => $categories[$catName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-            
-            foreach ($projectData['skill_names'] as $skillName) {
-                if (isset($skills[$skillName])) {
-                    DB::table('project_skill')->insert([
-                        'project_id' => $project->id,
-                        'skill_id' => $skills[$skillName],
-                        'created_at' => Carbon::now(),
-                        'updated_at' => Carbon::now(),
-                    ]);
-                }
-            }
-        }
-
-        // === GENERACIÓN PROGRAMÁTICA: 15 proyectos adicionales ===
-        $this->command->info('Generando 15 proyectos adicionales...');
-
-        $projectTitles = [
-            'Plataforma de Gestión de Inventarios',
-            'App de Reservas de Restaurantes',
-            'Sistema de Tracking GPS para Flotas',
-            'Portal de Telemedicina',
-            'Marketplace de Servicios Freelance',
-            'Sistema de Gestión de Documentos',
-            'App de Educación Interactiva',
-            'Plataforma de Crowdfunding',
-            'Sistema CRM Personalizado',
-            'App de Delivery con IA',
-            'Plataforma de Gestión de Eventos',
-            'Sistema de Facturación Electrónica',
-            'Red Social para Profesionales',
-            'Plataforma de Video Conferencias',
-            'Sistema de Control de Acceso IoT',
-        ];
-
-        $projectDescriptions = [
-            'Desarrollo completo de la plataforma con frontend responsive, backend escalable y panel de administración. Incluye integración con servicios de terceros y documentación técnica.',
-            'Proyecto full stack que requiere diseño UI/UX moderno, API REST robusta, sistema de notificaciones en tiempo real y panel de métricas avanzado.',
-            'Aplicación empresarial con autenticación multi-factor, reportes personalizados, exportación de datos y soporte multi-idioma.',
-            'Solución tecnológica integral con arquitectura de microservicios, base de datos distribuida y sistema de caché para alto rendimiento.',
-            'Desarrollo de plataforma digital con funcionalidades avanzadas de búsqueda, filtrado, pagos integrados y sistema de recomendaciones.',
-        ];
-
-        $statuses = ['open', 'open', 'open', 'in_progress', 'in_progress', 'in_progress', 'completed', 'completed', 'draft', 'pending_payment'];
         $levels = ['entry', 'mid', 'senior', 'lead'];
         $priorities = ['low', 'medium', 'high', 'urgent'];
+        $statuses = ['open', 'open', 'open', 'in_progress', 'in_progress', 'completed', 'completed', 'draft', 'pending_payment', 'cancelled'];
+        
         $categoryNames = array_keys($categories);
-        $skillNameKeys = array_keys($skills);
-
-        $projectIndex = 21; // Continue after existing projects
-        for ($p = 0; $p < 15; $p++) {
-            $status = $statuses[array_rand($statuses)];
+        
+        for ($i = 0; $i < 60; $i++) {
+            $template = $projectTemplates[$i % count($projectTemplates)];
             $companyId = $companies[array_rand($companies)];
-            $budgetMin = rand(2, 20) * 1000;
-            $budgetMax = $budgetMin + rand(2, 10) * 1000;
-            $durationValue = rand(1, 6);
-            $durationUnit = rand(0, 1) ? 'weeks' : 'months';
-
-            // Pick random categories and skills
-            shuffle($categoryNames);
-            shuffle($skillNameKeys);
-            $projCats = array_slice($categoryNames, 0, rand(1, 3));
-            $projSkills = array_slice($skillNameKeys, 0, rand(3, 6));
-
-            $tags = array_map(fn($s) => strtolower($s), array_slice($projSkills, 0, 3));
-
+            $status = $statuses[array_rand($statuses)];
+            
+            $budgetMin = rand(2000, 25000);
+            $budgetMax = $budgetMin + rand(2000, 15000);
+            
             $project = Project::create([
                 'company_id' => $companyId,
-                'title' => $projectTitles[$p],
-                'description' => $projectDescriptions[array_rand($projectDescriptions)],
+                'title' => $template['title'] . ' #' . ($i + 1),
+                'description' => 'Desarrollo completo de ' . strtolower($template['title']) . ' con las últimas tecnologías. Incluye frontend moderno, backend escalable y panel de administración.',
                 'budget_min' => $budgetMin,
                 'budget_max' => $budgetMax,
                 'budget_type' => rand(0, 1) ? 'fixed' : 'hourly',
-                'duration_value' => $durationValue,
-                'duration_unit' => $durationUnit,
+                'duration_value' => rand(1, 6),
+                'duration_unit' => rand(0, 1) ? 'weeks' : 'months',
                 'location' => null,
-                'remote' => rand(0, 4) > 0, // 80% remote
+                'remote' => rand(0, 4) > 0,
                 'level' => $levels[array_rand($levels)],
                 'priority' => $priorities[array_rand($priorities)],
-                'featured' => rand(0, 5) === 0, // ~17% featured
-                'deadline' => in_array($status, ['completed', 'cancelled']) ? Carbon::now()->subWeeks(rand(1, 8)) : Carbon::now()->addWeeks(rand(2, 12)),
-                'max_applicants' => rand(5, 30),
-                'tags' => json_encode($tags),
+                'featured' => rand(0, 7) === 0,
+                'deadline' => in_array($status, ['completed', 'cancelled']) ? Carbon::now()->subWeeks(rand(1, 12)) : Carbon::now()->addWeeks(rand(2, 16)),
+                'max_applicants' => rand(8, 30),
+                'tags' => json_encode(array_slice($template['skills'], 0, 3)),
                 'status' => $status,
             ]);
-
+            
             $projectData = ['id' => $project->id, 'status' => $status];
-
-            // Assign developer for in_progress, completed, pending_payment
+            
             if (in_array($status, ['in_progress', 'completed', 'pending_payment'])) {
                 $devId = $developers[array_rand($developers)];
                 $projectData['developer_id'] = $devId;
             }
-
-            $projects[$projectIndex + $p] = $projectData;
-
+            
+            $projects[$i + 1] = $projectData;
+            
+            // Categories
+            foreach ($template['category'] as $catName) {
+                if (isset($categories[$catName])) {
+                    DB::table('project_category_project')->insert([
+                        'project_id' => $project->id,
+                        'project_category_id' => $categories[$catName],
+                        'created_at' => Carbon::now(),
+                        'updated_at' => Carbon::now(),
+                    ]);
+                }
+            }
+            
+            // Skills
+            foreach ($template['skills'] as $skillName) {
+                if (isset($skills[$skillName])) {
+                    DB::table('project_skill')->insert([
+                        'project_id' => $project->id,
+                        'skill_id' => $skills[$skillName],
+                        'created_at' => Carbon::now(),
+                        'updated_at' => Carbon::now(),
+                    ]);
+                }
+            }
+        }
+        
+        // 90 proyectos adicionales generados
+        $this->command->info('   Generando 90 proyectos adicionales...');
+        
+        $additionalTitles = [
+            'Plataforma de Gestión de Proyectos', 'App de Comidas a Domicilio', 'Sistema de Citas Médicas',
+            'Plataforma de Aprendizaje Online', 'App de Seguimiento de Proyectos', 'Sistema de Reservas de Vuelos',
+            'Plataforma de Donativos', 'App de Control de Inventario', 'Sistema de Gestión de Hotels',
+            'Plataforma de Marketplace B2B', 'App de Fitness Social', 'Sistema de Encuestas y Votaciones',
+            'Plataforma de Blogs Profesionales', 'App de Marketplace de Servicios', 'Sistema de Gestión de RRHH',
+            'Plataforma de Reservas de Restaurantes', 'App de Carpooling', 'Sistema de Tickets de Soporte',
+            'Plataforma de Membresías Premium', 'App de Marketplace de Productos', 'Sistema de Facturación',
+            'Plataforma de Eventos Virtuales', 'App de Entregas', 'Sistema de Seguimiento de Flotas',
+            'Plataforma de Subscripciones', 'App de Cuidado de Mascotas', 'Sistema de Inventario',
+            'Plataforma de Aprendizaje', 'App de Viajes', 'Sistema de Reservas',
+            'Plataforma de Reviews', 'App de Finanzas', 'Sistema de Pagos',
+            'Plataforma de Comunidades', 'App de Productividad', 'Sistema de CRM',
+            'Plataforma de Contenido', 'App de Streaming', 'Sistema de Analytics',
+            'Plataforma de Social Media', 'App de Networking', 'Sistema de E-commerce',
+            'Plataforma de Education', 'App de Health', 'Sistema de Booking',
+            'Plataforma de Marketplace', 'App de Commerce', 'Sistema de Management',
+            'Plataforma de Services', 'App de Logistics', 'Systema de Delivery',
+        ];
+        
+        for ($i = 60; $i < 150; $i++) {
+            $companyId = $companies[array_rand($companies)];
+            $status = $statuses[array_rand($statuses)];
+            
+            $budgetMin = rand(2000, 20000);
+            $budgetMax = $budgetMin + rand(2000, 12000);
+            
+            $shuffledCats = $categoryNames;
+            shuffle($shuffledCats);
+            $projCats = array_slice($shuffledCats, 0, rand(1, 2));
+            
+            $skillKeys = array_keys($skills);
+            shuffle($skillKeys);
+            $projSkills = array_slice($skillKeys, 0, rand(3, 5));
+            
+            $project = Project::create([
+                'company_id' => $companyId,
+                'title' => $additionalTitles[($i - 60) % count($additionalTitles)],
+                'description' => 'Proyecto de desarrollo de software con tecnologías modernas. Se requiere profesional experimentado.',
+                'budget_min' => $budgetMin,
+                'budget_max' => $budgetMax,
+                'budget_type' => rand(0, 1) ? 'fixed' : 'hourly',
+                'duration_value' => rand(1, 6),
+                'duration_unit' => rand(0, 1) ? 'weeks' : 'months',
+                'location' => null,
+                'remote' => rand(0, 4) > 0,
+                'level' => $levels[array_rand($levels)],
+                'priority' => $priorities[array_rand($priorities)],
+                'featured' => rand(0, 10) === 0,
+                'deadline' => in_array($status, ['completed', 'cancelled']) ? Carbon::now()->subWeeks(rand(1, 10)) : Carbon::now()->addWeeks(rand(2, 14)),
+                'max_applicants' => rand(5, 25),
+                'tags' => json_encode(array_slice($projSkills, 0, 3)),
+                'status' => $status,
+            ]);
+            
+            $projectData = ['id' => $project->id, 'status' => $status];
+            
+            if (in_array($status, ['in_progress', 'completed', 'pending_payment'])) {
+                $devId = $developers[array_rand($developers)];
+                $projectData['developer_id'] = $devId;
+            }
+            
+            $projects[$i + 1] = $projectData;
+            
             foreach ($projCats as $catName) {
                 if (isset($categories[$catName])) {
                     DB::table('project_category_project')->insert([
@@ -1262,58 +929,81 @@ class FullDemoSeeder extends Seeder
                     ]);
                 }
             }
-
-            foreach ($projSkills as $sName) {
-                if (isset($skills[$sName])) {
+            
+            foreach ($projSkills as $skillName) {
+                if (isset($skills[$skillName])) {
                     DB::table('project_skill')->insert([
                         'project_id' => $project->id,
-                        'skill_id' => $skills[$sName],
+                        'skill_id' => $skills[$skillName],
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now(),
                     ]);
                 }
             }
         }
-
-        $this->command->info('Total projects created: ' . count($projects));
+        
+        $this->command->info('   ✓ Total proyectos creados: ' . count($projects));
         
         return $projects;
     }
 
     private function createApplications(array $projects, array $developers): void
     {
-        $this->command->info('Creando aplicaciones...');
+        $this->command->info('📨 Creando aplicaciones...');
         
         $coverLetters = [
-            "Hola, me interesa mucho este proyecto. Tengo experiencia directa con las tecnologías requeridas y he trabajado en proyectos similares. Me encantaría poder contribuir con mi experiencia.",
-            "Buenos días. He revisado los requisitos del proyecto y creo que mi perfil es ideal. En mi último empleo desarrollé un sistema similar con excelentes resultados.",
-            "¡Hola! Este proyecto me parece muy interesante. Cuento con años de experiencia en las tecnologías mencionadas y estoy disponible para comenzar de inmediato.",
-            "Estimado cliente. He analizado su proyecto y estoy muy motivado para participar. Tengo experiencia sólida en el stack tecnológico que requieren.",
+            "Hola, me interesa mucho este proyecto. Tengo experiencia directa con las tecnologías requeridas y he trabajado en proyectos similares.",
+            "Buenos días. He revisado los requisitos del proyecto y creo que mi perfil es ideal. Puedo comenzar de inmediato.",
+            "¡Hola! Este proyecto me parece muy interesante. Cuento con años de experiencia en las tecnologías mencionadas.",
+            "Estimado cliente. He analizado su proyecto y estoy muy motivado para participar.",
             "Me interesa participar en este proyecto. He desarrollado aplicaciones similares y puedo aportar valor desde el primer día.",
-            "Buenos días. After reviewing your requirements, I believe I am an excellent fit for this project. I have extensive experience with the needed technologies.",
-            "¡Hola! Este proyecto es exactamente lo que busco. Tengo las habilidades técnicas que necesitan y puedo entregar resultados de alta calidad.",
-            "Saludos. Me especializo en proyectos similares y puedo ofrecerles una solución robusta y escalable. Quedo a sus órdenes.",
-            "He revisado detalladamente los requisitos y estoy seguro de poder completar el proyecto con éxito. Tengo experiencia en todos los tecnologías solicitadas.",
-            "Buen día. Me encantaría formar parte de este proyecto. Mi enfoque en la calidad y los tiempos de entrega se ajusta a lo que buscan.",
-            "Hola equipo. Tengo más de 5 años de experiencia en proyectos similares y me fascina la propuesta. Podemos conversar sobre los detalles.",
-            "Estimados. He construido soluciones parecidas anteriormente y entiendo perfectamente lo que necesitan. Estoy listo para empezar.",
-            "¡Buen día! Este proyecto me llama la atención especialmente porque coincide con mi expertise. Ofrezco código limpio y bien documentado.",
-            "After analyzing your project requirements, I'm confident I can deliver an excellent result. Let's discuss the details.",
-            "Me interesa mucho este tipo de trabajo. Tengo un enfoque proactivo y siempre busco superar las expectativas del cliente.",
+            "Después de revisar sus requisitos, creo que soy un excelente candidato para este proyecto.",
+            "¡Hola! Este proyecto es exactamente lo que busco. Puedo entregar resultados de alta calidad.",
+            "Saludos. Me especializo en proyectos similares y puedo ofrecerles una solución robusta y escalable.",
+            "He revisado detalladamente los requisitos y estoy seguro de poder completar el proyecto con éxito.",
+            "Buen día. Me encantaría formar parte de este proyecto. Mi enfoque en la calidad se ajusta a lo que buscan.",
         ];
         
-        $applicationId = 1;
+        $statuses = ['pending', 'sent', 'reviewed', 'accepted', 'rejected'];
         
-        // Aplicaciones para proyectos Open (P1-P5)
-        for ($i = 1; $i <= 5; $i++) {
-            $project = $projects[$i];
-            $numApplications = rand(3, 5);
+        foreach ($projects as $projectNum => $project) {
+            $projectModel = Project::find($project['id']);
+            if (!$projectModel) continue;
+            
+            $numApplications = rand(3, 8);
             $availableDevelopers = $developers;
             shuffle($availableDevelopers);
             
+            // Skip if project already has a developer assigned
+            $assignedDeveloperId = isset($project['developer_id']) ? $project['developer_id'] : null;
+            
+            // Create accepted application for projects with assigned developer
+            if ($assignedDeveloperId) {
+                Application::create([
+                    'project_id' => $project['id'],
+                    'developer_id' => $assignedDeveloperId,
+                    'cover_letter' => $coverLetters[array_rand($coverLetters)],
+                    'status' => 'accepted',
+                ]);
+            }
+            
             for ($j = 0; $j < $numApplications; $j++) {
                 $developerId = $availableDevelopers[$j];
-                $status = ($j === 0) ? 'pending' : 'pending';
+                
+                // Skip if this developer is already assigned to this project
+                if ($developerId === $assignedDeveloperId) continue;
+                
+                // Determine status
+                if ($j === 0 && isset($project['developer_id'])) {
+                    // First application gets accepted if project has developer
+                    $status = 'accepted';
+                } elseif ($assignedDeveloperId && $j < 3) {
+                    $status = 'rejected';
+                } elseif ($projectModel->status === 'open') {
+                    $status = rand(0, 1) ? 'pending' : 'sent';
+                } else {
+                    $status = $statuses[array_rand($statuses)];
+                }
                 
                 Application::create([
                     'project_id' => $project['id'],
@@ -1321,832 +1011,336 @@ class FullDemoSeeder extends Seeder
                     'cover_letter' => $coverLetters[array_rand($coverLetters)],
                     'status' => $status,
                 ]);
-                $applicationId++;
             }
-        }
-        
-        // Aplicaciones para proyectos In Progress (P6-P10)
-        for ($i = 6; $i <= 10; $i++) {
-            $project = $projects[$i];
-            $assignedDeveloperId = $project['developer_id'];
-            $numApplications = rand(3, 5);
-            $availableDevelopers = array_filter($developers, fn($d) => $d !== $assignedDeveloperId);
-            $availableDevelopers = array_values($availableDevelopers);
-            shuffle($availableDevelopers);
-            
-            // Aplicación aceptada
-            Application::create([
-                'project_id' => $project['id'],
-                'developer_id' => $assignedDeveloperId,
-                'cover_letter' => $coverLetters[array_rand($coverLetters)],
-                'status' => 'accepted',
-            ]);
-            
-            // Aplicaciones rechazadas
-            for ($j = 0; $j < min($numApplications - 1, 2); $j++) {
-                Application::create([
-                    'project_id' => $project['id'],
-                    'developer_id' => $availableDevelopers[$j],
-                    'cover_letter' => $coverLetters[array_rand($coverLetters)],
-                    'status' => 'rejected',
-                ]);
-            }
-        }
-        
-        
-        // Aplicaciones para proyectos Completed (P11-P14)
-        for ($i = 11; $i <= 14; $i++) {
-            $project = $projects[$i];
-            $assignedDeveloperId = $project['developer_id'];
-            $availableDevelopers = array_filter($developers, fn($d) => $d !== $assignedDeveloperId);
-            $availableDevelopers = array_values($availableDevelopers);
-            shuffle($availableDevelopers);
-            
-            // Aplicación aceptada
-            Application::create([
-                'project_id' => $project['id'],
-                'developer_id' => $assignedDeveloperId,
-                'cover_letter' => $coverLetters[array_rand($coverLetters)],
-                'status' => 'accepted',
-            ]);
-            
-            // Aplicaciones rechazadas
-            for ($j = 0; $j < 2; $j++) {
-                Application::create([
-                    'project_id' => $project['id'],
-                    'developer_id' => $availableDevelopers[$j],
-                    'cover_letter' => $coverLetters[array_rand($coverLetters)],
-                    'status' => 'rejected',
-                ]);
-            }
-        }
-        
-        // Aplicaciones para proyectos Cancelled (P15-P16)
-        for ($i = 15; $i <= 16; $i++) {
-            $project = $projects[$i];
-            $numApplications = rand(2, 3);
-            $availableDevelopers = $developers;
-            shuffle($availableDevelopers);
-            
-            for ($j = 0; $j < $numApplications; $j++) {
-                $status = ($j === 0) ? 'pending' : 'rejected';
-                
-                Application::create([
-                    'project_id' => $project['id'],
-                    'developer_id' => $availableDevelopers[$j],
-                    'cover_letter' => $coverLetters[array_rand($coverLetters)],
-                    'status' => $status,
-                ]);
-            }
-        }
-        
-        // Aplicaciones para proyectos Pending Payment (P19-P20)
-        for ($i = 19; $i <= 20; $i++) {
-            $project = $projects[$i];
-            $assignedDeveloperId = $project['developer_id'];
-            
-            // Aplicación aceptada
-            Application::create([
-                'project_id' => $project['id'],
-                'developer_id' => $assignedDeveloperId,
-                'cover_letter' => $coverLetters[array_rand($coverLetters)],
-                'status' => 'accepted',
-            ]);
         }
     }
 
     private function createMilestones(array $projects): void
     {
-        $this->command->info('Creando milestones...');
+        $this->command->info('🎯 Creando milestones...');
         
-        // Milestones para proyectos In Progress (P6-P10)
-        $inProgressMilestones = [
-            6 => [ // Microservicios
-                ['title' => 'Análisis y diseño de arquitectura', 'amount' => 2500, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 1, 'deliverables' => ['Documento de arquitectura', 'Diagrama de microservicios', 'Definición de APIs']],
-                ['title' => 'Desarrollo de servicios core', 'amount' => 3000, 'status' => 'funded', 'progress_status' => 'review', 'order' => 2, 'deliverables' => ['Código fuente servicios', 'Tests unitarios', 'Documentación técnica']],
-                ['title' => 'Integración y comunicación entre servicios', 'amount' => 2500, 'status' => 'funded', 'progress_status' => 'in_progress', 'order' => 3, 'deliverables' => ['Service mesh configurado', 'Message queue implementado', 'Logs centralizados']],
-                ['title' => 'Testing integral y despliegue', 'amount' => 2000, 'status' => 'pending', 'progress_status' => 'todo', 'order' => 4, 'deliverables' => ['Tests de integración', 'Pipeline CI/CD', 'Manual de despliegue']],
-            ],
-            7 => [ // Dashboard Analytics
-                ['title' => 'Setup de infraestructura y base de datos', 'amount' => 1750, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 1, 'deliverables' => ['MongoDB configurado', 'Schemas definidos', 'APIs base']],
-                ['title' => 'Desarrollo de componentes del dashboard', 'amount' => 2800, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 2, 'deliverables' => ['Gráficos principales', 'Filtros implementados', 'Responsive design']],
-                ['title' => 'WebSockets y tiempo real', 'amount' => 1750, 'status' => 'funded', 'progress_status' => 'in_progress', 'order' => 3, 'deliverables' => ['WebSocket configurado', 'Updates en tiempo real', 'Notificaciones']],
-                ['title' => 'Testing, optimización y entrega', 'amount' => 700, 'status' => 'pending', 'progress_status' => 'todo', 'order' => 4, 'deliverables' => ['Tests completos', 'Optimización performance', 'Documentación']],
-            ],
-            8 => [ // UI/UX App Bancaria
-                ['title' => 'Investigación y wireframes', 'amount' => 1250, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 1, 'deliverables' => ['User research', 'Wireframes', 'User personas']],
-                ['title' => 'Diseño de UI completo', 'amount' => 2000, 'status' => 'funded', 'progress_status' => 'review', 'order' => 2, 'deliverables' => ['Prototipo alta fidelidad', 'Design system', 'Animaciones']],
-                ['title' => 'Especificaciones para desarrollo', 'amount' => 1250, 'status' => 'funded', 'progress_status' => 'in_progress', 'order' => 3, 'deliverables' => ['Specs técnicas', 'Componentes documentados', 'Assets exportados']],
-                ['title' => 'Validación y ajustes finales', 'amount' => 500, 'status' => 'pending', 'progress_status' => 'todo', 'order' => 4, 'deliverables' => ['Pruebas usuarios', 'Ajustes finales', 'Entrega documentos']],
-            ],
-            9 => [ // CI/CD Pipeline
-                ['title' => 'Análisis de infraestructura actual', 'amount' => 2000, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 1, 'deliverables' => ['Auditoría infraestructura', 'Plan de migración', 'Diseño pipeline']],
-                ['title' => 'Implementación de CI/CD', 'amount' => 4000, 'status' => 'funded', 'progress_status' => 'in_progress', 'order' => 2, 'deliverables' => ['GitHub Actions configurado', 'Tests automatizados', 'Artifact registry']],
-                ['title' => 'Configuración de Kubernetes', 'amount' => 3000, 'status' => 'pending', 'progress_status' => 'todo', 'order' => 3, 'deliverables' => ['Clusters configurados', 'Deployments automatizados', 'Monitoring']],
-                ['title' => 'Documentación y capacitación', 'amount' => 3000, 'status' => 'pending', 'progress_status' => 'todo', 'order' => 4, 'deliverables' => ['Manuales', 'Capacitación equipo', 'Soporte post-lanzamiento']],
-            ],
-            10 => [ // API Pagos
-                ['title' => 'Diseño de arquitectura de pagos', 'amount' => 1500, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 1, 'deliverables' => ['Arquitectura API', 'Modelos de datos', 'Flujos de pago']],
-                ['title' => 'Integración con Stripe', 'amount' => 2250, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 2, 'deliverables' => ['Stripe integrado', 'Webhooks configurados', 'Tests']],
-                ['title' => 'Integración con PayPal y MercadoPago', 'amount' => 2250, 'status' => 'funded', 'progress_status' => 'in_progress', 'order' => 3, 'deliverables' => ['PayPal integrado', 'MercadoPago integrado', 'Fallbacks configurados']],
-                ['title' => 'Testing, seguridad y entrega', 'amount' => 0, 'status' => 'pending', 'progress_status' => 'todo', 'order' => 4, 'deliverables' => ['Tests de seguridad', 'Documentación API', 'Soporte']],
-            ],
+        $milestoneTitles = [
+            'Investigación y Análisis', 'Diseño de Base de Datos', 'Prototipado UI/UX',
+            'Desarrollo del Backend', 'Integración de API', 'Desarrollo del Frontend',
+            'Pruebas Unitarias', 'Pruebas de Integración', 'Despliegue a Staging',
+            'Corrección de Bugs', 'Optimización de Rendimiento', 'Entrega Final'
         ];
         
-        foreach ($inProgressMilestones as $projectNum => $milestones) {
-            $project = $projects[$projectNum];
-            foreach ($milestones as $m) {
-                Milestone::create([
-                    'project_id' => $project['id'],
-                    'title' => $m['title'],
-                    'description' => null,
-                    'amount' => $m['amount'],
-                    'status' => $m['status'],
-                    'progress_status' => $m['progress_status'],
-                    'order' => $m['order'],
-                    'due_date' => $m['order'] <= 2 ? Carbon::now()->subWeeks(rand(1, 2)) : ($m['progress_status'] === 'in_progress' ? Carbon::now()->addWeeks(1) : Carbon::now()->addWeeks(2)),
-                    'deliverables' => json_encode($m['deliverables']),
-                ]);
+        foreach ($projects as $projectNum => $project) {
+            $projectModel = Project::find($project['id']);
+            if (!$projectModel || $project['status'] === 'draft') continue;
+            
+            $milestoneCount = rand(3, 6);
+            $budgetPerMilestone = $projectModel->budget_max / $milestoneCount;
+            
+            $completedMilestones = 0;
+            if ($project['status'] === 'completed') {
+                $completedMilestones = $milestoneCount;
+            } elseif ($project['status'] === 'in_progress') {
+                $completedMilestones = rand(1, $milestoneCount - 1);
+            } elseif ($project['status'] === 'pending_payment') {
+                $completedMilestones = $milestoneCount;
             }
-        }
-        
-        // Milestones para proyectos Completed (P11-P14)
-        $completedMilestones = [
-            11 => [ // WooCommerce
-                ['title' => 'Diseño y maquetación', 'amount' => 1200, 'status' => 'released', 'progress_status' => 'completed', 'order' => 1],
-                ['title' => 'Desarrollo e integración de pagos', 'amount' => 1600, 'status' => 'released', 'progress_status' => 'completed', 'order' => 2],
-                ['title' => 'Testing y lanzamiento', 'amount' => 1200, 'status' => 'released', 'progress_status' => 'completed', 'order' => 3],
-            ],
-            12 => [ // OAuth2
-                ['title' => 'Diseño del sistema de autenticación', 'amount' => 1000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 1],
-                ['title' => 'Implementación de OAuth2 y JWT', 'amount' => 2000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 2],
-                ['title' => 'Integración de 2FA y pruebas', 'amount' => 2000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 3],
-            ],
-            13 => [ // App Fitness
-                ['title' => 'Diseño de arquitectura y UI', 'amount' => 2000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 1],
-                ['title' => 'Desarrollo de funcionalidades core', 'amount' => 4000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 2],
-                ['title' => 'Pruebas y publicación', 'amount' => 3000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 3],
-            ],
-            14 => [ // AWS Infrastructure
-                ['title' => 'Diseño de arquitectura cloud', 'amount' => 2500, 'status' => 'released', 'progress_status' => 'completed', 'order' => 1],
-                ['title' => 'Implementación con Terraform', 'amount' => 5500, 'status' => 'released', 'progress_status' => 'completed', 'order' => 2],
-                ['title' => 'Documentación y transferencia', 'amount' => 3000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 3],
-            ],
-        ];
-        
-        foreach ($completedMilestones as $projectNum => $milestones) {
-            $project = $projects[$projectNum];
-            foreach ($milestones as $m) {
+            
+            for ($i = 1; $i <= $milestoneCount; $i++) {
+                $milestoneStatus = 'pending';
+                $progressStatus = 'todo';
+                
+                if ($i <= $completedMilestones) {
+                    $milestoneStatus = 'released';
+                    $progressStatus = 'completed';
+                } elseif ($i === $completedMilestones + 1 && $project['status'] === 'in_progress') {
+                    $milestoneStatus = 'funded';
+                    $progressStatus = 'in_progress';
+                } elseif ($project['status'] === 'pending_payment') {
+                    $milestoneStatus = 'funded';
+                    $progressStatus = 'completed';
+                }
+                
                 Milestone::create([
                     'project_id' => $project['id'],
-                    'title' => $m['title'],
-                    'description' => null,
-                    'amount' => $m['amount'],
-                    'status' => $m['status'],
-                    'progress_status' => $m['progress_status'],
-                    'order' => $m['order'],
-                    'due_date' => Carbon::now()->subWeeks(rand(1, 4)),
-                    'deliverables' => null,
-                ]);
-            }
-        }
-        
-        // Milestones para proyectos Pending Payment (P19-P20)
-        $pendingPaymentMilestones = [
-            19 => [ // Migración DB
-                ['title' => 'Análisis y planificación', 'amount' => 1000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 1],
-                ['title' => 'Migración de datos', 'amount' => 2000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 2],
-                ['title' => 'Optimización y testing', 'amount' => 1000, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 3],
-            ],
-            20 => [ // Dashboard BI
-                ['title' => 'Diseño de arquitectura', 'amount' => 2000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 1],
-                ['title' => 'Desarrollo de visualizaciones', 'amount' => 4000, 'status' => 'released', 'progress_status' => 'completed', 'order' => 2],
-                ['title' => 'Reportes y entrega', 'amount' => 2000, 'status' => 'funded', 'progress_status' => 'completed', 'order' => 3],
-            ],
-        ];
-        
-        foreach ($pendingPaymentMilestones as $projectNum => $milestones) {
-            $project = $projects[$projectNum];
-            foreach ($milestones as $m) {
-                Milestone::create([
-                    'project_id' => $project['id'],
-                    'title' => $m['title'],
-                    'description' => null,
-                    'amount' => $m['amount'],
-                    'status' => $m['status'],
-                    'progress_status' => $m['progress_status'],
-                    'order' => $m['order'],
-                    'due_date' => Carbon::now()->subWeeks(1),
-                    'deliverables' => null,
+                    'title' => "Hito $i: " . $milestoneTitles[array_rand($milestoneTitles)],
+                    'description' => 'Descripción del milestone ' . $i . ' del proyecto.',
+                    'amount' => $budgetPerMilestone,
+                    'status' => $milestoneStatus,
+                    'progress_status' => $progressStatus,
+                    'order' => $i,
+                    'due_date' => Carbon::now()->addDays(rand(7, 30)),
+                    'deliverables' => $progressStatus === 'completed' ? json_encode(['Entregable 1', 'Entregable 2']) : null,
                 ]);
             }
         }
     }
 
-    private function createConversationsAndMessages(array $projects): void
+    private function createConversationsAndMessages(array $projects, array $developers): void
     {
-        $this->command->info('Creando conversaciones y mensajes...');
+        $this->command->info('💬 Creando conversaciones y mensajes...');
         
-        // Conversaciones para proyectos in_progress (P6-P10)
-        $inProgressConversations = [
-            6 => [ // Microservicios - Carlos (company 1) + Santiago (dev 3)
-                ['company_id' => 9, 'developer_id' => 22],
-                [
-                    "¡Hola! Bienvenido al proyecto. Me alegra mucho que te hayas unido al equipo.",
-                    "¡Hola! Muchas gracias por la oportunidad. Estoy muy motivado con este proyecto.",
-                    "Perfecto. Te comparto los requisitos detallados del primer módulo en el repositorio.",
-                    "Ya los revisé. Tengo algunas preguntas sobre la arquitectura propuesta.",
-                    "Claro, cuéntame. Estoy disponible para resolver cualquier duda.",
-                    "Sobre la integración con la base de datos, ¿prefieren PostgreSQL o MySQL?",
-                    "PostgreSQL definitivamente. Necesitamos soporte para datos JSON.",
-                    "Perfecto. Ya tengo avance en el primer milestone. Subo el código hoy.",
-                    "Excelente. Lo reviso esta tarde y te doy feedback.",
-                    "Acabo de hacer push al repositorio. El primer módulo está listo para review."
-                ]
-            ],
-            7 => [ // Dashboard - Ana (company 2) + María (dev 12)
-                ['company_id' => 10, 'developer_id' => 27],
-                [
-                    "¡Bienvenida! Gracias por aceptar el proyecto.",
-                    "Gracias a ustedes por la oportunidad. Ya revisé los requisitos iniciales.",
-                    "Excelente. El dashboard de analytics es muy importante para nosotros.",
-                    "Entiendo. ¿Tienen preferencia por alguna librería de gráficos específica?",
-                    "Preferimos Chart.js o ApexCharts, pero estamos abiertos a sugerencias.",
-                    "Perfecto, usaré ApexCharts. Ya tengo el diseño preliminar listo.",
-                    "Muy bien. ¿Cuándo puedes tener el primer mockup?",
-                    "Lo tendré mañana. Agregaré también algunas animaciones suaves.",
-                    "Genial. El equipo está ansioso por verlo.",
-                    "Aquí está el link al prototipo en Figma."
-                ]
-            ],
-            8 => [ // UI/UX - Laura (company 4) + Isabella (dev 6)
-                ['company_id' => 12, 'developer_id' => 21],
-                [
-                    "¡Hola! Estamos muy emocionados con el redesign.",
-                    "¡Gracias! He analizado la app actual y tengo varias ideas de mejora.",
-                    "Perfecto. ¿Qué aspectos crees que necesitan más atención?",
-                    "El flujo de pagos y la navegación. Hay beberapa puntos de fricción.",
-                    "Exacto, eso mismo nos han dicho los usuarios. ¿Tienes propuestas?",
-                    "Sí, te preparé un documento conwireframes de mejora.",
-                    "Lo revisé, muy profesional. Me gusta especialmente el nuevo dashboard.",
-                    "Gracias. También propongo un sistema de diseño más moderno.",
-                    "Excelente. Sigamos adelante con ese enfoque.",
-                    "Perfecto. Empiezo con los prototipos de alta fidelidad."
-                ]
-            ],
-            9 => [ // CI/CD - Pablo (company 3) + Camila (dev 4)
-                ['company_id' => 11, 'developer_id' => 19],
-                [
-                    "¡Hola! Thank you for joining this infrastructure project.",
-                    "Hello! I'm excited to work on the CI/CD pipeline modernization.",
-                    "Great. We need to migrate from our current Jenkins setup to GitHub Actions.",
-                    "That makes sense. I've done several similar migrations successfully.",
-                    "Perfect. What's your approach for the Kubernetes cluster?",
-                    "I'll use EKS with proper node pools and cluster autoscaler.",
-                    "Excellent. We need to ensure zero downtime during deployment.",
-                    "I'll implement blue-green deployments with proper health checks.",
-                    "That's exactly what we need. Let's proceed with the planning.",
-                    "I've already prepared a detailed migration plan."
-                ]
-            ],
-            10 => [ // API Pagos - Julia (company 8) + Alejandro (dev 13)
-                ['company_id' => 16, 'developer_id' => 28],
-                [
-                    "¡Bienvenido al proyecto de API de pagos!",
-                    "¡Gracias! Ya tengo experiencia con Stripe y PayPal, serápan com.",
-                    "Perfecto. Necesitamos integración también con MercadoPago.",
-                    "Lo incluyo en el plan. ¿Tienen cuenta de MercadoPago configurada?",
-                    "Sí, te paso las credenciales por otro canal seguro.",
-                    "Excelente. ¿Hay algún requerimiento específico de seguridad?",
-                    "PCI compliance es obligatorio. Tarjetas nunca deben tocar nuestro servidor.",
-                    "Entendido. Usaré tokens y payment intents deStripe.",
-                    "Perfecto. También necesitamos webhooks para confirmar pagos.",
-                    "Ya lo tengo contemplado. Todos los eventos estarán manejados."
-                ]
-            ],
+        $messageTemplates = [
+            'Hola, me interesa tu perfil para este proyecto.',
+            '¿Tienes disponibilidad para iniciar pronto?',
+            'He revisado tu portafolio y me parece excelente.',
+            'Podemos agendar una llamada para discutir los detalles.',
+            '¿Tienes experiencia con las tecnologías requeridas?',
+            'El presupuesto está sujeto a negociación.',
+            'Necesitamos comenzar lo antes posible.',
+            'Tengo más detalles sobre el proyecto.',
+            '¿Cuál es tu disponibilidad esta semana?',
+            'Excelente, quedamos en contacto.',
         ];
         
-        foreach ($inProgressConversations as $projectNum => $convData) {
-            $projectInfo = $convData[0];
-            $messages = $convData[1];
-            $project = $projects[$projectNum];
+        $conversationCount = 0;
+        
+        foreach ($projects as $projectNum => $project) {
+            if (!isset($project['developer_id'])) continue;
             
+            $projectModel = Project::find($project['id']);
+            if (!$projectModel) continue;
+            
+            $companyId = $projectModel->company_id;
+            $developerId = $project['developer_id'];
+            
+            // Create conversation
             $conversation = Conversation::create([
-                'type' => 'project',
                 'project_id' => $project['id'],
-                'initiator_id' => $projectInfo['company_id'],
-                'participant_id' => $projectInfo['developer_id'],
+                'type' => 'project',
+                'initiator_id' => $companyId,
+                'participant_id' => $developerId,
             ]);
             
-            $isCompany = true;
-            foreach ($messages as $index => $content) {
+            $conversationCount++;
+            
+            // Create messages
+            $numMessages = rand(4, 10);
+            $msgTime = Carbon::now()->subDays(rand(1, 30));
+            
+            for ($m = 0; $m < $numMessages; $m++) {
+                $senderId = ($m % 2 === 0) ? $companyId : $developerId;
+                
                 Message::create([
                     'conversation_id' => $conversation->id,
-                    'sender_id' => $isCompany ? $projectInfo['company_id'] : $projectInfo['developer_id'],
-                    'content' => $content,
+                    'sender_id' => $senderId,
+                    'content' => $messageTemplates[array_rand($messageTemplates)],
                     'type' => 'text',
-                    'file_path' => null,
-                    'is_read' => $index < 8,
+                    'is_read' => rand(0, 1) === 1,
                 ]);
-                $isCompany = !$isCompany;
+                
+                $msgTime = $msgTime->addHours(rand(1, 48));
             }
         }
         
-        // Conversaciones para proyectos completed (P11-P14)
-        $completedConversations = [
-            11 => [ // WooCommerce - Carlos (company 1) + Valentina (dev 2)
-                ['company_id' => 9, 'developer_id' => 17],
-                [
-                    "¡Hola! Gracias por unirte al proyecto de e-commerce.",
-                    "¡Gracias! Ya he trabajado con WooCommerce, serápan com.",
-                    "Excelente. Necesitamos una tienda muy personalizada.",
-                    "Entiendo. ¿Tienen mockups o es自由 diseño?",
-                    "Te comparto el diseño que我们有 en Figma.",
-                    "Perfecto, ya lo revisé. Queda muy profesional.",
-                    "We need integration with a local payment gateway.",
-                    "Lo incluyo. ¿Tienen documentación de la API?",
-                    "Sí, te la paso. Also, we need inventory management.",
-                    "Incluiré un sistema de inventario completo.",
-                    "Excelente trabajo, la tienda quedó perfect.",
-                    "Muchas gracias. Quedo atento a cualquier ajuste."
-                ]
-            ],
-            12 => [ // OAuth2 - Ana (company 2) + Andrés (dev 1)
-                ['company_id' => 10, 'developer_id' => 16],
-                [
-                    "¡Hola! El proyecto de autenticación es muy importante.",
-                    "Entiendo. ¿Qué proveedor de OAuth necesitan?",
-                    "Principalmente Google y Microsoft, pero necesitamos poder agregar más.",
-                    "Diseñaré una arquitectura modular para eso.",
-                    "Perfecto. Also need JWT tokens for our mobile app.",
-                    "Lo tengo cubierto. Usaré access y refresh tokens.",
-                    "Excelente. ¿Cuándo tendrías el primer milestone?",
-                    "En dos semanas tendrás el sistema básico funcionando.",
-                    "Perfecto. We'll test it thoroughly.",
-                    "El sistema está listo para pruebas.",
-                    "¡Excelente trabajo! Todo funcionando perfect.",
-                    "Gracias. Fue un placer trabajar con ustedes."
-                ]
-            ],
-            13 => [ // App Fitness - Juan (company 5) + Sofía (dev 14)
-                ['company_id' => 13, 'developer_id' => 29],
-                [
-                    "¡Bienvenida! La app de fitness es nuestro proyecto más ambicioso.",
-                    "¡Gracias! Tengo experiencia con apps de este tipo.",
-                    "Great. We need tracking de ejercicios y alimentación.",
-                    "Usaré AsyncStorage para persistencia local y API para sync.",
-                    "Perfecto. También necesitamos notificaciones push.",
-                    "Ya lo tengo implementado. ¿Qué tipo de recordatorios?",
-                    "Ejercicios, hydration y meals.",
-                    "Entendido. Configuraré un sistema de recordatorios completo.",
-                    "La app está lista para submission a stores.",
-                    "Excelente. El diseño quedó increible.",
-                    "¡Muchas gracias! Fue un proyecto muy divertido.",
-                    "Totally. We'll work together again soon."
-                ]
-            ],
-            14 => [ // AWS - Laura (company 4) + Lucía (dev 8)
-                ['company_id' => 12, 'developer_id' => 23],
-                [
-                    "¡Hola! El proyecto de migración cloud es crítico.",
-                    "Entiendo. ¿Cuál es el estado actual de su infraestructura?",
-                    "Tenemos servidores on-premise que queremos migrar.",
-                    "Diseñaré una arquitectura AWS completamente nueva.",
-                    "We need to ensure high availability.",
-                    "Usaré múltiples AZs y Auto Scaling Groups.",
-                    "Perfecto. Also need proper monitoring.",
-                    "Implementaré CloudWatch con alertas personalizadas.",
-                    "La infraestructura está lista para producción.",
-                    "Excelente. El equipo está muy impresionado.",
-                    "Gracias. Dejo toda la documentación necesaria.",
-                    "Perfect. It was great working with you."
-                ]
-            ],
-        ];
-        
-        foreach ($completedConversations as $projectNum => $convData) {
-            $projectInfo = $convData[0];
-            $messages = $convData[1];
-            $project = $projects[$projectNum];
+        // Create some direct conversations
+        for ($i = 0; $i < 30; $i++) {
+            $companyId = $developers[array_rand($developers)];
+            $developerId = $developers[array_rand($developers)];
+            
+            if ($companyId === $developerId) continue;
             
             $conversation = Conversation::create([
-                'type' => 'project',
-                'project_id' => $project['id'],
-                'initiator_id' => $projectInfo['company_id'],
-                'participant_id' => $projectInfo['developer_id'],
+                'project_id' => null,
+                'type' => 'direct',
+                'initiator_id' => $companyId,
+                'participant_id' => $developerId,
             ]);
             
-            $isCompany = true;
-            foreach ($messages as $index => $content) {
+            for ($m = 0; $m < rand(2, 5); $m++) {
+                $senderId = ($m % 2 === 0) ? $companyId : $developerId;
+                
                 Message::create([
                     'conversation_id' => $conversation->id,
-                    'sender_id' => $isCompany ? $projectInfo['company_id'] : $projectInfo['developer_id'],
-                    'content' => $content,
+                    'sender_id' => $senderId,
+                    'content' => $messageTemplates[array_rand($messageTemplates)],
                     'type' => 'text',
-                    'file_path' => null,
-                    'is_read' => true,
+                    'is_read' => rand(0, 1) === 1,
                 ]);
-                $isCompany = !$isCompany;
             }
         }
     }
 
     private function createReviews(array $projects): void
     {
-        $this->command->info('Creando reseñas...');
+        $this->command->info('⭐ Creando reviews...');
         
-        $reviewsData = [
-            11 => ['rating' => 5, 'comment' => 'Valentina hizo un trabajo excepcional en nuestra tienda online. Entregó antes del plazo y la calidad del código es sobresaliente. Totalmente recomendada.'],
-            12 => ['rating' => 4, 'comment' => 'Andrés implementó el sistema de autenticación de forma sólida y segura. Buena comunicación durante todo el proyecto. Solo sugeriría más documentación.'],
-            13 => ['rating' => 5, 'comment' => 'Sofía superó nuestras expectativas con la app de fitness. Diseño impecable y rendimiento excelente. Definitivamente volveremos a trabajar juntos.'],
-            14 => ['rating' => 5, 'comment' => 'Lucía es una experta en infraestructura cloud. Migró toda nuestra infraestructura sin downtime y nos dejó una documentación muy completa.'],
+        $reviewComments = [
+            'Excelente profesional, entregó todo a tiempo y con gran calidad.',
+            'Muy buena comunicación y disposición para resolver problemas.',
+            'El código es limpio y bien estructurado. Recomendado 100%.',
+            'Hubo algunos retrasos pero el resultado final fue satisfactorio.',
+            'Gran experiencia trabajando juntos, esperamos colaborar nuevamente.',
+            'Superó nuestras expectativas en cuanto a funcionalidad y diseño.',
+            'Profesional muy competente, lo recomiendo.',
+            'Trabajo de alta calidad, muy satisfecho con el resultado.',
+            'Buena experiencia, cumplió con todos los requisitos.',
+            'Excelente trabajo, sin duda volvería a contratar.',
         ];
         
-        foreach ($reviewsData as $projectNum => $reviewData) {
-            $project = $projects[$projectNum];
+        foreach ($projects as $projectNum => $project) {
+            if ($project['status'] !== 'completed' || !isset($project['developer_id'])) continue;
+            
+            $projectModel = Project::find($project['id']);
+            if (!$projectModel) continue;
             
             Review::create([
                 'project_id' => $project['id'],
-                'company_id' => Project::find($project['id'])->company_id,
+                'company_id' => $projectModel->company_id,
                 'developer_id' => $project['developer_id'],
-                'rating' => $reviewData['rating'],
-                'comment' => $reviewData['comment'],
+                'rating' => rand(3, 5),
+                'comment' => $reviewComments[array_rand($reviewComments)],
             ]);
         }
     }
 
     private function createTransactions(array $projects, array $admins): void
     {
-        $this->command->info('Creando transacciones...');
+        $this->command->info('💵 Creando transacciones financieras...');
         
-        // Proyectos completed (P11-P14) - transacciones completas
-        $completedProjectIds = [11, 12, 13, 14];
+        $adminWallet = Wallet::where('user_id', $admins[0])->first();
         
-        foreach ($completedProjectIds as $projectNum) {
-            $project = $projects[$projectNum];
+        foreach ($projects as $projectNum => $project) {
             $projectModel = Project::find($project['id']);
+            if (!$projectModel) continue;
+            
             $companyId = $projectModel->company_id;
-            $developerId = $project['developer_id'];
-            
-            $companyWallet = Wallet::firstOrCreate(
-                ['user_id' => $companyId],
-                ['balance' => 0, 'held_balance' => 0]
-            );
-            $developerWallet = Wallet::firstOrCreate(
-                ['user_id' => $developerId],
-                ['balance' => 0, 'held_balance' => 0]
-            );
-            $adminWallet = Wallet::firstOrCreate(
-                ['user_id' => $admins[0]],
-                ['balance' => 0, 'held_balance' => 0]
-            );
-            
-            // Depósito inicial de la company
-            Transaction::create([
-                'wallet_id' => $companyWallet->id,
-                'amount' => $projectModel->budget_min,
-                'type' => 'deposit',
-                'description' => 'Depósito inicial para proyecto: ' . $projectModel->title,
-                'reference_type' => 'project',
-                'reference_id' => $project['id'],
-            ]);
-            
-            $companyWallet->balance += $projectModel->budget_min;
-            $companyWallet->save();
-            
-            // Milestones
-            $milestones = Milestone::where('project_id', $project['id'])->orderBy('order')->get();
-            foreach ($milestones as $milestone) {
-                // Escrow deposit
-                Transaction::create([
-                    'wallet_id' => $companyWallet->id,
-                    'amount' => -$milestone->amount,
-                    'type' => 'escrow_deposit',
-                    'description' => 'Depósito en escrow para milestone: ' . $milestone->title,
-                    'reference_type' => 'milestone',
-                    'reference_id' => $milestone->id,
-                ]);
-                
-                $companyWallet->held_balance += $milestone->amount;
-                $companyWallet->balance -= $milestone->amount;
-                $companyWallet->save();
-                
-                // Payment al developer (90% después de commission)
-                $developerAmount = $milestone->amount * 0.90;
-                $commissionAmount = $milestone->amount * 0.10;
-                
-                Transaction::create([
-                    'wallet_id' => $developerWallet->id,
-                    'amount' => $developerAmount,
-                    'type' => 'payment_received',
-                    'description' => 'Pago recibido por milestone: ' . $milestone->title,
-                    'reference_type' => 'milestone',
-                    'reference_id' => $milestone->id,
-                ]);
-                
-                $developerWallet->balance += $developerAmount;
-                $developerWallet->save();
-                
-                // Commission al admin
-                Transaction::create([
-                    'wallet_id' => $adminWallet->id,
-                    'amount' => $commissionAmount,
-                    'type' => 'commission',
-                    'description' => 'Comisión del proyecto: ' . $projectModel->title,
-                    'reference_type' => 'project',
-                    'reference_id' => $project['id'],
-                ]);
-                
-                $adminWallet->balance += $commissionAmount;
-                $adminWallet->save();
-                
-                // Release del escrow
-                Transaction::create([
-                    'wallet_id' => $companyWallet->id,
-                    'amount' => 0,
-                    'type' => 'escrow_release',
-                    'description' => 'Liberación de escrow para milestone: ' . $milestone->title,
-                    'reference_type' => 'milestone',
-                    'reference_id' => $milestone->id,
-                ]);
-                
-                $companyWallet->held_balance -= $milestone->amount;
-                $companyWallet->save();
-            }
-        }
-        
-        // Proyectos in_progress (P6-P10) - solo escrow deposits
-        $inProgressProjectIds = [6, 7, 8, 9, 10];
-        
-        foreach ($inProgressProjectIds as $projectNum) {
-            $project = $projects[$projectNum];
-            $projectModel = Project::find($project['id']);
-            $companyId = $projectModel->company_id;
-            
             $companyWallet = Wallet::where('user_id', $companyId)->first();
+            if (!$companyWallet) continue;
             
-            // Depósito inicial
+            // Deposit
+            $depositAmount = $projectModel->budget_min * (in_array($project['status'], ['completed', 'pending_payment']) ? 1 : 0.5);
+            
             Transaction::create([
                 'wallet_id' => $companyWallet->id,
-                'amount' => $projectModel->budget_min * 0.5,
-                'type' => 'deposit',
-                'description' => 'Depósito inicial para proyecto: ' . $projectModel->title,
-                'reference_type' => 'project',
-                'reference_id' => $project['id'],
-            ]);
-            
-            $companyWallet->balance += $projectModel->budget_min * 0.5;
-            $companyWallet->save();
-            
-            // Escrow deposits para milestones funded
-            $fundedMilestones = Milestone::where('project_id', $project['id'])
-                ->where('status', 'funded')
-                ->get();
-            
-            foreach ($fundedMilestones as $milestone) {
-                Transaction::create([
-                    'wallet_id' => $companyWallet->id,
-                    'amount' => -$milestone->amount,
-                    'type' => 'escrow_deposit',
-                    'description' => 'Depósito en escrow para milestone: ' . $milestone->title,
-                    'reference_type' => 'milestone',
-                    'reference_id' => $milestone->id,
-                ]);
-                
-                $companyWallet->held_balance += $milestone->amount;
-                $companyWallet->balance -= $milestone->amount;
-                $companyWallet->save();
-            }
-        }
-        
-        // Proyectos pending payment (P19-P20)
-        $pendingPaymentProjectIds = [19, 20];
-        
-        foreach ($pendingPaymentProjectIds as $projectNum) {
-            $project = $projects[$projectNum];
-            $projectModel = Project::find($project['id']);
-            $companyId = $projectModel->company_id;
-            
-            $companyWallet = Wallet::where('user_id', $companyId)->first();
-            
-            // Depósito inicial
-            Transaction::create([
-                'wallet_id' => $companyWallet->id,
-                'amount' => $projectModel->budget_min,
+                'amount' => $depositAmount,
                 'type' => 'deposit',
                 'description' => 'Depósito para proyecto: ' . $projectModel->title,
-                'reference_type' => 'project',
+                'reference_type' => 'App\Models\Project',
                 'reference_id' => $project['id'],
             ]);
             
-            $companyWallet->balance += $projectModel->budget_min;
+            $companyWallet->balance += $depositAmount;
             $companyWallet->save();
             
-            // Todos los milestones en escrow
-            $milestones = Milestone::where('project_id', $project['id'])->get();
+            // Create escrow deposits for milestones
+            $milestones = Milestone::where('project_id', $project['id'])->whereIn('status', ['funded', 'released'])->get();
+            
             foreach ($milestones as $milestone) {
                 Transaction::create([
                     'wallet_id' => $companyWallet->id,
                     'amount' => -$milestone->amount,
                     'type' => 'escrow_deposit',
                     'description' => 'Depósito en escrow para milestone: ' . $milestone->title,
-                    'reference_type' => 'milestone',
+                    'reference_type' => 'App\Models\Milestone',
                     'reference_id' => $milestone->id,
                 ]);
                 
                 $companyWallet->held_balance += $milestone->amount;
                 $companyWallet->balance -= $milestone->amount;
                 $companyWallet->save();
+                
+                // If milestone is released, process payment to developer
+                if ($milestone->status === 'released' && isset($project['developer_id'])) {
+                    $developerWallet = Wallet::where('user_id', $project['developer_id'])->first();
+                    if ($developerWallet) {
+                        $developerAmount = $milestone->amount * 0.90;
+                        $commissionAmount = $milestone->amount * 0.10;
+                        
+                        // Payment to developer
+                        Transaction::create([
+                            'wallet_id' => $developerWallet->id,
+                            'amount' => $developerAmount,
+                            'type' => 'payment_received',
+                            'description' => 'Pago por milestone: ' . $milestone->title,
+                            'reference_type' => 'App\Models\Milestone',
+                            'reference_id' => $milestone->id,
+                        ]);
+                        
+                        $developerWallet->balance += $developerAmount;
+                        $developerWallet->save();
+                        
+                        // Commission to admin
+                        if ($adminWallet) {
+                            Transaction::create([
+                                'wallet_id' => $adminWallet->id,
+                                'amount' => $commissionAmount,
+                                'type' => 'commission',
+                                'description' => 'Comisión del proyecto: ' . $projectModel->title,
+                                'reference_type' => 'App\Models\Project',
+                                'reference_id' => $project['id'],
+                            ]);
+                            
+                            $adminWallet->balance += $commissionAmount;
+                            $adminWallet->save();
+                        }
+                        
+                        // Release escrow
+                        Transaction::create([
+                            'wallet_id' => $companyWallet->id,
+                            'amount' => 0,
+                            'type' => 'escrow_release',
+                            'description' => 'Liberación de escrow para milestone: ' . $milestone->title,
+                            'reference_type' => 'App\Models\Milestone',
+                            'reference_id' => $milestone->id,
+                        ]);
+                        
+                        $companyWallet->held_balance -= $milestone->amount;
+                        $companyWallet->save();
+                    }
+                }
             }
         }
     }
 
     private function createPortfolios(array $developers): void
     {
-        $this->command->info('Creando portfolios...');
+        $this->command->info('🎨 Creando portfolios...');
         
-        $portfolioData = [
-            16 => [ // Andrés (dev 1)
-                [
-                    'title' => 'Plataforma de E-learning Interactiva',
-                    'description' => 'Plataforma educativa con videoconferencias en tiempo real y gamificación',
-                    'project_url' => 'https://elearning-demo.com',
-                    'github_url' => 'https://github.com/andresgarcia/elearning',
-                    'technologies' => ['React', 'Laravel', 'PostgreSQL', 'WebRTC'],
-                    'completion_date' => 'Enero 2026',
-                    'client' => 'EduTech Solutions',
-                    'featured' => true,
-                    'views' => 234,
-                    'likes' => 45,
-                ],
-                [
-                    'title' => 'API de Gestión de Inventarios',
-                    'description' => 'Sistema REST API para gestión de inventarios con múltiples almacenes',
-                    'project_url' => null,
-                    'github_url' => 'https://github.com/andresgarcia/inventory-api',
-                    'technologies' => ['Laravel', 'MySQL', 'Redis', 'Docker'],
-                    'completion_date' => 'Octubre 2025',
-                    'client' => 'LogiStorage S.A.',
-                    'featured' => false,
-                    'views' => 156,
-                    'likes' => 33,
-                ],
-            ],
-            17 => [ // Valentina (dev 2)
-                [
-                    'title' => 'Dashboard SaaS para Marketing',
-                    'description' => 'Dashboard interactivo para análisis de campañas de marketing digital',
-                    'project_url' => 'https://marketdash.io',
-                    'github_url' => null,
-                    'technologies' => ['Next.js', 'TypeScript', 'TailwindCSS', 'PostgreSQL'],
-                    'completion_date' => 'Noviembre 2025',
-                    'client' => 'DigitalFirst Agency',
-                    'featured' => true,
-                    'views' => 312,
-                    'likes' => 67,
-                ],
-            ],
-            19 => [ // Camila (dev 4)
-                [
-                    'title' => 'Plataforma de Despliegue Continuo',
-                    'description' => 'Plataforma interna de CI/CD para múltiples equipos de desarrollo',
-                    'project_url' => null,
-                    'github_url' => 'https://github.com/camilardz/cicd-platform',
-                    'technologies' => ['Kubernetes', 'Docker', 'GitHub Actions', 'AWS'],
-                    'completion_date' => 'Diciembre 2025',
-                    'client' => 'TechCorp International',
-                    'featured' => true,
-                    'views' => 189,
-                    'likes' => 42,
-                ],
-                [
-                    'title' => 'Infraestructura Multi-Cloud',
-                    'description' => 'Arquitectura multi-cloud con Terraform para empresa fintech',
-                    'project_url' => null,
-                    'github_url' => 'https://github.com/camilardz/multicloud-infra',
-                    'technologies' => ['AWS', 'GCP', 'Terraform', 'Ansible'],
-                    'completion_date' => 'Septiembre 2025',
-                    'client' => 'FinSecure',
-                    'featured' => false,
-                    'views' => 145,
-                    'likes' => 28,
-                ],
-            ],
-            21 => [ // Isabella (dev 6)
-                [
-                    'title' => 'Rediseño App de Banca Móvil',
-                    'description' => 'Rediseño completo de app de banca móvil para banco regional',
-                    'project_url' => null,
-                    'github_url' => null,
-                    'technologies' => ['Figma', 'Principle', 'After Effects'],
-                    'completion_date' => 'Agosto 2025',
-                    'client' => 'Banco Regional',
-                    'featured' => true,
-                    'views' => 456,
-                    'likes' => 89,
-                ],
-            ],
-            22 => [ // Santiago (dev 3)
-                [
-                    'title' => 'Sistema de Mensajería Empresarial',
-                    'description' => 'Plataforma de mensajería en tiempo real para empresas',
-                    'project_url' => 'https://bizchat.io',
-                    'github_url' => 'https://github.com/santiagomtz/enterprise-chat',
-                    'technologies' => ['Node.js', 'Socket.io', 'MongoDB', 'Redis'],
-                    'completion_date' => 'Julio 2025',
-                    'client' => 'CommsPro',
-                    'featured' => true,
-                    'views' => 278,
-                    'likes' => 54,
-                ],
-            ],
-            23 => [ // Lucía (dev 8)
-                [
-                    'title' => 'Migración Cloud para Retail',
-                    'description' => 'Migración completa de infraestructura on-premise a AWS',
-                    'project_url' => null,
-                    'github_url' => null,
-                    'technologies' => ['AWS', 'Terraform', 'Kubernetes', 'CloudWatch'],
-                    'completion_date' => 'Octubre 2025',
-                    'client' => 'RetailMax',
-                    'featured' => true,
-                    'views' => 345,
-                    'likes' => 72,
-                ],
-            ],
-            27 => [ // María (dev 12)
-                [
-                    'title' => 'Plataforma de Análisis en Tiempo Real',
-                    'description' => 'Dashboard de analytics con procesamiento de millones de eventos',
-                    'project_url' => 'https://realtimeanalytics.io',
-                    'github_url' => 'https://github.com/mariavargas/analytics-platform',
-                    'technologies' => ['React', 'Node.js', 'MongoDB', 'GraphQL', 'Redis'],
-                    'completion_date' => 'Noviembre 2025',
-                    'client' => 'DataDriven Inc',
-                    'featured' => true,
-                    'views' => 289,
-                    'likes' => 61,
-                ],
-            ],
-            28 => [ // Alejandro (dev 13)
-                [
-                    'title' => 'ERP para PYMES',
-                    'description' => 'Sistema ERP completo para pequeñas y medianas empresas',
-                    'project_url' => 'https://pymeerp.com',
-                    'github_url' => 'https://github.com/alejandrocastro/pyme-erp',
-                    'technologies' => ['Laravel', 'Vue.js', 'MySQL', 'Docker'],
-                    'completion_date' => 'Junio 2025',
-                    'client' => 'PymeSolutions',
-                    'featured' => true,
-                    'views' => 412,
-                    'likes' => 85,
-                ],
-            ],
-            29 => [ // Sofía (dev 14)
-                [
-                    'title' => 'App de Meditation y Bienestar',
-                    'description' => 'Aplicación móvil de meditación con tracking de hábitos',
-                    'project_url' => 'https://mindfulapp.io',
-                    'github_url' => 'https://github.com/sofiamendoza/wellness-app',
-                    'technologies' => ['React Native', 'TypeScript', 'Node.js', 'Firebase'],
-                    'completion_date' => 'Enero 2026',
-                    'client' => 'WellnessCo',
-                    'featured' => true,
-                    'views' => 523,
-                    'likes' => 112,
-                ],
-            ],
-            30 => [ // Ricardo (dev 15)
-                [
-                    'title' => 'API de Predicciones Deportivas',
-                    'description' => 'API de machine learning para predicciones de eventos deportivos',
-                    'project_url' => null,
-                    'github_url' => 'https://github.com/ricardonavarro/sports-predictions',
-                    'technologies' => ['Python', 'Django', 'PostgreSQL', 'TensorFlow'],
-                    'completion_date' => 'Diciembre 2025',
-                    'client' => 'BetAnalytics',
-                    'featured' => false,
-                    'views' => 198,
-                    'likes' => 39,
-                ],
-            ],
+        $portfolioTitles = [
+            'Plataforma E-commerce Enterprise',
+            'Sistema de Gestión de Proyectos',
+            'App de Delivery con IA',
+            'Dashboard de Analytics',
+            'Plataforma de E-learning',
+            'API REST de Alto Rendimiento',
+            'App Mobile de Finanzas',
+            'Sistema de Reservas',
+            'Plataforma de Marketplace',
+            'Dashboard IoT',
         ];
         
-        foreach ($portfolioData as $developerId => $portfolios) {
-            foreach ($portfolios as $portfolio) {
+        $technologies = [
+            ['React', 'Node.js', 'PostgreSQL', 'AWS'],
+            ['Vue.js', 'Laravel', 'MySQL', 'Docker'],
+            ['Flutter', 'Firebase', 'Google Maps'],
+            ['React Native', 'Node.js', 'MongoDB'],
+            ['Next.js', 'TypeScript', 'TailwindCSS'],
+            ['Angular', 'Spring Boot', 'PostgreSQL'],
+            ['Django', 'Python', 'AWS', 'Redis'],
+            ['React', 'Node.js', 'GraphQL', 'Apollo'],
+            ['Flutter', 'Firebase', 'Stripe'],
+            ['Swift', 'iOS', 'CoreData'],
+        ];
+        
+        // Create portfolios for first 60 developers
+        for ($i = 0; $i < min(60, count($developers)); $i++) {
+            $developerId = $developers[$i];
+            
+            // 0-3 portfolio projects per developer
+            $numPortfolios = rand(0, 3);
+            
+            for ($p = 0; $p < $numPortfolios; $p++) {
+                $techIndex = rand(0, count($technologies) - 1);
+                
                 PortfolioProject::create([
                     'user_id' => $developerId,
-                    'title' => $portfolio['title'],
-                    'description' => $portfolio['description'],
-                    'image_url' => null,
-                    'project_url' => $portfolio['project_url'],
-                    'github_url' => $portfolio['github_url'],
-                    'technologies' => json_encode($portfolio['technologies']),
-                    'completion_date' => $portfolio['completion_date'],
-                    'client' => $portfolio['client'],
-                    'featured' => $portfolio['featured'],
-                    'views' => $portfolio['views'],
-                    'likes' => $portfolio['likes'],
+                    'title' => $portfolioTitles[rand(0, count($portfolioTitles) - 1)] . ' Project',
+                    'description' => 'Proyecto de desarrollo completo con funcionalidades avanzadas y diseño moderno.',
+                    'project_url' => rand(0, 1) ? 'https://project-demo.com' : null,
+                    'github_url' => rand(0, 1) ? 'https://github.com/user/project' : null,
+                    'technologies' => json_encode($technologies[$techIndex]),
+                    'completion_date' => Carbon::now()->subMonths(rand(1, 12))->format('F Y'),
+                    'client' => rand(0, 1) ? 'Cliente ' . rand(1, 50) : null,
+                    'featured' => rand(0, 3) === 0,
+                    'views' => rand(50, 500),
+                    'likes' => rand(10, 100),
                 ]);
             }
         }
@@ -2154,44 +1348,37 @@ class FullDemoSeeder extends Seeder
 
     private function createFavorites(array $companies, array $developers): void
     {
-        $this->command->info('Creando favoritos...');
+        $this->command->info('❤️ Creando favoritos...');
         
-        $favorites = [
-            [9, 16],   // TechNova favoritea a Andrés
-            [9, 22],   // TechNova favoritea a Santiago
-            [9, 17],   // TechNova favoritea a Valentina
-            [10, 27],  // ByteForge favoritea a María
-            [10, 23],  // ByteForge favoritea a Lucía
-            [11, 19],  // CloudPeak favoritea a Camila
-            [11, 23],  // CloudPeak favoritea a Lucía
-            [12, 21],  // DataStream favoritea a Isabella
-            [12, 16],  // DataStream favoritea a Andrés
-            [13, 29],  // InnoCode favoritea a Sofía
-            [13, 17],  // InnoCode favoritea a Valentina
-            [14, 16],  // NexGen favoritea a Andrés
-            [14, 27],  // NexGen favoritea a María
-            [15, 23],  // AppVenture favoritea a Lucía
-            [16, 28],  // CodeCraft favoritea a Alejandro
-            [16, 16],  // CodeCraft favoritea a Andrés
-        ];
-        
-        foreach ($favorites as $favorite) {
-            Favorite::create([
-                'company_id' => $favorite[0],
-                'developer_id' => $favorite[1],
-            ]);
+        // Each company favorites 5-15 developers
+        foreach ($companies as $companyId) {
+            $numFavorites = rand(5, 15);
+            $favoritedDevs = [];
+            
+            for ($i = 0; $i < $numFavorites; $i++) {
+                $developerId = $developers[array_rand($developers)];
+                
+                if (!in_array($developerId, $favoritedDevs)) {
+                    $favoritedDevs[] = $developerId;
+                    
+                    Favorite::firstOrCreate([
+                        'company_id' => $companyId,
+                        'developer_id' => $developerId,
+                    ]);
+                }
+            }
         }
     }
 
-    private function createUserPreferences(array $allUsers): void
+    private function createUserPreferences(array $users): void
     {
-        $this->command->info('Creando preferencias de usuario...');
+        $this->command->info('⚙️ Creando preferencias de usuario...');
         
-        $themes = ['dark', 'dark', 'dark', 'dark', 'dark', 'dark', 'light', 'light', 'light', 'light'];
-        $colors = ['#00FF85', '#00FF85', '#00FF85', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6', '#10B981'];
-        $languages = ['es', 'es', 'es', 'es', 'es', 'es', 'es', 'en', 'en', 'en', 'en'];
+        $themes = ['dark', 'light', 'terminal'];
+        $languages = ['es', 'en', 'pt'];
+        $colors = ['#00FF85', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'];
         
-        foreach ($allUsers as $userId) {
+        foreach ($users as $userId) {
             UserPreference::create([
                 'user_id' => $userId,
                 'theme' => $themes[array_rand($themes)],
@@ -2204,83 +1391,71 @@ class FullDemoSeeder extends Seeder
 
     private function createActivityLogs(array $admins, array $companies, array $developers, array $projects): void
     {
-        $this->command->info('Creando logs de actividad...');
+        $this->command->info('📝 Creando logs de actividad (mapa de calor)...');
         
         $allUsers = array_merge($admins, $companies, $developers);
-        $ips = ['192.168.1.10', '192.168.1.15', '10.0.0.5', '10.0.0.12', '181.50.10.5', '181.70.20.15', '200.50.30.25'];
+        
+        $actions = [
+            'login', 'logout', 'profile_view', 'profile_update', 'project_created',
+            'project_updated', 'project_viewed', 'application_sent', 'application_accepted',
+            'application_rejected', 'milestone_completed', 'payment_received', 'message_sent',
+            'conversation_started', 'review_created', 'favorite_added', 'portfolio_updated'
+        ];
+        
+        $ips = [
+            '192.168.1.10', '192.168.1.15', '10.0.0.5', '10.0.0.12',
+            '181.50.10.5', '181.70.20.15', '200.50.30.25', '45.33.32.156',
+            '89.216.48.10', '190.190.200.5'
+        ];
+        
         $userAgents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15',
             'Mozilla/5.0 (X11; Linux x86_64) Firefox/121.0',
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/120.0.0.0',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1',
         ];
         
-        // Login logs
+        // Generate many activity logs for heatmap
+        $logCount = 0;
+        
         foreach ($allUsers as $userId) {
-            for ($i = 0; $i < rand(1, 3); $i++) {
+            // 10-30 activities per user for heatmap
+            $numActivities = rand(10, 30);
+            
+            for ($i = 0; $i < $numActivities; $i++) {
+                $action = $actions[array_rand($actions)];
+                $daysAgo = rand(0, 60);
+                
+                // Peak hours: 70% chance to be in peak hours
+                if (rand(1, 100) <= 70) {
+                    $hour = rand(1, 2) == 1 ? rand(9, 13) : rand(14, 18);
+                } else {
+                    $hour = rand(0, 23);
+                }
+                
+                $createdAt = Carbon::now()->subDays($daysAgo)->setTime($hour, rand(0, 59), rand(0, 59));
+                
                 ActivityLog::create([
                     'user_id' => $userId,
-                    'action' => 'login',
-                    'details' => 'Inicio de sesión exitoso',
+                    'action' => $action,
+                    'details' => "Acción: $action realizada por usuario",
                     'ip_address' => $ips[array_rand($ips)],
                     'user_agent' => $userAgents[array_rand($userAgents)],
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]);
+                
+                $logCount++;
             }
         }
         
-        // Project created logs
-        foreach ($projects as $projectNum => $project) {
-            $projectModel = Project::find($project['id']);
-            ActivityLog::create([
-                'user_id' => $projectModel->company_id,
-                'action' => 'project_created',
-                'details' => 'Proyecto creado: ' . $projectModel->title,
-                'ip_address' => $ips[array_rand($ips)],
-                'user_agent' => $userAgents[array_rand($userAgents)],
-            ]);
-        }
-        
-        // Application accepted logs
-        $acceptedApplications = Application::where('status', 'accepted')->get();
-        foreach ($acceptedApplications as $application) {
-            ActivityLog::create([
-                'user_id' => $application->developer_id,
-                'action' => 'application_accepted',
-                'details' => 'Postulación aceptada para proyecto ID: ' . $application->project_id,
-                'ip_address' => $ips[array_rand($ips)],
-                'user_agent' => $userAgents[array_rand($userAgents)],
-            ]);
-        }
-        
-        // Milestone completed logs
-        $completedMilestones = Milestone::where('progress_status', 'completed')->get();
-        foreach ($completedMilestones as $milestone) {
-            $project = Project::find($milestone->project_id);
-            ActivityLog::create([
-                'user_id' => $project->company_id,
-                'action' => 'milestone_completed',
-                'details' => 'Milestone completado: ' . $milestone->title . ' (Proyecto: ' . $project->title . ')',
-                'ip_address' => $ips[array_rand($ips)],
-                'user_agent' => $userAgents[array_rand($userAgents)],
-            ]);
-        }
-        
-        // Profile updated logs para algunos developers
-        $selectedDevelopers = array_rand(array_flip($developers), 5);
-        foreach ($selectedDevelopers as $developerId) {
-            ActivityLog::create([
-                'user_id' => $developerId,
-                'action' => 'profile_updated',
-                'details' => 'Perfil actualizado',
-                'ip_address' => $ips[array_rand($ips)],
-                'user_agent' => $userAgents[array_rand($userAgents)],
-            ]);
-        }
+        $this->command->info('   ✓ Total logs de actividad creados: ' . $logCount);
     }
 
     private function createSystemSettings(): void
     {
-        $this->command->info('Creando settings del sistema...');
+        $this->command->info('🔧 Creando settings del sistema...');
         
         $settings = [
             ['key' => 'commission_rate', 'value' => '10', 'type' => 'integer', 'group' => 'marketplace'],
@@ -2293,10 +1468,179 @@ class FullDemoSeeder extends Seeder
             ['key' => 'maintenance_mode', 'value' => 'false', 'type' => 'boolean', 'group' => 'general'],
             ['key' => 'default_currency', 'value' => 'USD', 'type' => 'string', 'group' => 'marketplace'],
             ['key' => 'escrow_enabled', 'value' => 'true', 'type' => 'boolean', 'group' => 'marketplace'],
+            ['key' => 'min_withdrawal_amount', 'value' => '50', 'type' => 'integer', 'group' => 'marketplace'],
+            ['key' => 'payment_processing_fee', 'value' => '2.9', 'type' => 'string', 'group' => 'marketplace'],
         ];
         
         foreach ($settings as $setting) {
             SystemSetting::create($setting);
         }
+    }
+
+    private function spreadTimestamps(): void
+    {
+        $this->command->info('📅 Distribuyendo timestamps para métricas del dashboard (mapa de calor)...');
+        
+        // Users: last 90 days
+        $users = DB::table('users')->get();
+        foreach ($users as $user) {
+            $date = Carbon::now()->subDays(rand(0, 90))->subHours(rand(0, 23))->subMinutes(rand(0, 59));
+            DB::table('users')->where('id', $user->id)->update([
+                'created_at' => $date,
+                'updated_at' => clone $date,
+            ]);
+        }
+        
+        // Projects: last 90 days
+        $projects = DB::table('projects')->get();
+        foreach ($projects as $project) {
+            $created_at = Carbon::now()->subDays(rand(10, 90))->subHours(rand(0, 23));
+            $updated_at = clone $created_at;
+            if ($project->status === 'completed') {
+                $updated_at = (clone $created_at)->addDays(rand(5, 45));
+                if ($updated_at > Carbon::now()) $updated_at = Carbon::now();
+            }
+            DB::table('projects')->where('id', $project->id)->update([
+                'created_at' => $created_at,
+                'updated_at' => $updated_at,
+            ]);
+        }
+        
+        // Applications: 0 - 60 days
+        $applications = DB::table('applications')->get();
+        foreach ($applications as $app) {
+            $date = Carbon::now()->subDays(rand(0, 60))->subHours(rand(0, 23))->subMinutes(rand(0, 59));
+            DB::table('applications')->where('id', $app->id)->update([
+                'created_at' => $date,
+                'updated_at' => clone $date,
+            ]);
+        }
+        
+        // Messages: 0 - 60 days with peak hours
+        $messages = DB::table('messages')->get();
+        foreach ($messages as $msg) {
+            $daysAgo = rand(0, 60);
+            // Peak hours logic: 70% chance to be in peak hours (9-13 or 14-18)
+            if (rand(1, 100) <= 70) {
+                $hour = rand(1, 2) == 1 ? rand(9, 13) : rand(14, 18);
+            } else {
+                $hour = rand(0, 23);
+            }
+            $date = Carbon::now()->subDays($daysAgo)->setTime($hour, rand(0, 59), rand(0, 59));
+            DB::table('messages')->where('id', $msg->id)->update([
+                'created_at' => $date,
+                'updated_at' => clone $date,
+            ]);
+        }
+        
+        // Transactions: 0 - 60 days
+        $transactions = DB::table('transactions')->get();
+        foreach ($transactions as $tx) {
+            $date = Carbon::now()->subDays(rand(0, 60))->subHours(rand(0, 23))->subMinutes(rand(0, 59));
+            DB::table('transactions')->where('id', $tx->id)->update([
+                'created_at' => $date,
+                'updated_at' => clone $date,
+            ]);
+        }
+        
+        // Reviews: 0 - 30 days
+        $reviews = DB::table('reviews')->get();
+        foreach ($reviews as $rev) {
+            $date = Carbon::now()->subDays(rand(0, 30))->subHours(rand(0, 23));
+            DB::table('reviews')->where('id', $rev->id)->update([
+                'created_at' => $date,
+                'updated_at' => clone $date,
+            ]);
+        }
+        
+        // Activity logs: 0 - 90 days with peak hours
+        $activityLogs = DB::table('activity_logs')->get();
+        foreach ($activityLogs as $log) {
+            $daysAgo = rand(0, 90);
+            // Peak hours: 70% chance
+            if (rand(1, 100) <= 70) {
+                $hour = rand(1, 2) == 1 ? rand(9, 13) : rand(14, 18);
+            } else {
+                $hour = rand(0, 23);
+            }
+            $date = Carbon::now()->subDays($daysAgo)->setTime($hour, rand(0, 59), rand(0, 59));
+            DB::table('activity_logs')->where('id', $log->id)->update([
+                'created_at' => $date,
+                'updated_at' => clone $date,
+            ]);
+        }
+        
+        // Conversations
+        $conversations = DB::table('conversations')->get();
+        foreach ($conversations as $conv) {
+            $date = Carbon::now()->subDays(rand(5, 60))->subHours(rand(0, 23));
+            DB::table('conversations')->where('id', $conv->id)->update([
+                'created_at' => $date,
+                'updated_at' => $date,
+            ]);
+        }
+        
+        // Milestones
+        $milestones = DB::table('milestones')->get();
+        foreach ($milestones as $milestone) {
+            $date = Carbon::now()->subDays(rand(10, 60))->subHours(rand(0, 23));
+            DB::table('milestones')->where('id', $milestone->id)->update([
+                'created_at' => $date,
+                'updated_at' => $date,
+            ]);
+        }
+        
+        $this->command->info('   ✓ Timestamps distribuidos correctamente para el mapa de calor');
+    }
+    
+    /**
+     * Crear PlatformCommissions de prueba para el dashboard
+     */
+    private function createPlatformCommissions(array $projects, array $companies, array $developers): void
+    {
+        $this->command->info('💰 Creando comisiones de prueba para el dashboard...');
+        
+        // Buscar proyectos completados o en progreso que tengan aplicaciones aceptadas
+        $completedProjects = \App\Models\Project::where('status', 'in_progress')
+            ->orWhere('status', 'completed')
+            ->whereHas('applications', function ($query) {
+                $query->where('status', 'accepted');
+            })
+            ->with(['applications' => function ($query) {
+                $query->where('status', 'accepted');
+            }])
+            ->limit(20)
+            ->get();
+        
+        $commissionCount = 0;
+        foreach ($completedProjects as $project) {
+            $application = $project->applications->first();
+            if (!$application) continue;
+            
+            $totalAmount = $project->budget_max ?? $project->budget_min ?? 1000;
+            $heldAmount = $totalAmount * 0.5;
+            $commissionRate = $totalAmount < 500 ? 0.20 : 0.15;
+            $commissionAmount = $heldAmount * $commissionRate;
+            $netAmount = $heldAmount - $commissionAmount;
+            
+            // Algunos proyectos completados, otros pendientes
+            $status = rand(1, 100) <= 70 ? 'released' : 'pending';
+            
+            \App\Models\PlatformCommission::create([
+                'project_id' => $project->id,
+                'company_id' => $project->company_id,
+                'developer_id' => $application->developer_id,
+                'total_amount' => $totalAmount,
+                'held_amount' => $heldAmount,
+                'commission_rate' => $commissionRate,
+                'commission_amount' => $status === 'released' ? $commissionAmount : 0,
+                'net_amount' => $status === 'released' ? $netAmount : 0,
+                'status' => $status,
+            ]);
+            
+            $commissionCount++;
+        }
+        
+        $this->command->info('   ✓ Comisiones de prueba creadas: ' . $commissionCount);
     }
 }

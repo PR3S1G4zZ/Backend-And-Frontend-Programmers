@@ -22,6 +22,14 @@ class ApiAuthenticate extends Middleware
      */
     protected function unauthenticated($request, array $guards)
     {
+        \Log::warning('API Authentication failed:', [
+            'url' => $request->fullUrl(),
+            'method' => $request->method(),
+            'headers' => $request->headers->all(),
+            'bearer_token_exists' => !empty($request->bearerToken()),
+            'guards' => $guards,
+        ]);
+        
         abort(response()->json(['message' => 'No autenticado'], 401));
     }
 }

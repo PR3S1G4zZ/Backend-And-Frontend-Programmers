@@ -14,6 +14,12 @@ class Review extends Model
         'developer_id',
         'rating',
         'comment',
+        // Métricas de evaluación
+        'clean_code_rating',
+        'communication_rating',
+        'compliance_rating',
+        'creativity_rating',
+        'post_delivery_support_rating',
     ];
 
     protected $uniqueConstraints = [
@@ -33,5 +39,22 @@ class Review extends Model
     public function developer()
     {
         return $this->belongsTo(User::class, 'developer_id');
+    }
+
+    /**
+     * Calcular el promedio de todas las métricas
+     */
+    public function getAverageRatingAttribute()
+    {
+        $ratings = [
+            $this->rating,
+            $this->clean_code_rating,
+            $this->communication_rating,
+            $this->compliance_rating,
+            $this->creativity_rating,
+            $this->post_delivery_support_rating,
+        ];
+        
+        return round(array_sum($ratings) / count($ratings), 1);
     }
 }

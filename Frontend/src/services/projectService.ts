@@ -28,6 +28,9 @@ export type ProjectResponse = {
   has_applied?: boolean;
   milestones_count?: number;
   completed_milestones_count?: number;
+  // Campos de progreso del proyecto
+  progress_percentage?: number;
+  all_milestones_completed?: boolean;
   deleted_at?: string | null;
 };
 
@@ -50,7 +53,7 @@ export type ApplicationResponse = {
 export async function fetchProjects(params: Record<string, string> = {}) {
   const query = new URLSearchParams(params).toString();
   const url = query ? `/projects?${query}` : '/projects';
-  return apiRequest<{ data: ProjectResponse[]; meta?: any; links?: any }>(url);
+  return apiRequest<{ data: ProjectResponse[] }>(url);
 }
 
 export async function fetchCompanyProjects() {
@@ -103,6 +106,37 @@ export async function rejectApplication(applicationId: string) {
 
 export async function fundProject(id: number) {
   return apiRequest<{ message: string; project: ProjectResponse }>(`/projects/${id}/fund`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * Iniciar proyecto - Cambia el estado a in_progress y crea un grupo chat
+ * Solo se puede llamar si el proyecto tiene al menos un desarrollador aceptado
+ */
+export async function startProject(id: number) {
+  return apiRequest<{ message: string; project: ProjectResponse }>(`/projects/${id}/start`, {
+    method: 'POST',
+  });
+}
+
+export async function getDeveloperProgress(projectId: number) {
+  return apiRequest<{ data: any[] }>(`/projects/${projectId}/developer-progress`);
+}
+
+export async function updateDeveloperProgress(projectId: number, developerId: number, data: any) {
+  return apiRequest<{ data: any }>(`/projects/${projectId}/developer-progress/${developerId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Completar proyecto - Cobra el 50% restante y paga al freelancer
+ * Solo se puede llamar cuando todas las milestones están completadas
+ */
+export async function completeProject(id: number) {
+  return apiRequest<{ message: string; project: ProjectResponse }>(`/projects/${id}/complete`, {
     method: 'POST',
   });
 }

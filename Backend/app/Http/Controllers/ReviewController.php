@@ -36,6 +36,12 @@ class ReviewController extends Controller
             'developer_id' => 'required|exists:users,id',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
+            // Métricas opcionales (si no se envían, se usarán valores por defecto de 5)
+            'clean_code_rating' => 'nullable|integer|min:1|max:5',
+            'communication_rating' => 'nullable|integer|min:1|max:5',
+            'compliance_rating' => 'nullable|integer|min:1|max:5',
+            'creativity_rating' => 'nullable|integer|min:1|max:5',
+            'post_delivery_support_rating' => 'nullable|integer|min:1|max:5',
         ]);
 
         $user = $request->user();
@@ -63,6 +69,17 @@ class ReviewController extends Controller
             ], 400);
         }
 
+        // Verificar que no existe una review previa para este proyecto y developer
+        $existingReview = Review::where('project_id', $request->project_id)
+            ->where('developer_id', $request->developer_id)
+            ->first();
+
+        if ($existingReview) {
+            return response()->json([
+                'message' => 'Ya has realizado una reseña para este desarrollador en este proyecto'
+            ], 422);
+        }
+
         // Crear la review
         $review = Review::create([
             'project_id' => $request->project_id,
@@ -70,6 +87,12 @@ class ReviewController extends Controller
             'developer_id' => $request->developer_id,
             'rating' => $request->rating,
             'comment' => $request->comment,
+            // Métricas de evaluación
+            'clean_code_rating' => $request->clean_code_rating ?? 5,
+            'communication_rating' => $request->communication_rating ?? 5,
+            'compliance_rating' => $request->compliance_rating ?? 5,
+            'creativity_rating' => $request->creativity_rating ?? 5,
+            'post_delivery_support_rating' => $request->post_delivery_support_rating ?? 5,
         ]);
 
         return response()->json([
@@ -101,6 +124,31 @@ class ReviewController extends Controller
         return response()->json([
             'success' => true,
             'data' => $review
+        ]);
+    }
+
+    /**
+     * Obtener reviews de un proyecto específico
+     */
+    public function projectReviews(Request $request, Project $project)
+    {
+        // Verificar que el usuario tiene acceso al proyecto
+        $user = $request->user();
+        // El usuario tiene acceso si es la empresa dueña O es un developer con aplicación aceptada
+        $hasAccess = ($user->id === $project->company_id) || 
+            $project->applications()->where('developer_id', $user->id)->where('status', 'accepted')->exists();
+        
+        if (!$hasAccess) {
+            abort(403, 'Unauthorized');
+        }
+
+        $reviews = Review::where('project_id', $project->id)
+            ->with(['company', 'developer'])
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => \App\Http\Resources\ReviewResource::collection($reviews)
         ]);
     }
 }

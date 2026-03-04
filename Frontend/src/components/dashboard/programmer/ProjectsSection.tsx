@@ -64,7 +64,7 @@ interface Project {
   deadline: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   featured: boolean;
-  status: 'open' | 'in-review' | 'closed';
+  status: 'open' | 'in_progress' | 'completed' | 'cancelled' | 'draft' | 'pending_payment';
   tags: string[];
   hasApplied: boolean;
 }
@@ -106,7 +106,7 @@ const mapProject = (project: ProjectResponse): Project => {
     priority: project.priority ?? 'medium',
     featured: project.featured ?? false,
     status: (project.status as Project['status']) ?? 'open',
-    tags: project.tags ?? [],
+    tags: Array.isArray(project.tags) ? project.tags : [],
     hasApplied: project.has_applied ?? false,
   };
 };
@@ -158,7 +158,7 @@ export function ProjectsSection() {
       project.location.toLowerCase().includes(selectedLocation.toLowerCase()) ||
       (selectedLocation === 'remoto' && project.remote);
 
-    return matchesSearch && matchesCategory && matchesLevel && matchesLocation && project.status === 'open';
+    return matchesSearch && matchesCategory && matchesLevel && matchesLocation && (project.status === 'open' || project.status === 'in_progress');
   });
 
   // Apply sorting to filtered projects
@@ -444,12 +444,12 @@ export function ProjectsSection() {
                 onClick={() => setSelectedCategory(category.id)}
                 className={`flex items-center space-x-2 whitespace-nowrap ${selectedCategory === category.id
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'border-[#333333] text-white hover:bg-[#333333]'
+                  : 'border-border text-foreground hover:bg-accent'
                   }`}
               >
                 <IconComponent className="h-4 w-4" />
                 <span>{category.name}</span>
-                <Badge variant="secondary" className="bg-[#333333] text-white ml-1">
+                <Badge variant="secondary" className="bg-secondary text-secondary-foreground ml-1">
                   {category.count}
                 </Badge>
               </Button>
@@ -499,7 +499,7 @@ export function ProjectsSection() {
                     animate={{ opacity: 1, x: 0 }}
                     className="absolute top-4 left-4 z-10"
                   >
-                    <Badge className="bg-red-600 text-white animate-pulse">
+                    <Badge className="bg-red-600 text-red-50 animate-pulse">
                       <Zap className="h-3 w-3 mr-1" />
                       Urgente
                     </Badge>
@@ -583,7 +583,7 @@ export function ProjectsSection() {
 
                   {/* Level Badge */}
                   <div className="flex items-center justify-between">
-                    <Badge className={`${getLevelColor(project.level)} text-white`}>
+                    <Badge className={`${getLevelColor(project.level)} text-primary-foreground`}>
                       {getLevelText(project.level)}
                     </Badge>
 
@@ -677,11 +677,11 @@ export function ProjectsSection() {
                         </Button>
                       </motion.div>
 
-                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white p-2">
+                      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground p-2">
                         <MessageSquare className="h-4 w-4" />
                       </Button>
 
-                      <Button size="sm" variant="ghost" className="text-gray-400 hover:text-white p-2">
+                      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground p-2">
                         <BookmarkPlus className="h-4 w-4" />
                       </Button>
                     </div>

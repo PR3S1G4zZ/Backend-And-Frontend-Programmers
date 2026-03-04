@@ -284,8 +284,6 @@ export function ProfileSection() {
     skills, languages
   ]);
 
-  // Para compatibilidad con llamadas existentes
-  const calculateProfileCompletion = () => profileCompletion;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">

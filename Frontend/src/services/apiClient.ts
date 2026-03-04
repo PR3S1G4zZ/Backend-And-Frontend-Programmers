@@ -1,6 +1,6 @@
 import { authService } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
 export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = authService.getToken();
@@ -26,12 +26,8 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
 
   if (!response.ok) {
     if (response.status === 401) {
-      // Limpiar toda la sesión para evitar bucles de recarga
-      authService.clearToken();
-      authService.clearStoredUser();
-      localStorage.removeItem('last_page');
-      window.location.href = '/';
-      return {} as T;
+      // Loguear el error pero no redirigir automáticamente
+      console.error('Error de autenticación: Token no válido o expirado');
     }
     throw new Error(data.message || 'Error en la petición');
   }

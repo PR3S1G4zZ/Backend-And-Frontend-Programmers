@@ -39,6 +39,7 @@ interface Contact {
   unreadCount: number;
   isOnline: boolean;
   isTyping?: boolean;
+  isGroup?: boolean;
 }
 
 interface Message {
@@ -95,6 +96,7 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
           unreadCount: contact.unreadCount,
           isOnline: contact.isOnline,
           isTyping: false,
+          isGroup: contact.role === 'group',
         }));
         setContacts(mapped);
         if (mapped.length > 0 && !selectedContact) {
@@ -110,8 +112,12 @@ export function ChatSection({ userType, initialChatId }: ChatSectionProps) {
 
     loadConversations();
 
+    // Auto-refresh de conversaciones cada 30 segundos
+    const conversationsInterval = setInterval(loadConversations, 30000);
+
     return () => {
       isMounted = false;
+      clearInterval(conversationsInterval);
     };
   }, []);
 

@@ -86,6 +86,8 @@ export function RevenueChart<TData extends Record<string, unknown>>({
                 borderRadius: "8px",
                 color: "var(--foreground)",
               }}
+              itemStyle={{ color: "var(--foreground)" }}
+              labelStyle={{ color: "var(--foreground)" }}
               formatter={(value) => formatter(Number(value))}
             />
             <Area

@@ -141,9 +141,10 @@ class ApplicationControllerTest extends TestCase
             'status' => 'accepted',
         ]);
 
+        // El proyecto no pasa a in_progress al aceptar la aplicación, se mantiene en open
         $this->assertDatabaseHas('projects', [
             'id'     => $project->id,
-            'status' => 'in_progress',
+            'status' => 'open',
         ]);
     }
 

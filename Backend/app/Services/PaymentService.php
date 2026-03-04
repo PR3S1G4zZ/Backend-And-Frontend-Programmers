@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\Transaction;
+use App\Models\PlatformCommission;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -36,14 +37,21 @@ class PaymentService
              $wallet->increment('held_balance', $amount);
 
              $this->createTransaction($wallet, -$amount, 'escrow_deposit', "Depósito en Garantía Proyecto #{$project->id}", $project);
+
+             // Actualizar estado del proyecto dentro de la transacción
+             if ($project->status === 'pending_payment') {
+                 $project->update(['status' => 'open']);
+             }
          });
     }
 
     /**
      * Release funds for a Milestone (or Project Completion).
      * Moves funds from Company Held Balance to Developer Wallet (minus commission).
+     *
+     * @param bool $updateCommissionRecord If true, updates the PlatformCommission record when called from project completion
      */
-    public function releaseMilestone(User $company, float $amount, $project)
+    public function releaseMilestone(User $company, float $amount, $project, bool $updateCommissionRecord = false)
     {
         $companyWallet = $this->getWallet($company);
         
@@ -62,7 +70,9 @@ class PaymentService
         // 2. Calculate split amount
         $splitAmount = $amount / $developerCount;
 
-        DB::transaction(function () use ($companyWallet, $acceptedApps, $amount, $splitAmount, $project) {
+        $totalCommissionReleased = 0;
+
+        DB::transaction(function () use ($companyWallet, $acceptedApps, $amount, $splitAmount, $project, &$totalCommissionReleased) {
             // Deduct total from Held Balance
             $companyWallet->decrement('held_balance', $amount);
 
@@ -77,6 +87,8 @@ class PaymentService
                 $rate = $this->getCommissionRate($splitAmount);
                 $commission = $splitAmount * $rate;
                 $netAmount = $splitAmount - $commission;
+
+                $totalCommissionReleased += $commission;
 
                 // Add to Developer
                 $devWallet = $this->getWallet($developer);
@@ -93,6 +105,11 @@ class PaymentService
                 $this->createTransaction($devWallet, $netAmount, 'payment_received', "Pago recibido Proyecto #{$project->id}", $project);
             }
         });
+
+        // Update commission record if this is a project completion
+        if ($updateCommissionRecord && $totalCommissionReleased > 0) {
+            $this->findAndReleaseCommission($project->id, $totalCommissionReleased);
+        }
     }
 
     // --- Legacy / Helper Methods ---
@@ -104,7 +121,47 @@ class PaymentService
 
     public function releaseFunds(User $company, float $amount, $reference)
     {
-        $this->releaseMilestone($company, $amount, $reference);
+        $this->releaseMilestone($company, $amount, $reference, true);
+    }
+
+    public function releaseFundsToDeveloper($application, float $amount, $reference)
+    {
+        $company = $reference->company;
+        $developer = $application->developer;
+        
+        if (!$developer) {
+            throw new \Exception("La aplicación no tiene un desarrollador asignado.");
+        }
+
+        $companyWallet = $this->getWallet($company);
+        
+        if ($companyWallet->balance < $amount) {
+            throw new \Exception("Fondos insuficientes en la cartera de la empresa para pagar al desarrollador.");
+        }
+
+        // Apply Platform Commission
+        $platformCommissionRate = env('PLATFORM_COMMISSION_RATE', 10) / 100;
+        $commission = $amount * $platformCommissionRate;
+        $netAmount = $amount - $commission;
+        
+        $devWallet = $this->getWallet($developer);
+        $adminWallet = $this->getAdminWallet();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($company, $companyWallet, $devWallet, $adminWallet, $amount, $netAmount, $commission, $reference, $developer) {
+             // Deduct from Company
+            $companyWallet->decrement('balance', $amount);
+            $this->createTransaction($companyWallet, -$amount, 'payment_sent', "Pago por Proyecto #{$reference->id} a {$developer->name}", $reference);
+
+            // Add to Admin
+            if ($adminWallet && $commission > 0) {
+                 $adminWallet->increment('balance', $commission);
+                 $this->createTransaction($adminWallet, $commission, 'commission', "Comisión Proyecto #{$reference->id} (Dev: {$developer->name})", $reference);
+            }
+
+            // Add to Developer
+            $devWallet->increment('balance', $netAmount);
+            $this->createTransaction($devWallet, $netAmount, 'payment_received', "Pago recibido por Proyecto #{$reference->id}", $reference);
+        });
     }
 
     public function processProjectPayment(User $company, User $developer, float $amount, $reference)
@@ -120,7 +177,7 @@ class PaymentService
 
     protected function getAdminWallet()
     {
-        $admin = User::where('role', 'admin')->first();
+        $admin = User::where('user_type', 'admin')->first();
         return $admin ? $this->getWallet($admin) : null;
     }
 
@@ -133,5 +190,92 @@ class PaymentService
             'reference_type' => get_class($reference),
             'reference_id' => $reference->id,
         ]);
+    }
+
+    /**
+     * Crear un registro de comisión global del proyecto cuando se financia
+     * Guarda el monto retenido (50%). La comisión se calcula cuando se libera el proyecto a todos los devs.
+     * @throws \Exception Si no hay desarrollador asignado al proyecto
+     */
+    public function createCommissionRecord(User $company, $project, float $totalAmount)
+    {
+        // Obtener el developer asignado
+        $acceptedApp = $project->applications()->where('status', 'accepted')->first();
+        
+        if (!$acceptedApp) {
+            throw new \Exception("No se puede cobrar sin un desarrollador asignado.");
+        }
+
+        // Just use the first app as the placeholder or make it null if multiple devs but schema expects user_id
+        // (If multiple devs is standard, you should drop developer_id constraint or link to apps, 
+        //  but using the project company and one dev is fine for general project commissions mapping).
+        return \App\Models\PlatformCommission::create([
+            'project_id' => $project->id,
+            'user_id' => $acceptedApp->developer_id, // Primary dev roughly 
+            'amount' => $totalAmount,
+            'commission_rate' => env('PLATFORM_COMMISSION_RATE', 10),
+            'calculated_commission' => $totalAmount * (env('PLATFORM_COMMISSION_RATE', 10) / 100),
+            'status' => 'pending'
+        ]);
+    }
+
+    /**
+     * Actualizar el registro de comisión cuando se completa el proyecto
+     */
+    public function releaseCommission($commissionId, float $commissionAmount)
+    {
+        $commission = PlatformCommission::findOrFail($commissionId);
+        $commission->update([
+            'commission_amount' => $commissionAmount,
+            'status' => 'released',
+        ]);
+        return $commission;
+    }
+
+    /**
+     * Buscar y actualizar la comisión del proyecto
+     */
+    public function findAndReleaseCommission($projectId, float $totalCommissionReleased)
+    {
+        $commission = PlatformCommission::where('project_id', $projectId)
+            ->where('status', 'pending')
+            ->first();
+        
+        if ($commission) {
+            $commission->update([
+                'commission_amount' => $totalCommissionReleased,
+                'status' => 'released',
+            ]);
+        }
+        
+        return $commission;
+    }
+
+    /**
+     * Obtener todas las comisiones de la plataforma
+     */
+    public function getAllCommissions()
+    {
+        return PlatformCommission::with(['project', 'company', 'developer'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Obtener el total de comisiones cobradas
+     */
+    public function getTotalCommission(): float
+    {
+        return PlatformCommission::where('status', 'released')
+            ->sum('commission_amount');
+    }
+
+    /**
+     * Obtener el total de fondos retenidos
+     */
+    public function getTotalHeld(): float
+    {
+        return PlatformCommission::where('status', 'pending')
+            ->sum('held_amount');
     }
 }

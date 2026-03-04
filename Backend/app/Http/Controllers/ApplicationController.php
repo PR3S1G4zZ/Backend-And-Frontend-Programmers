@@ -95,8 +95,8 @@ class ApplicationController extends Controller
                 // 2. Reject other pending applications for this project (optional but common)
                 // $project->applications()->where('id', '!=', $application->id)->update(['status' => 'rejected']);
     
-                // 3. Update Project Status and assign developer (if project table has that field, or just rely on 'in_progress')
-                $project->update(['status' => 'in_progress']);
+                // 3. No longer update project status to in_progress here - wait for manual start button
+                // $project->update(['status' => 'in_progress']);
     
                 // 4. Dispatch Event to handle Chat Creation
                 \App\Events\ApplicationAccepted::dispatch($application);

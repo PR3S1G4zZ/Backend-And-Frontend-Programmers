@@ -102,14 +102,9 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
     };
   }, []);
 
-  // Resetear paginación al cambiar filtros o búsqueda
+  // Resetear paginación al cambiar búsqueda
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setVisibleCount(12);
-  };
-
-  const handleFiltersChange = (newFilters: typeof filters) => {
-    setFilters(newFilters);
     setVisibleCount(12);
   };
 

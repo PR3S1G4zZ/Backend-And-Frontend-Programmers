@@ -15,20 +15,25 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+ 'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+// Reemplaza el '*' por las URLs reales
+'allowed_origins' => [
+    'http://localhost:5173',          // Tu React local (Vite)
+    'https://frontend-programmers.vercel.app', // Tu URL de Vercel
+],
 
-    'allowed_origins_patterns' => [],
+'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+'exposed_headers' => [],
 
-    'max_age' => 0,
+'max_age' => 0,
 
-    'supports_credentials' => false,
+// Cámbialo a true si vas a usar Login/Auth
+'supports_credentials' => true,
 
 ];

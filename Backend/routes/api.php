@@ -55,13 +55,17 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    // Projects (solo empresas)
-    Route::get('/projects', [ProjectController::class, 'index']);
-    Route::post('/projects', [ProjectController::class, 'store']);
-    Route::get('/projects/{project}', [ProjectController::class, 'show']);
-    Route::put('/projects/{project}', [ProjectController::class, 'update']);
-    Route::post('/projects/{project}/fund', [ProjectController::class, 'fund']);
-    Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
+     // Projects (solo empresas)
+     Route::get('/projects', [ProjectController::class, 'index']);
+     Route::post('/projects', [ProjectController::class, 'store']);
+     Route::get('/projects/{project}', [ProjectController::class, 'show']);
+     Route::put('/projects/{project}', [ProjectController::class, 'update']);
+     Route::post('/projects/{project}/fund', [ProjectController::class, 'fund']);
+     Route::post('/projects/{project}/start', [ProjectController::class, 'start']); // Iniciar proyecto
+     Route::get('/projects/{project}/developer-progress', [ProjectController::class, 'getDeveloperProgress']); // Obtener progreso de desarrolladores
+     Route::put('/projects/{project}/developer-progress/{developerId}', [ProjectController::class, 'updateDeveloperProgress']); // Actualizar progreso de desarrollador
+     Route::post('/projects/{project}/complete', [ProjectController::class, 'complete']); // Finalizar proyecto y pagar
+     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
 
     // Aplicaciones (programadores)
     Route::post('/projects/{project}/apply', [ApplicationController::class, 'apply']);
@@ -95,6 +99,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Developers
     Route::get('/developers', [DeveloperController::class, 'index']);
     Route::get('/developers/{id}', [DeveloperController::class, 'show']);
+    
+    // Developer: Mis proyectos completados
+    Route::get('/developer/completed-projects', [DeveloperController::class, 'myCompletedProjects']);
 
     // Conversations
     Route::get('/conversations', [ConversationController::class, 'index']);
@@ -110,6 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index']);
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::get('/reviews/{id}', [ReviewController::class, 'show']);
+    Route::get('/projects/{project}/reviews', [ReviewController::class, 'projectReviews']);
 
     // Company projects
     Route::get('/company/projects', [ProjectController::class, 'companyProjects']);
@@ -132,6 +140,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/projects/{id}/restore', [AdminController::class, 'restoreProject']);
 
         Route::get('/metrics', [AdminController::class, 'metrics']);
+
+        // Commissions
+        Route::get('/commissions', [AdminController::class, 'commissions']);
+        Route::get('/commissions/stats', [AdminController::class, 'commissionStats']);
 
         // Categories Management
         Route::apiResource('categories', \App\Http\Controllers\CategoryController::class)->except(['index', 'show']);

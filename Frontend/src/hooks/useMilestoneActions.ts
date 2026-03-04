@@ -14,9 +14,10 @@ interface UseMilestoneActionsProps {
     projectId: number;
     onUpdate?: () => void;
     userType: 'programmer' | 'company';
+    developerId?: number | null;
 }
 
-export function useMilestoneActions({ projectId, onUpdate }: UseMilestoneActionsProps) {
+export function useMilestoneActions({ projectId, onUpdate, developerId }: UseMilestoneActionsProps) {
     const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
     const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,7 +68,8 @@ export function useMilestoneActions({ projectId, onUpdate }: UseMilestoneActions
 
         if (result.isConfirmed) {
             try {
-                await apiClient.post(`/projects/${projectId}/milestones/${milestone.id}/approve`, {});
+                const payload = developerId ? { developer_id: developerId } : {};
+                await apiClient.post(`/projects/${projectId}/milestones/${milestone.id}/approve`, payload);
                 showSwal({ icon: 'success', title: 'Aprobado', text: 'El hito ha sido aprobado.' });
                 onUpdate?.();
             } catch (error: any) {
@@ -88,7 +90,8 @@ export function useMilestoneActions({ projectId, onUpdate }: UseMilestoneActions
 
         if (result.isConfirmed) {
             try {
-                await apiClient.post(`/projects/${projectId}/milestones/${milestone.id}/reject`, {});
+                const payload = developerId ? { developer_id: developerId } : {};
+                await apiClient.post(`/projects/${projectId}/milestones/${milestone.id}/reject`, payload);
                 showSwal({ icon: 'info', title: 'Rechazado', text: 'El hito ha sido devuelto al desarrollador.' });
                 onUpdate?.();
             } catch (error: any) {
@@ -100,9 +103,10 @@ export function useMilestoneActions({ projectId, onUpdate }: UseMilestoneActions
     const updateStatusSimple = async (milestone: Milestone, newStatus: string) => {
         // For simple status changes (Todo <-> In Progress)
         try {
-            await apiClient.put(`/projects/${projectId}/milestones/${milestone.id}`, {
-                progress_status: newStatus
-            });
+            const payload: any = { progress_status: newStatus };
+            if (developerId) payload.developer_id = developerId;
+
+            await apiClient.put(`/projects/${projectId}/milestones/${milestone.id}`, payload);
             onUpdate?.();
         } catch (error: any) {
             showSwal({ icon: 'error', title: 'Error', text: error.response?.data?.message || 'No se pudo actualizar el estado' });

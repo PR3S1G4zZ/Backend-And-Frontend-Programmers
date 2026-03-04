@@ -9,11 +9,12 @@ import { GrowthDashboard } from './dashboard/components/admin/GrowthDashboard';
 import { ProjectsDashboard } from './dashboard/components/admin/ProjectsDashboard';
 import { ProjectsManagement } from './dashboard/components/admin/ProjectsManagement';
 import { SatisfactionDashboard } from './dashboard/components/admin/SatisfactionDashboard';
+import { CommissionsDashboard } from './dashboard/components/admin/CommissionsDashboard';
 import { UserManagement } from './dashboard/components/UserManagement';
 import { AdminSettings } from './dashboard/components/admin/AdminSettings';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield, Menu, Download } from 'lucide-react';
+import { BarChart3, DollarSign, TrendingUp, Users, Star, Shield, Menu, Download, Percent } from 'lucide-react';
 import { fetchAdminMetrics, type AdminMetrics, type KPI } from '../services/adminMetricsService';
 import { useAuth } from '../contexts/AuthContext';
 import jsPDF from 'jspdf';
@@ -26,6 +27,7 @@ interface AdminDashboardProps {
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [selectedTab, setSelectedTab] = useState('activity');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
@@ -176,8 +178,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </Card>
               </div>
 
-              <Tabs defaultValue="activity" className="w-full">
-                <TabsList className="grid w-full grid-cols-5 bg-card border border-border">
+              <Tabs defaultValue="activity" className="w-full" onValueChange={setSelectedTab}>
+                <TabsList className="grid w-full grid-cols-6 bg-card border border-border">
                   <TabsTrigger
                     value="activity"
                     className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -192,6 +194,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   >
                     <DollarSign className="w-4 h-4" />
                     Financiero
+                  </TabsTrigger>
+
+                  <TabsTrigger
+                    value="commissions"
+                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    <Percent className="w-4 h-4" />
+                    Comisiones
                   </TabsTrigger>
 
                   <TabsTrigger
@@ -225,6 +235,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
                 <TabsContent value="financial" className="mt-6">
                   <FinancialDashboard selectedPeriod={selectedPeriod} metrics={metrics?.financial} isLoading={metricsLoading} />
+                </TabsContent>
+
+                <TabsContent value="commissions" className="mt-6">
+                  {selectedTab === 'commissions' && (
+                    <CommissionsDashboard />
+                  )}
                 </TabsContent>
 
                 <TabsContent value="growth" className="mt-6">

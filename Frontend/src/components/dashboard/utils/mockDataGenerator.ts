@@ -4,7 +4,10 @@ export interface TimeSeriesData {
   period: string;
   users: number;
   projects: number;
-  revenue?: number;
+  programmers: number;
+  companies: number;
+  applications: number;
+  revenue: number;
   [key: string]: any;
 }
 
@@ -38,42 +41,54 @@ const periodMultipliers = {
 // Generate time series data based on period
 export function generateTimeSeriesData(period: string): TimeSeriesData[] {
   const multiplier = periodMultipliers[period as keyof typeof periodMultipliers] || periodMultipliers.month;
-  
+
   switch (period) {
     case 'day':
       return Array.from({ length: 24 }, (_, i) => ({
         period: `${i}:00`,
         users: Math.floor((120 + Math.random() * 80) * multiplier.users),
         projects: Math.floor((8 + Math.random() * 6) * multiplier.projects),
+        programmers: Math.floor((70 + Math.random() * 50) * multiplier.users),
+        companies: Math.floor((50 + Math.random() * 30) * multiplier.users),
+        applications: Math.floor((10 + Math.random() * 8) * multiplier.projects),
         revenue: Math.floor((3500 + Math.random() * 2000) * multiplier.revenue)
       }));
-      
+
     case 'week': {
       const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
       return days.map(day => ({
         period: day,
         users: Math.floor((180 + Math.random() * 120) * multiplier.users),
         projects: Math.floor((12 + Math.random() * 8) * multiplier.projects),
+        programmers: Math.floor((110 + Math.random() * 70) * multiplier.users),
+        companies: Math.floor((70 + Math.random() * 50) * multiplier.users),
+        applications: Math.floor((15 + Math.random() * 10) * multiplier.projects),
         revenue: Math.floor((5000 + Math.random() * 3000) * multiplier.revenue)
       }));
     }
-      
+
     case 'year': {
       const years = ['2020', '2021', '2022', '2023', '2024'];
       return years.map((year, index) => ({
         period: year,
         users: Math.floor((1200 + index * 800 + Math.random() * 500) * multiplier.users),
         projects: Math.floor((85 + index * 60 + Math.random() * 30) * multiplier.projects),
+        programmers: Math.floor((750 + index * 500 + Math.random() * 300) * multiplier.users),
+        companies: Math.floor((450 + index * 300 + Math.random() * 200) * multiplier.users),
+        applications: Math.floor((100 + index * 80 + Math.random() * 50) * multiplier.projects),
         revenue: Math.floor((45000 + index * 25000 + Math.random() * 10000) * multiplier.revenue)
       }));
     }
-      
+
     default: {
       const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       return months.map((month, index) => ({
         period: month,
         users: Math.floor((1200 + index * 200 + Math.random() * 300) * multiplier.users),
         projects: Math.floor((85 + index * 15 + Math.random() * 20) * multiplier.projects),
+        programmers: Math.floor((750 + index * 120 + Math.random() * 200) * multiplier.users),
+        companies: Math.floor((450 + index * 80 + Math.random() * 100) * multiplier.users),
+        applications: Math.floor((100 + index * 50 + Math.random() * 30) * multiplier.projects),
         revenue: Math.floor((45000 + index * 4000 + Math.random() * 8000) * multiplier.revenue)
       }));
     }
@@ -100,7 +115,7 @@ export function generateKPIData(period: string) {
         change: { value: 12.5 + (Math.random() - 0.5) * 10, isPositive: true, period: getPeriodLabel(period) }
       },
       {
-        title: "Nuevos Registros", 
+        title: "Nuevos Registros",
         value: baseData.newRegistrations.toLocaleString(),
         change: { value: 8.2 + (Math.random() - 0.5) * 8, isPositive: true, period: getPeriodLabel(period) }
       },
@@ -110,7 +125,7 @@ export function generateKPIData(period: string) {
         change: { value: 15.3 + (Math.random() - 0.5) * 12, isPositive: true, period: getPeriodLabel(period) }
       },
       {
-        title: "Proyectos Completados", 
+        title: "Proyectos Completados",
         value: baseData.completedProjects.toLocaleString(),
         change: { value: 5.7 + (Math.random() - 0.5) * 6, isPositive: true, period: getPeriodLabel(period) }
       },
@@ -168,6 +183,72 @@ export function generateKPIData(period: string) {
         value: `${(68.4 + (Math.random() - 0.5) * 10).toFixed(1)}%`,
         change: { value: 5.2 + (Math.random() - 0.5) * 8, isPositive: true, period: getPeriodLabel(period) }
       }
+    ],
+    financial: [
+      {
+        title: "Ingresos Netos",
+        value: `$${baseData.revenue.toLocaleString()}`,
+        change: { value: 18.4 + (Math.random() - 0.5) * 15, isPositive: true, period: getPeriodLabel(period) }
+      },
+      {
+        title: "GMV Total",
+        value: `$${(baseData.revenue * 1.25).toLocaleString()}`,
+        change: { value: 12.5 + (Math.random() - 0.5) * 10, isPositive: true, period: getPeriodLabel(period) }
+      },
+      {
+        title: "Transacciones",
+        value: Math.floor(baseData.activeProjects * 0.8).toString(),
+        change: { value: 8.7 + (Math.random() - 0.5) * 8, isPositive: true, period: getPeriodLabel(period) }
+      },
+      {
+        title: "Ticket Promedio",
+        value: `$${Math.floor(baseData.revenue / Math.max(1, baseData.activeProjects)).toLocaleString()}`,
+        change: { value: 5.2 + (Math.random() - 0.5) * 6, isPositive: true, period: getPeriodLabel(period) }
+      }
+    ],
+    satisfaction: [
+      {
+        title: "Rating Promedio",
+        value: `${(4.3 + Math.random() * 0.5).toFixed(1)}`,
+        change: { value: 0.2 + (Math.random() - 0.5) * 0.4, isPositive: Math.random() > 0.3, period: getPeriodLabel(period) }
+      },
+      {
+        title: "Proyectos a Tiempo",
+        value: `${(75 + Math.random() * 15).toFixed(1)}%`,
+        change: { value: 3.5 + (Math.random() - 0.5) * 5, isPositive: Math.random() > 0.4, period: getPeriodLabel(period) }
+      },
+      {
+        title: "Satisfacción Cliente",
+        value: `${(85 + Math.random() * 10).toFixed(1)}%`,
+        change: { value: 2.1 + (Math.random() - 0.5) * 4, isPositive: Math.random() > 0.6, period: getPeriodLabel(period) }
+      },
+      {
+        title: "Número de Reviews",
+        value: Math.floor(baseData.completedProjects * 0.8).toString(),
+        change: { value: 10.3 + (Math.random() - 0.5) * 8, isPositive: true, period: getPeriodLabel(period) }
+      }
+    ],
+    activity: [
+      {
+        title: "Sesiones Promedio",
+        value: `${(12 + Math.random() * 8).toFixed(1)}`,
+        change: { value: 5.2 + (Math.random() - 0.5) * 6, isPositive: true, period: getPeriodLabel(period) }
+      },
+      {
+        title: "Mensajes Enviados",
+        value: Math.floor(baseData.activeUsers * 0.8).toString(),
+        change: { value: 15.3 + (Math.random() - 0.5) * 10, isPositive: true, period: getPeriodLabel(period) }
+      },
+      {
+        title: "Archivos Compartidos",
+        value: Math.floor(baseData.activeProjects * 0.6).toString(),
+        change: { value: 8.7 + (Math.random() - 0.5) * 8, isPositive: true, period: getPeriodLabel(period) }
+      },
+      {
+        title: "Tiempo Promedio Sesión",
+        value: `${Math.floor(15 + Math.random() * 10)} min`,
+        change: { value: 2.1 + (Math.random() - 0.5) * 4, isPositive: Math.random() > 0.6, period: getPeriodLabel(period) }
+      }
     ]
   };
 }
@@ -213,7 +294,7 @@ export function generateRatingData(period: string): RatingData[] {
   };
 
   const mult = multipliers[period as keyof typeof multipliers] || multipliers.month;
-  
+
   const baseData = [
     { rating: "5 ⭐", count: 456, percentage: 62.1 },
     { rating: "4 ⭐", count: 198, percentage: 26.9 },
@@ -232,7 +313,7 @@ export function generateRatingData(period: string): RatingData[] {
 // Generate funnel data
 export function generateFunnelData(period: string, type: 'projects' | 'conversion') {
   const multiplier = periodMultipliers[period as keyof typeof periodMultipliers] || periodMultipliers.month;
-  
+
   if (type === 'projects') {
     const base = Math.floor(358 * multiplier.projects);
     return [

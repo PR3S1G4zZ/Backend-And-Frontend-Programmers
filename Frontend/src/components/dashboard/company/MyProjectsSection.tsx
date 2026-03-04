@@ -36,7 +36,7 @@ interface Project {
   id: string;
   title: string;
   description: string;
-  status: 'draft' | 'published' | 'in-progress' | 'completed' | 'paused' | 'cancelled';
+  status: 'draft' | 'open' | 'in_progress' | 'completed' | 'cancelled' | 'pending_payment';
   budget: number;
   budgetType: 'fixed' | 'hourly';
   progress: number;
@@ -47,6 +47,13 @@ interface Project {
     avatar?: string;
     rating: number;
   };
+  developers?: Array<{
+    id: number;
+    name: string;
+    avatar?: string;
+    rating: number;
+    progress: number;
+  }>;
   applicants: number;
   category: string;
   skills: string[];
@@ -62,26 +69,27 @@ interface MyProjectsSectionProps {
 
 const mapProject = (project: ProjectResponse): Project => {
   const statusMap: Record<string, Project['status']> = {
-    open: 'published',
-    in_progress: 'in-progress',
+    open: 'open',
+    in_progress: 'in_progress',
     completed: 'completed',
     cancelled: 'cancelled',
     draft: 'draft',
+    pending_payment: 'pending_payment',
   };
 
-  const status = statusMap[project.status] ?? 'published';
+  const status = statusMap[project.status] ?? 'open';
   const budget = project.budget_max ?? project.budget_min ?? 0;
   const budgetType = project.budget_type ?? 'fixed';
   const category = project.categories?.[0]?.name ?? 'Sin categoría';
   const skills = project.skills?.map((skill) => skill.name) ?? [];
-  const acceptedApplication = project.applications?.find((application) => application.developer);
+  const acceptedApplications = project.applications?.filter((application: any) => application.developer && application.status === 'accepted');
 
   let progress = 0;
   if (status === 'completed') {
     progress = 100;
   } else if (project.milestones_count && project.milestones_count > 0) {
     progress = Math.round((project.completed_milestones_count || 0) / project.milestones_count * 100);
-  } else if (status === 'in-progress') {
+  } else if (status === 'in_progress') {
     // Fallback if no milestones but in progress (e.g. just started or legacy)
     progress = 0;
   }
@@ -96,12 +104,18 @@ const mapProject = (project: ProjectResponse): Project => {
     progress,
     startDate: project.created_at ?? '',
     deadline: project.deadline ?? '',
-    developer: acceptedApplication?.developer
-      ? {
-        name: acceptedApplication.developer.name,
-        rating: 0,
-      }
-      : undefined,
+    developer: acceptedApplications?.[0]?.developer ? {
+      name: acceptedApplications[0].developer.name,
+      avatar: undefined,
+      rating: 0
+    } : undefined,
+    developers: acceptedApplications?.map(application => ({
+      id: application.developer.id,
+      name: application.developer.name,
+      avatar: undefined,
+      rating: 0,
+      progress: 0 // Esto se actualizará con los datos del servicio
+    })),
     applicants: project.applications_count ?? 0,
     category,
     skills,
@@ -215,11 +229,11 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
   const getStatusColor = (status: Project['status']) => {
     switch (status) {
       case 'draft': return 'bg-gray-600';
-      case 'published': return 'bg-blue-600';
-      case 'in-progress': return 'bg-yellow-600';
+      case 'open': return 'bg-blue-600';
+      case 'in_progress': return 'bg-yellow-600';
       case 'completed': return 'bg-primary';
-      case 'paused': return 'bg-orange-600';
       case 'cancelled': return 'bg-red-600';
+      case 'pending_payment': return 'bg-purple-600';
       default: return 'bg-gray-600';
     }
   };
@@ -227,11 +241,11 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
   const getStatusText = (status: Project['status']) => {
     switch (status) {
       case 'draft': return 'Borrador';
-      case 'published': return 'Publicado';
-      case 'in-progress': return 'En Progreso';
+      case 'open': return 'Publicado';
+      case 'in_progress': return 'En Progreso';
       case 'completed': return 'Completado';
-      case 'paused': return 'Pausado';
       case 'cancelled': return 'Cancelado';
+      case 'pending_payment': return 'Esperando Pago';
       default: return 'Desconocido';
     }
   };
@@ -248,7 +262,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
 
   const filteredProjects = projects.filter(project => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'active') return ['published', 'in-progress'].includes(project.status);
+    if (activeTab === 'active') return ['open', 'in_progress'].includes(project.status);
     if (activeTab === 'completed') return project.status === 'completed';
     if (activeTab === 'drafts') return project.status === 'draft';
     return true;
@@ -280,7 +294,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
 
   const stats = {
     total: projects.length,
-    active: projects.filter(p => ['published', 'in-progress'].includes(p.status)).length,
+    active: projects.filter(p => ['open', 'in_progress'].includes(p.status)).length,
     completed: projects.filter(p => p.status === 'completed').length,
     drafts: projects.filter(p => p.status === 'draft').length
   };
@@ -484,7 +498,9 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
 
                       <div className="flex items-center space-x-2 overflow-hidden">
                         <Users className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                        <span className="text-white truncate">{project.applicants} candidatos</span>
+                        <span className="text-white truncate">
+                          {project.developers?.length ? `${project.developers.length} desarrolladores` : `${project.applicants} candidatos`}
+                        </span>
                       </div>
 
                       {project.deadline && (
@@ -502,8 +518,8 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                       </div>
                     </div>
 
-                    {/* Progress and Developer */}
-                    {project.status === 'in-progress' && (
+                    {/* Progress and Developers */}
+                    {project.status === 'in_progress' && (
                       <div className="space-y-3">
                         <div>
                           <div className="flex justify-between items-end mb-2">
@@ -525,21 +541,42 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                           </div>
                         </div>
 
-                        {project.developer && (
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={project.developer.avatar} />
-                              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                                {project.developer.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-white text-sm font-medium">{project.developer.name}</p>
-                              <div className="flex items-center space-x-1">
-                                <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                                <span className="text-xs text-gray-400">{project.developer.rating}</span>
+                        {project.developers && project.developers.length > 0 && (
+                          <div className="space-y-2">
+                            <span className="text-xs font-medium text-gray-400">Progreso de desarrolladores</span>
+                            {project.developers.map(developer => (
+                              <div key={developer.id} className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={developer.avatar} />
+                                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                                      {developer.name.split(' ').map(n => n[0]).join('')}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="text-white text-sm font-medium">{developer.name}</p>
+                                    <div className="flex items-center space-x-1">
+                                      <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                                      <span className="text-xs text-gray-400">{developer.rating}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="w-32">
+                                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700/50">
+                                    <motion.div
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${developer.progress}%` }}
+                                      transition={{ duration: 1, ease: "easeOut" }}
+                                      className={`h-full rounded-full ${developer.progress === 100 ? 'bg-gradient-to-r from-green-500 to-emerald-400' :
+                                        developer.progress > 50 ? 'bg-gradient-to-r from-blue-500 to-cyan-400' :
+                                          'bg-gradient-to-r from-yellow-500 to-orange-400'
+                                        }`}
+                                    />
+                                  </div>
+                                  <span className="text-xs text-gray-400 text-right mt-1 block">{developer.progress}%</span>
+                                </div>
                               </div>
-                            </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -548,7 +585,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
 
                   {/* Actions */}
                   <div className="ml-6 flex flex-col space-y-2">
-                    {project.status === 'published' && (
+                    {project.status === 'open' && (
                       <Button
                         size="sm"
                         className="bg-blue-600 text-white hover:bg-blue-700"
@@ -559,7 +596,7 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
                       </Button>
                     )}
 
-                    {project.status === 'in-progress' && (
+                    {project.status === 'in_progress' && (
                       <>
                         <Button
                           size="sm"

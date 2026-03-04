@@ -21,6 +21,14 @@ class ReviewResource extends JsonResource
             'developer_id' => $this->developer_id,
             'rating' => $this->rating,
             'comment' => $this->comment,
+            // Métricas de evaluación
+            'clean_code_rating' => $this->clean_code_rating,
+            'communication_rating' => $this->communication_rating,
+            'compliance_rating' => $this->compliance_rating,
+            'creativity_rating' => $this->creativity_rating,
+            'post_delivery_support_rating' => $this->post_delivery_support_rating,
+            // Promedio general
+            'average_rating' => $this->average_rating,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             

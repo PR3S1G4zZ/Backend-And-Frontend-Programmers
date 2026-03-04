@@ -82,10 +82,10 @@ class AuthService {
     try {
       const response = await fetch(url, config);
 
-      // Si el token es inválido/expirado, limpiar sesión y salir
+      // Si el token es inválido/expirado, retornar error sin limpiar sesión
       if (response.status === 401) {
         const data = await response.json().catch(() => null);
-        this.clearToken();
+        console.error('Error de autenticación: Token no válido o expirado');
         return {
           success: false,
           message: data?.message || 'No autorizado. Inicia sesión nuevamente.',

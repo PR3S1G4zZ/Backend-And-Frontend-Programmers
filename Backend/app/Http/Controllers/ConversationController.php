@@ -25,8 +25,7 @@ class ConversationController extends Controller
         // Check availability logic? (not requested yet)
 
         // Find existing conversation
-        $query = DB::table('conversations')
-            ->where('type', $type)
+        $query = Conversation::where('type', $type)
             ->where(function($q) use ($initiatorId, $participantId) {
                  $q->where(function($sub) use ($initiatorId, $participantId) {
                      $sub->where('initiator_id', $initiatorId)->where('participant_id', $participantId);
@@ -46,36 +45,49 @@ class ConversationController extends Controller
         }
 
         // Create new
-        $id = DB::table('conversations')->insertGetId([
+        $conversation = Conversation::create([
             'type' => $type,
             'project_id' => $projectId,
             'initiator_id' => $initiatorId,
-            'participant_id' => $participantId,
-            'created_at' => now(),
-            'updated_at' => now()
+            'participant_id' => $participantId
         ]);
 
-        return response()->json(['message' => 'Conversación creada', 'conversation_id' => $id], 201);
+        return response()->json(['message' => 'Conversación creada', 'conversation_id' => $conversation->id], 201);
     }
 
     public function index(Request $request)
     {
         $userId = $request->user()->id;
 
-        // Fetch conversations where user is initiator OR participant
+        // Fetch conversations where user is initiator OR participant OR in group participants
         $conversations = Conversation::where('initiator_id', $userId)
             ->orWhere('participant_id', $userId)
-            ->with(['initiator', 'participant', 'lastMessage'])
+            ->orWhereHas('participants', function($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->with(['initiator', 'participant', 'lastMessage', 'participants'])
             ->get()
             ->map(function ($conv) use ($userId) {
-                // Determine the "other" user
+                // Check if it's a group conversation
+                if ($conv->is_group) {
+                    return [
+                        'id' => $conv->id,
+                        'name' => $conv->name,
+                        'role' => 'group', // Indicate it's a group conversation
+                        'timestamp' => $conv->lastMessage?->created_at ?? $conv->created_at,
+                        'lastMessage' => $conv->lastMessage?->content ?? 'Inicio de conversación',
+                        'unreadCount' => 0, // Implement unread logic later
+                        'isOnline' => false, // Real-time status later
+                    ];
+                }
+                
+                // Determine the "other" user for direct conversations
                 $otherUser = $conv->initiator_id === $userId ? $conv->participant : $conv->initiator;
                 
                 return [
                     'id' => $conv->id,
                     'name' => $otherUser->name . ' ' . $otherUser->lastname,
                     'role' => $otherUser->role, // developer or company
-                    // Avatar logic if exists
                     'timestamp' => $conv->lastMessage?->created_at ?? $conv->created_at,
                     'lastMessage' => $conv->lastMessage?->content ?? 'Inicio de conversación',
                     'unreadCount' => 0, // Implement unread logic later

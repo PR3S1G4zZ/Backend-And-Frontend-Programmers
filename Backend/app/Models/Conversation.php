@@ -11,6 +11,12 @@ class Conversation extends Model
         'initiator_id',
         'participant_id',
         'project_id',
+        'name',
+        'is_group',
+    ];
+
+    protected $casts = [
+        'is_group' => 'boolean',
     ];
 
     public function messages()
@@ -37,5 +43,10 @@ class Conversation extends Model
     public function project()
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function participants()
+    {
+        return $this->belongsToMany(User::class, 'conversation_participants', 'conversation_id', 'user_id');
     }
 }
