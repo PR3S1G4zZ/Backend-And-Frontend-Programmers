@@ -32,6 +32,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchProjects, type ProjectResponse } from '../../../services/projectService';
 import { toggleFavorite as toggleFavoriteApi } from '../../../services/favoriteService';
+import { toast } from "sonner";
 
 interface Project {
   id: string;
@@ -158,7 +159,7 @@ export function ProjectsSection() {
       project.location.toLowerCase().includes(selectedLocation.toLowerCase()) ||
       (selectedLocation === 'remoto' && project.remote);
 
-    return matchesSearch && matchesCategory && matchesLevel && matchesLocation && (project.status === 'open' || project.status === 'in_progress');
+    return matchesSearch && matchesCategory && matchesLevel && matchesLocation && project.status === 'open';
   });
 
   // Apply sorting to filtered projects
@@ -204,10 +205,16 @@ export function ProjectsSection() {
     try {
       await import('../../../services/projectService').then(m => m.applyToProject(projectId));
       setAppliedProjects(prev => [...prev, projectId]);
-      // Optional: Add success toast/alert here
+      toast.success('Postulación exitosa!', {
+        description: 'Tu postulación ha sido registrada. Puedes ver el estado en tu dashboard.',
+        action: {
+          label: 'Ver Proyecto',
+          onClick: () => window.location.href = `/dashboard/programmer?section=projects-active`
+        },
+      });
     } catch (error) {
       console.error("Error applying to project:", error);
-      // Optional: Add error toast
+      toast.error('Error al postularse al proyecto.');
       setError('Error al postularse al proyecto.');
     }
   };

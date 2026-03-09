@@ -131,9 +131,8 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
 
   // Get active projects for display (max 3)
   const displayProjects = activeProjects.slice(0, 3).map(project => {
-    const progress = project.completed_milestones_count && project.milestones_count
-      ? Math.round((project.completed_milestones_count / project.milestones_count) * 100)
-      : 0;
+    // Use project.progress_percentage instead of old calculation
+    const progress = project.progress_percentage || 0;
 
     return {
       title: project.title,

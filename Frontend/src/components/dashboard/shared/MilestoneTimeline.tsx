@@ -29,6 +29,8 @@ interface Milestone {
     due_date: string;
     order: number;
     deliverables?: string[];
+    assigned_developer_id?: number | null;
+    developer?: { id: number; name: string };
 }
 
 interface MilestoneTimelineProps {
@@ -37,9 +39,10 @@ interface MilestoneTimelineProps {
     onUpdate?: () => void;
     userType: 'programmer' | 'company';
     developerId?: number | null;
+    acceptedDevelopers?: Array<{ id: number; name: string }>;
 }
 
-export function MilestoneTimeline({ projectId, refreshTrigger, userType, developerId }: MilestoneTimelineProps) {
+export function MilestoneTimeline({ projectId, refreshTrigger, userType, developerId, acceptedDevelopers = [] }: MilestoneTimelineProps) {
     const [milestones, setMilestones] = useState<Milestone[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -148,6 +151,25 @@ export function MilestoneTimeline({ projectId, refreshTrigger, userType, develop
             case 'review': return 'En Revisión';
             case 'in_progress': return 'En Progreso';
             default: return 'Pendiente';
+        }
+    };
+
+    const handleAssignDeveloper = async (milestoneId: number, devId: string) => {
+        try {
+            await apiClient.put(`/projects/${projectId}/milestones/${milestoneId}`, {
+                assigned_developer_id: devId ? Number(devId) : null
+            });
+            fetchMilestones();
+            Swal.fire({
+                background: '#1f2937', color: '#f3f4f6', icon: 'success',
+                title: 'Asignado', text: 'Hito asignado correctamente', timer: 1000, showConfirmButton: false
+            });
+        } catch (error: any) {
+            console.error(error);
+            Swal.fire({
+                background: '#1f2937', color: '#f3f4f6', icon: 'error',
+                title: 'Error', text: error.response?.data?.message || 'No se pudo asignar el hito'
+            });
         }
     };
 
@@ -277,6 +299,32 @@ export function MilestoneTimeline({ projectId, refreshTrigger, userType, develop
 
                                     <h4 className="font-semibold text-base text-gray-100">{milestone.title}</h4>
                                     <p className="text-sm text-gray-400 line-clamp-2">{milestone.description}</p>
+
+                                    {/* Assignment Section for Company */}
+                                    {userType === 'company' && (
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className="text-[10px] text-gray-400">Asignado a:</span>
+                                            <select
+                                                className="text-[10px] bg-gray-800 border-none rounded px-1 py-0.5 text-gray-200 outline-none"
+                                                value={milestone.assigned_developer_id || ''}
+                                                onChange={(e) => handleAssignDeveloper(milestone.id, e.target.value)}
+                                            >
+                                                <option value="">Sin asignar</option>
+                                                {acceptedDevelopers.map(dev => (
+                                                    <option key={dev.id} value={dev.id}>{dev.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {/* Display Assigned Dev for Programmers */}
+                                    {userType === 'programmer' && (
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className="text-[10px] text-gray-400 italic">
+                                                {milestone.developer ? `Asignado a: ${milestone.developer.name}` : 'Sin asignar'}
+                                            </span>
+                                        </div>
+                                    )}
 
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-800">

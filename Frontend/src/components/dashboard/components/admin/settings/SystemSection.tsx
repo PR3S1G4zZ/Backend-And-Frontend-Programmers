@@ -46,11 +46,33 @@ export function SystemSection() {
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
+    // Al montar — solo una vez:
     useEffect(() => {
-        fetchData();
+        fetchSettings();
+        fetchBackups();
+    }, []);
+
+    // Al cambiar de página — solo logs:
+    useEffect(() => {
+        fetchLogs();
     }, [page, debouncedSearch]);
 
-    const fetchData = async () => {
+    const fetchSettings = async () => {
+        try {
+            const settingsRes = await apiRequest<any>('/admin/system/settings');
+            if (settingsRes.success) {
+                const flatSettings: any = {};
+                Object.values(settingsRes.settings).flat().forEach((s: any) => {
+                    flatSettings[s.key] = s.value;
+                });
+                setMaintenanceMode(flatSettings.maintenance_mode === 'true');
+            }
+        } catch (error) {
+            console.error('Error fetching settings:', error);
+        }
+    };
+
+    const fetchLogs = async () => {
         try {
             setLoading(true);
             const searchParams = new URLSearchParams({
@@ -60,32 +82,26 @@ export function SystemSection() {
                 searchParams.append('search', debouncedSearch);
             }
 
-            const [logsRes, settingsRes, backupsRes] = await Promise.all([
-                apiRequest<any>(`/admin/system/logs?${searchParams.toString()}`),
-                apiRequest<any>('/admin/system/settings'),
-                apiRequest<any>('/admin/backups')
-            ]);
-
+            const logsRes = await apiRequest<any>(`/admin/system/logs?${searchParams.toString()}`);
             if (logsRes.success) {
                 setLogs(logsRes.logs.data);
                 setTotalPages(logsRes.logs.last_page);
             }
+        } catch (error) {
+            console.error('Error fetching logs:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-            if (settingsRes.success) {
-                const flatSettings: any = {};
-                Object.values(settingsRes.settings).flat().forEach((s: any) => {
-                    flatSettings[s.key] = s.value;
-                });
-                setMaintenanceMode(flatSettings.maintenance_mode === 'true');
-            }
-
+    const fetchBackups = async () => {
+        try {
+            const backupsRes = await apiRequest<any>('/admin/backups');
             if (backupsRes.success) {
                 setLastBackup(backupsRes.last_backup);
             }
         } catch (error) {
-            console.error('Error fetching system data:', error);
-        } finally {
-            setLoading(false);
+            console.error('Error fetching backups:', error);
         }
     };
 
@@ -187,7 +203,7 @@ export function SystemSection() {
                     background: 'var(--card)',
                     color: 'var(--foreground)'
                 });
-                fetchData();
+                fetchBackups();
 
                 if (res.filename) {
                     handleDownloadBackup(res.filename);
@@ -512,7 +528,7 @@ export function SystemSection() {
                             Las acciones de los usuarios aparecerán aquí.
                         </p>
                         <button
-                            onClick={fetchData}
+                            onClick={fetchLogs}
                             className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card hover:bg-accent text-foreground text-sm font-medium transition-colors"
                         >
                             <Search className="w-4 h-4" />

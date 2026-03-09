@@ -14,6 +14,7 @@ interface Milestone {
     amount: string;
     status: 'pending' | 'funded' | 'released' | 'blocked';
     progress_status: 'todo' | 'in_progress' | 'review' | 'completed';
+    assigned_developer_id?: number | null;
 }
 
 interface KanbanBoardProps {
@@ -263,7 +264,7 @@ export function KanbanBoard({ projectId, onUpdate, refreshTrigger, userType, dev
         if (milestones.length === 0) setLoading(true);
         setIsRefreshing(true);
         try {
-            const url = userType === 'company' && developerId
+            const url = developerId
                 ? `/projects/${projectId}/milestones?developer_id=${developerId}`
                 : `/projects/${projectId}/milestones`;
             const response = await apiClient.get<Milestone[]>(url);

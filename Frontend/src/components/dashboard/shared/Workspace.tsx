@@ -10,7 +10,9 @@ import { ReviewDialog } from './ReviewDialog';
 import apiClient from '../../../services/apiClient';
 import { completeProject, type ProjectResponse } from '../../../services/projectService';
 
-interface Project extends ProjectResponse { }
+interface Project extends ProjectResponse {
+    developer_progress?: number;
+}
 
 interface WorkspaceProps {
     projectId: number;
@@ -28,21 +30,14 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
 
     const fetchProject = async () => {
         try {
-            const response = await apiClient.get<Project>(`/projects/${projectId}`);
+            const url = selectedDeveloperId
+                ? `/projects/${projectId}?developer_id=${selectedDeveloperId}`
+                : `/projects/${projectId}`;
+            const response = await apiClient.get<Project>(url);
             // @ts-ignore
             const data = response.data || response;
             setProject(data);
             setProjectCompleted(data.status === 'completed');
-
-            if (userType === 'company' && selectedDeveloperId === null && data.applications) {
-                const acceptedApps = data.applications.filter((app: any) => app.status === 'accepted');
-                if (acceptedApps.length > 0) {
-                    const firstDevId = Number(acceptedApps[0].developer_id);
-                    if (!isNaN(firstDevId)) {
-                        setSelectedDeveloperId(firstDevId);
-                    }
-                }
-            }
         } catch (error) {
             console.error("Error loading project", error);
         }
@@ -54,7 +49,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
         // Auto-refresh cada 30 segundos
         const intervalId = setInterval(fetchProject, 30000);
         return () => clearInterval(intervalId);
-    }, [projectId]); // Remove dependencies that cause looping, just keep projectId
+    }, [projectId, selectedDeveloperId]); // Refresh when developer changes or ID changes
 
     const handleGlobalRefresh = () => {
         fetchProject();
@@ -136,25 +131,37 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                     )}
             </div>
 
-            {/* Progress Bar */}
+            {/* Progress Bars */}
             {project && (
-                <Card className="p-4 bg-card/50">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Progreso del Proyecto</span>
-                        <span className="text-sm font-bold text-primary">
-                            {project.progress_percentage || 0}%
-                        </span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                        <div
-                            className="bg-primary h-2.5 rounded-full transition-all duration-300"
-                            style={{ width: `${project.progress_percentage || 0}%` }}
-                        ></div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                        {project.completed_milestones_count || 0} de {project.milestones_count || 0} milestones completadas
-                    </p>
-                </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className="p-4 bg-background/50 backdrop-blur-sm border-border">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium text-muted-foreground">Progreso del Proyecto</span>
+                            <span className="text-sm font-bold text-primary">{project.progress_percentage || 0}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                            <div
+                                className="bg-primary h-2 rounded-full transition-all duration-500"
+                                style={{ width: `${project.progress_percentage || 0}%` }}
+                            />
+                        </div>
+                    </Card>
+
+                    <Card className="p-4 bg-background/50 backdrop-blur-sm border-border">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium text-muted-foreground">
+                                {userType === 'company' ? 'Progreso del Desarrollador' : 'Mi Progreso'}
+                            </span>
+                            <span className="text-sm font-bold text-green-500">{project.developer_progress || 0}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                            <div
+                                className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                                style={{ width: `${project.developer_progress || 0}%` }}
+                            />
+                        </div>
+                    </Card>
+                </div>
             )}
 
             {/* Developer Selector for Company */}
@@ -166,16 +173,17 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                             className="bg-background border border-border rounded-md px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
                             value={selectedDeveloperId || ''}
                             onChange={(e) => {
-                                setSelectedDeveloperId(Number(e.target.value));
+                                const val = e.target.value;
+                                setSelectedDeveloperId(val ? Number(val) : null);
                                 handleUpdate();
                             }}
                         >
-                            <option value="" disabled>Seleccionar Desarrollador</option>
+                            <option value="">Seleccionar desarrollador...</option>
                             {project.applications
                                 .filter((app: any) => app.status === 'accepted')
                                 .map((app: any) => (
-                                    <option key={app.developer_id} value={app.developer_id}>
-                                        {app.developer?.name || `Desarrollador #${app.developer_id}`}
+                                    <option key={app.developer?.id} value={app.developer?.id}>
+                                        {app.developer?.name || `Desarrollador #${app.developer?.id}`}
                                     </option>
                                 ))}
                         </select>
@@ -188,9 +196,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                 <div className="flex items-center gap-2 mb-4 text-sm font-semibold text-muted-foreground">
                     <Clock className="h-4 w-4" />
                     Línea de Tiempo del Proyecto
-                    <span className="ml-4 text-[10px] font-normal opacity-50">Debug: pId:{projectId} devId:{selectedDeveloperId} MT:{typeof MilestoneTimeline} KB:{typeof KanbanBoard}</span>
                 </div>
-                {/* Only render if we have a developer selected (for company) or if it's a programmer */}
                 {Boolean(userType === 'programmer' || userType === 'company') && (
                     <MilestoneTimeline
                         projectId={projectId}
@@ -198,6 +204,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                         onUpdate={handleUpdate}
                         userType={userType}
                         developerId={selectedDeveloperId}
+                        acceptedDevelopers={project?.applications?.map((app: any) => app.developer).filter(Boolean)}
                     />
                 )}
             </Card>
@@ -212,7 +219,7 @@ export function Workspace({ projectId, userType, onBack }: WorkspaceProps) {
                 </div>
 
                 <div className="flex-1 mt-4 min-h-0 overflow-x-auto">
-                    {Boolean(userType === 'programmer' || selectedDeveloperId) && (
+                    {Boolean(userType === 'programmer' || true) && (
                         <KanbanBoard
                             projectId={projectId}
                             refreshTrigger={refreshTrigger}

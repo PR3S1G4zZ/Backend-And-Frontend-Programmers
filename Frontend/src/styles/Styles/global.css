@@ -85,6 +85,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0D0D0D;
   --foreground: #ffffff;
   --card: #1A1A1A;
@@ -117,6 +118,10 @@
 
   --primary-rgb: 0, 255, 133;
   /* Update this via Context if needed, or rely on CSS vars if we can inject them */
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }
 
 .terminal {
@@ -209,10 +214,14 @@
 
   /* Chart Colors for Better Visibility */
   --color-chart-1: var(--primary);
-  --color-chart-2: #10b981; /* Emerald 500 */
-  --color-chart-3: #3b82f6; /* Blue 500 */
-  --color-chart-4: #f59e0b; /* Amber 500 */
-  --color-chart-5: #ef4444; /* Red 500 */
+  --color-chart-2: #10b981;
+  /* Emerald 500 */
+  --color-chart-3: #3b82f6;
+  /* Blue 500 */
+  --color-chart-4: #f59e0b;
+  /* Amber 500 */
+  --color-chart-5: #ef4444;
+  /* Red 500 */
 
   /* Programmers Brand Colors Mapped */
   --color-programmers-black: var(--programmers-black);

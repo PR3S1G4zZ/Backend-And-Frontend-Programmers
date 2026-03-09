@@ -23,7 +23,7 @@ import {
   Play
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fetchCompanyProjects, deleteProject, updateProject, type ProjectResponse } from '../../../services/projectService';
+import { fetchCompanyProjects, deleteProject, updateProject, getDeveloperProgress, type ProjectResponse } from '../../../services/projectService';
 import { useSweetAlert } from '../../ui/sweet-alert';
 import {
   DropdownMenu,
@@ -201,7 +201,36 @@ export function MyProjectsSection({ onSectionChange }: MyProjectsSectionProps) {
         // Check if response has data property (API Resource wrapper)
         const projectsData = 'data' in response ? response.data : response;
         if (Array.isArray(projectsData)) {
-          setProjects(projectsData.map(mapProject));
+          // Load developer progress for each project
+          const projectsWithProgress = await Promise.all(
+            projectsData.map(async (projectData) => {
+              const project = mapProject(projectData);
+              if (project.developers && project.developers.length > 0) {
+                // Get developer progress for this project
+                const progressResponse = await getDeveloperProgress(Number(project.id));
+                const progressData = 'data' in progressResponse ? progressResponse.data : progressResponse;
+
+                // Update developer progress
+                const developersWithProgress = project.developers.map(developer => {
+                  const developerProgress = progressData.find(
+                    (p: any) => p.developer_id === developer.id
+                  );
+                  return {
+                    ...developer,
+                    progress: developerProgress ? developerProgress.progress : 0
+                  };
+                });
+
+                return {
+                  ...project,
+                  developers: developersWithProgress
+                };
+              }
+              return project;
+            })
+          );
+
+          setProjects(projectsWithProgress);
         } else {
           console.error('Projects data is not an array', response);
           setProjects([]);

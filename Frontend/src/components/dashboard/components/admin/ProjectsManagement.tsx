@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Filter, Trash2, Eye,
@@ -31,6 +31,8 @@ export function ProjectsManagement() {
         status: '',
         search: ''
     });
+    const [searchInput, setSearchInput] = useState('');
+    const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [pagination, setPagination] = useState({
         current_page: 1,
         last_page: 1,
@@ -67,9 +69,13 @@ export function ProjectsManagement() {
         }
     };
 
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFilters((prev: AdminProjectParams) => ({ ...prev, search: e.target.value, page: 1 }));
-    };
+    const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        searchTimeout.current = setTimeout(() => {
+            setFilters((prev: AdminProjectParams) => ({ ...prev, search: value, page: 1 }));
+        }, 400);
+    }, []);
 
     const handleStatusFilter = (status: string) => {
         setFilters((prev: AdminProjectParams) => ({ ...prev, status, page: 1 }));
@@ -197,8 +203,11 @@ export function ProjectsManagement() {
                             type="text"
                             placeholder="Buscar proyectos..."
                             className="pl-9 pr-4 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:border-primary w-64 transition-all"
-                            value={filters.search}
-                            onChange={handleSearch}
+                            value={searchInput}
+                            onChange={(e) => {
+                                setSearchInput(e.target.value);
+                                handleSearch(e);
+                            }}
                         />
                     </div>
 

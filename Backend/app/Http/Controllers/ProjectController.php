@@ -62,6 +62,12 @@ class ProjectController extends Controller
             ->withExists(['applications as has_applied' => function ($query) use ($r) {
                 $query->where('developer_id', $r->user()->id ?? 0);
             }]);
+            
+        // Por defecto, solo mostrar proyectos abiertos para programadores
+        if (! $r->filled('status') && ($r->user()->user_type === 'programmer')) {
+            $q->where('status', 'open');
+        }
+        
         if ($r->filled('status')) {
             $q->where('status', $r->status);
         }
@@ -163,12 +169,29 @@ class ProjectController extends Controller
             ->with('developer:id,name,lastname,email,profile_picture')
             ->get()
             ->map(function ($app) use ($project) {
-                $completed = \App\Models\DeveloperMilestone::whereIn('milestone_id', $project->milestones->pluck('id'))
+                // Obtener milestones asignados al desarrollador
+                $assignedMilestones = $project->milestones()
+                    ->where('assigned_developer_id', $app->developer_id)
+                    ->get();
+                
+                $total = $assignedMilestones->count();
+                
+                if ($total === 0) {
+                    return [
+                        'developer_id' => $app->developer_id,
+                        'developer' => $app->developer,
+                        'progress' => 0,
+                        'milestones_completed' => 0,
+                        'total_milestones' => 0
+                    ];
+                }
+                
+                $completed = \App\Models\DeveloperMilestone::whereIn('milestone_id', $assignedMilestones->pluck('id'))
                     ->where('developer_id', $app->developer_id)
                     ->where('progress_status', 'completed')
                     ->count();
-                $total = $project->milestones()->count();
-                $progressPercentage = $total > 0 ? round(($completed / $total) * 100) : 0;
+                
+                $progressPercentage = round(($completed / $total) * 100);
                 
                 return [
                     'developer_id' => $app->developer_id,
@@ -211,29 +234,13 @@ class ProjectController extends Controller
     {
         abort_unless($request->user()->user_type === 'company', 403);
 
-        $projects = Project::with(['company', 'categories', 'skills', 'applications.developer'])
-            ->withCount(['applications', 'milestones'])
+        $perPage = $request->get('per_page', 20);
+
+        $projects = Project::with(['company', 'categories', 'skills'])
+            ->withCount('applications')
             ->where('company_id', $request->user()->id)
             ->latest()
-            ->get();
-
-        // Add completed_milestones_count manually using DeveloperMilestone for each project
-        foreach ($projects as $project) {
-            $completedCount = \App\Models\DeveloperMilestone::whereIn('milestone_id', $project->milestones->pluck('id'))
-                ->where('progress_status', 'completed')
-                ->count();
-            // Assign completed milestones to the project to match frontend expectations
-            // Note: Since each developer has their own completions, this number could be higher than total milestones 
-            // if multiple devs complete the same milestone. A better metric is average progress or individual progress.
-            // For now, let's keep it as total completed milestones across all developers for the company dashboard overview.
-            $project->completed_milestones_count = $completedCount;
-            
-            // Re-adjust total milestones count to be milestones * accepted devs for an accurate percentage if needed, 
-            // but for simplicity the frontend just divides completed / total. 
-            // Let's set milestones_count to total expected completions:
-            $acceptedDevsCount = $project->applications()->where('status', 'accepted')->count();
-            $project->milestones_count = $project->milestones->count() * max(1, $acceptedDevsCount); 
-        }
+            ->paginate($perPage);
 
         return \App\Http\Resources\ProjectResource::collection($projects);
     }

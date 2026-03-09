@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use App\Models\User;
 use App\Models\Project;
 use App\Models\Application;
@@ -36,9 +37,9 @@ class AdminController extends Controller
                     'required',
                     'string',
                     'min:8',
-                    'max:15',
+                    'max:64',
                     'regex:/^\S+$/',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,15}$/'
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,64}$/'
                 ],
             ]);
 
@@ -222,7 +223,8 @@ class AdminController extends Controller
                     'success' => false,
                     'message' => 'Usuario no encontrado.'
                 ], 404);
-            }
+            } 
+            
 
             // No se puede banear a un admin
             if ($user->user_type === 'admin') {
@@ -530,28 +532,25 @@ class AdminController extends Controller
      */
     public function metrics(Request $request): JsonResponse
     {
-        try {
-
-            $period = $this->sanitizePeriod($request->get('period', 'month'));
+        // Mantener este método pero que solo llame a los 5 separados
+        // con Cache::remember para evitar recalcular en cada request
+        $period = $this->sanitizePeriod($request->get('period', 'month'));
+        
+        $cacheKey = "admin_metrics_{$period}";
+        
+        // Increase cache duration from 5 minutes to 1 hour for better performance
+        $data = Cache::remember($cacheKey, 3600, function () use ($period) {
             $timeSeries = $this->buildTimeSeries($period);
+            return [
+                'activity'     => $this->buildActivityMetrics($period, $timeSeries),
+                'financial'    => $this->buildFinancialMetrics($period, $timeSeries),
+                'growth'       => $this->buildGrowthMetrics($period, $timeSeries),
+                'projects'     => $this->buildProjectsMetrics($period),
+                'satisfaction' => $this->buildSatisfactionMetrics($period),
+            ];
+        });
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'activity' => $this->buildActivityMetrics($period, $timeSeries),
-                    'financial' => $this->buildFinancialMetrics($period, $timeSeries),
-                    'growth' => $this->buildGrowthMetrics($period, $timeSeries),
-                    'projects' => $this->buildProjectsMetrics($period),
-                    'satisfaction' => $this->buildSatisfactionMetrics($period),
-                ],
-            ]);
-        } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener métricas.'
-            ], 500);
-        }
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
     /**
@@ -670,24 +669,27 @@ class AdminController extends Controller
 
     private function bucketCounts(Carbon $start, Carbon $end, string $label): array
     {
-        $users = User::whereBetween('created_at', [$start, $end])->count();
-        $programmers = User::where('user_type', 'programmer')->whereBetween('created_at', [$start, $end])->count();
-        $companies = User::where('user_type', 'company')->whereBetween('created_at', [$start, $end])->count();
-        $projects = Project::whereBetween('created_at', [$start, $end])->count();
-        $applications = Application::whereBetween('created_at', [$start, $end])->count();
+        // Optimized: Use single query per model instead of multiple where clauses
+        $userStats = User::whereBetween('created_at', [$start, $end])
+            ->selectRaw("COUNT(*) as total, COUNT(CASE WHEN user_type = 'programmer' THEN 1 END) as programmers, COUNT(CASE WHEN user_type = 'company' THEN 1 END) as companies")
+            ->first();
+
+        $projectsCount = Project::whereBetween('created_at', [$start, $end])->count();
+        $applicationsCount = Application::whereBetween('created_at', [$start, $end])->count();
+        
+        // Optimized: Use SQL sum instead of collection sum
         $revenue = Project::whereBetween('created_at', [$start, $end])
-            ->get()
-            ->sum(function($project) {
-                return $project->budget_max ?? $project->budget_min ?? 0;
-            });
+            ->selectRaw('COALESCE(SUM(COALESCE(budget_max, budget_min)), 0) as total')
+            ->first()
+            ->total;
 
         return [
             'period' => $label,
-            'users' => $users,
-            'programmers' => $programmers,
-            'companies' => $companies,
-            'projects' => $projects,
-            'applications' => $applications,
+            'users' => $userStats->total,
+            'programmers' => $userStats->programmers,
+            'companies' => $userStats->companies,
+            'projects' => $projectsCount,
+            'applications' => $applicationsCount,
             'revenue' => $revenue,
         ];
     }
@@ -761,27 +763,23 @@ class AdminController extends Controller
 
         $revenue = Project::where('status', 'completed')
             ->whereBetween('created_at', [$start, $end])
-            ->get()
-            ->sum(function($project) {
-                return $project->budget_max ?? $project->budget_min ?? 0;
-            });
+            ->selectRaw('COALESCE(SUM(COALESCE(budget_max, budget_min)), 0) as total')
+            ->first()
+            ->total;
         $revenuePrev = Project::where('status', 'completed')
             ->whereBetween('created_at', [$prevStart, $prevEnd])
-            ->get()
-            ->sum(function($project) {
-                return $project->budget_max ?? $project->budget_min ?? 0;
-            });
+            ->selectRaw('COALESCE(SUM(COALESCE(budget_max, budget_min)), 0) as total')
+            ->first()
+            ->total;
 
         $gmv = Project::whereBetween('created_at', [$start, $end])
-            ->get()
-            ->sum(function($project) {
-                return $project->budget_max ?? $project->budget_min ?? 0;
-            });
+            ->selectRaw('COALESCE(SUM(COALESCE(budget_max, budget_min)), 0) as total')
+            ->first()
+            ->total;
         $gmvPrev = Project::whereBetween('created_at', [$prevStart, $prevEnd])
-            ->get()
-            ->sum(function($project) {
-                return $project->budget_max ?? $project->budget_min ?? 0;
-            });
+            ->selectRaw('COALESCE(SUM(COALESCE(budget_max, budget_min)), 0) as total')
+            ->first()
+            ->total;
 
         $transactions = Application::whereBetween('created_at', [$start, $end])->count();
         $transactionsPrev = Application::whereBetween('created_at', [$prevStart, $prevEnd])->count();
@@ -949,22 +947,26 @@ class AdminController extends Controller
             ->whereBetween('created_at', [$prevStart, $prevEnd])
             ->count();
 
-        $avgDuration = Project::where('status', 'completed')
-            ->get()
-            ->avg(function($project) {
-                return $project->created_at && $project->updated_at 
-                    ? $project->created_at->diffInDays($project->updated_at) 
-                    : 0;
-            });
-        $avgDuration = $avgDuration ? round($avgDuration) : 0;
+        // Calculate average duration in days (database agnostic)
+        $completedProjectsForDuration = Project::where('status', 'completed')->get(['created_at', 'updated_at']);
+        $totalDuration = 0;
+        $count = 0;
+        
+        foreach ($completedProjectsForDuration as $project) {
+            $diff = $project->updated_at->diffInDays($project->created_at);
+            $totalDuration += $diff;
+            $count++;
+        }
+        
+        $avgDuration = $count > 0 ? round($totalDuration / $count) : 0;
 
         $applications = Application::count();
         $accepted = Application::where('status', 'accepted')->count();
         $successRate = $applications > 0 ? round(($accepted / $applications) * 100, 1) : 0;
 
-        $statusCounts = Project::get()
+        $statusCounts = Project::selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
-            ->map->count();
+            ->pluck('count', 'status');
         $totalStatus = $statusCounts->sum() ?: 1;
         $categories = collect($statusCounts)->map(function ($count, $status) use ($totalStatus) {
             return [
@@ -1032,9 +1034,9 @@ class AdminController extends Controller
         $avgRatingPrev = $reviewCountPrev > 0 ? round($reviewsPrev->avg('rating'), 1) : 0;
 
         $ratingBuckets = Review::whereBetween('created_at', [$start, $end])
-            ->get()
+            ->selectRaw('rating, COUNT(*) as count')
             ->groupBy('rating')
-            ->map->count();
+            ->pluck('count', 'rating');
 
         $ratingData = collect(range(1, 5))->map(function ($rating) use ($ratingBuckets, $reviewCount) {
             $count = $ratingBuckets[$rating] ?? 0;
@@ -1075,23 +1077,22 @@ class AdminController extends Controller
                 ];
             });
 
-        $topProjects = Review::with('project.categories')
-            ->get()
+        $topProjects = Review::select('project_id', DB::raw('AVG(rating) as avg_rating'), DB::raw('COUNT(*) as total_reviews'))
             ->groupBy('project_id')
-            ->map(function($reviews) {
-                $project = $reviews->first()->project;
+            ->orderByDesc('avg_rating')
+            ->take(5)
+            ->with(['project.categories'])
+            ->get()
+            ->map(function ($row) {
+                $project = $row->project;
                 $category = $project?->categories?->first()?->name ?? 'Sin categoría';
-                
                 return [
-                    'project' => $project?->title ?? 'Proyecto',
-                    'rating' => round($reviews->avg('rating'), 1),
-                    'reviews' => $reviews->count(),
+                    'project'  => $project?->title ?? 'Proyecto',
+                    'rating'   => round($row->avg_rating, 1),
+                    'reviews'  => $row->total_reviews,
                     'category' => $category,
                 ];
-            })
-            ->sortByDesc('rating')
-            ->take(5)
-            ->values();
+            });
 
         $qualityMetrics = [
             ['metric' => 'Código Limpio', 'score' => $satisfaction, 'icon' => '💻'],
@@ -1140,28 +1141,30 @@ class AdminController extends Controller
     private function buildActivityHeatmap(): array
     {
         $dayLabels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-        $heatmap = [];
-
-        foreach ($dayLabels as $label) {
-            $heatmap[] = ['day' => $label, 'hours' => array_fill(0, 24, 0)];
-        }
+        $heatmap = array_map(fn($label) => [
+            'day' => $label,
+            'hours' => array_fill(0, 24, 0)
+        ], $dayLabels);
 
         $start = Carbon::now()->subDays(30);
         $end = Carbon::now();
 
-        $activitySources = [
-            Message::whereBetween('created_at', [$start, $end])->get(['created_at']),
-            Application::whereBetween('created_at', [$start, $end])->get(['created_at']),
-        ];
+        // Get all messages and applications in the time range
+        $messages = Message::whereBetween('created_at', [$start, $end])->get(['created_at']);
+        $applications = Application::whereBetween('created_at', [$start, $end])->get(['created_at']);
 
-        foreach ($activitySources as $records) {
-            foreach ($records as $record) {
-                $dayIndex = (int) $record->created_at->format('N') - 1;
-                $hourIndex = (int) $record->created_at->format('G');
-                if (isset($heatmap[$dayIndex]['hours'][$hourIndex])) {
-                    $heatmap[$dayIndex]['hours'][$hourIndex] += 1;
-                }
-            }
+        // Process messages
+        foreach ($messages as $message) {
+            $dayIdx = ($message->created_at->dayOfWeek - 1 + 7) % 7; // Convert to 0=Lun, 6=Dom
+            $hourIdx = $message->created_at->hour;
+            $heatmap[$dayIdx]['hours'][$hourIdx]++;
+        }
+
+        // Process applications
+        foreach ($applications as $app) {
+            $dayIdx = ($app->created_at->dayOfWeek - 1 + 7) % 7; // Convert to 0=Lun, 6=Dom
+            $hourIdx = $app->created_at->hour;
+            $heatmap[$dayIdx]['hours'][$hourIdx]++;
         }
 
         return $heatmap;
@@ -1174,42 +1177,36 @@ class AdminController extends Controller
 
         $hours = array_fill(0, 24, ['activity' => 0, 'users' => 0]);
 
-        $messageStats = Message::whereBetween('created_at', [$start, $end])
-            ->get()
-            ->groupBy(function($message) {
-                return $message->created_at->hour;
-            })
-            ->map(function($messages) {
-                return [
-                    'hour' => $messages->first()->created_at->hour,
-                    'total' => $messages->count(),
-                    'users' => $messages->unique('sender_id')->count()
-                ];
-            });
+        // Get all messages and applications in the time range
+        $messages = Message::whereBetween('created_at', [$start, $end])->get(['created_at', 'sender_id']);
+        $applications = Application::whereBetween('created_at', [$start, $end])->get(['created_at', 'developer_id']);
 
-        foreach ($messageStats as $stat) {
-            $hour = (int) $stat['hour'];
-            $hours[$hour]['activity'] += (int) $stat['total'];
-            $hours[$hour]['users'] += (int) $stat['users'];
+        // Process messages
+        $messageUsersPerHour = [];
+        foreach ($messages as $message) {
+            $hour = $message->created_at->hour;
+            $hours[$hour]['activity']++;
+            if (!isset($messageUsersPerHour[$hour])) {
+                $messageUsersPerHour[$hour] = [];
+            }
+            $messageUsersPerHour[$hour][$message->sender_id] = true;
+        }
+        foreach ($messageUsersPerHour as $hour => $users) {
+            $hours[$hour]['users'] += count($users);
         }
 
-        $applicationStats = Application::whereBetween('created_at', [$start, $end])
-            ->get()
-            ->groupBy(function($application) {
-                return $application->created_at->hour;
-            })
-            ->map(function($applications) {
-                return [
-                    'hour' => $applications->first()->created_at->hour,
-                    'total' => $applications->count(),
-                    'users' => $applications->unique('developer_id')->count()
-                ];
-            });
-
-        foreach ($applicationStats as $stat) {
-            $hour = (int) $stat['hour'];
-            $hours[$hour]['activity'] += (int) $stat['total'];
-            $hours[$hour]['users'] += (int) $stat['users'];
+        // Process applications
+        $appUsersPerHour = [];
+        foreach ($applications as $app) {
+            $hour = $app->created_at->hour;
+            $hours[$hour]['activity']++;
+            if (!isset($appUsersPerHour[$hour])) {
+                $appUsersPerHour[$hour] = [];
+            }
+            $appUsersPerHour[$hour][$app->developer_id] = true;
+        }
+        foreach ($appUsersPerHour as $hour => $users) {
+            $hours[$hour]['users'] += count($users);
         }
 
         $maxActivity = max(1, ...array_map(fn ($value) => $value['activity'], $hours));
