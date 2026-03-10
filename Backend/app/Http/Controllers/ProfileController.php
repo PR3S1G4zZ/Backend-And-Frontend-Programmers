@@ -18,10 +18,15 @@ class ProfileController extends Controller
             ? CompanyProfile::firstOrCreate(['user_id' => $user->id])
             : DeveloperProfile::firstOrCreate(['user_id' => $user->id]);
 
+        $userData = $user->only('id', 'name', 'lastname', 'email', 'user_type', 'profile_picture');
+        if ($userData['profile_picture']) {
+            $userData['profile_picture'] = asset('storage/' . $userData['profile_picture']);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
-                'user' => $user->only('id', 'name', 'lastname', 'email', 'user_type', 'profile_picture'),
+                'user' => $userData,
                 'profile' => $profile,
             ],
         ]);
@@ -41,8 +46,8 @@ class ProfileController extends Controller
             if (!empty($userData)) {
                 if ($request->hasFile('profile_picture')) {
                     $path = $request->file('profile_picture')->store('profile_pictures', 'public');
-                    // Generate full URL
-                    $userData['profile_picture'] = url('storage/' . $path);
+                    // Store relative path to storage directory
+                    $userData['profile_picture'] = $path;
                 }
                 $user->update($userData);
             }

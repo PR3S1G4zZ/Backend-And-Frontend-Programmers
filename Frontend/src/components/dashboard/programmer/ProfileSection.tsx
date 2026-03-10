@@ -124,7 +124,7 @@ export function ProfileSection() {
           github: profile.links?.github || '',
           linkedin: profile.links?.linkedin || '',
           twitter: profile.links?.twitter || '',
-          profile_picture: userInfo.profile_picture ? `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${userInfo.profile_picture}` : '',
+          profile_picture: userInfo.profile_picture || '',
         }));
 
         const skillNames = Array.isArray(profile.skills) ? profile.skills : [];
@@ -218,7 +218,7 @@ export function ProfileSection() {
         const updatedUser = response.user;
         setProfileData(prev => ({
           ...prev,
-          profile_picture: `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${updatedUser.profile_picture}`
+          profile_picture: updatedUser.profile_picture || ''
         }));
         // Update global auth user if needed
         // updateUser(updatedUser); 
@@ -447,14 +447,14 @@ export function ProfileSection() {
                     <div className="relative">
                       {isEditing ? (
                         <ImageUpload
-                          currentImage={profileData.profile_picture}
+                          currentImage={profileData.profile_picture || ''}
                           name={profileData.name}
                           onImageChange={setProfileImageFile}
                         />
                       ) : (
                         <div className="relative">
                           <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
-                            <AvatarImage src={profileData.profile_picture} object-cover />
+                            <AvatarImage src={profileData.profile_picture || ''} object-cover />
                             <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                               {profileData.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
                             </AvatarFallback>
@@ -484,7 +484,7 @@ export function ProfileSection() {
                         </span>
                         <span className="flex items-center text-primary">
                           <DollarSign className="h-3 w-3 mr-1" />
-                          €{profileData.hourlyRate}/hora
+                          ${profileData.hourlyRate}/hora
                         </span>
                       </div>
                     </div>
@@ -549,7 +549,7 @@ export function ProfileSection() {
                     </div>
 
                     <div>
-                      <Label htmlFor="hourlyRate" className="text-foreground">Tarifa por Hora (€)</Label>
+                      <Label htmlFor="hourlyRate" className="text-foreground">Tarifa por Hora ($)</Label>
                       <Input
                         id="hourlyRate"
                         type="number"

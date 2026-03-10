@@ -404,7 +404,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                   {/* Hourly Rate Filter */}
                   <div>
                     <label className="text-foreground font-medium mb-3 block">
-                      Tarifa por hora: €{filters.hourlyRate[0]}-€{filters.hourlyRate[1]}
+                      Tarifa por hora: ${filters.hourlyRate[0]}-${filters.hourlyRate[1]}
                     </label>
                     <Slider
                       value={filters.hourlyRate}
@@ -521,7 +521,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                       <div className="flex items-center space-x-4">
                         <div className="relative">
                           <Avatar className="h-16 w-16 border-2 border-transparent group-hover:border-primary transition-colors duration-300 ring-2 ring-background">
-                            <AvatarImage src={developer.avatar} />
+                            <AvatarImage src={developer.profilePicture || ''} />
                             <AvatarFallback className="bg-gradient-to-br from-primary/80 to-purple-600/80 text-white text-lg font-bold">
                               {developer.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
@@ -556,7 +556,7 @@ export function SearchProgrammersSection({ onSectionChange }: SearchProgrammersS
                           <span className="text-[10px] text-muted-foreground">({developer.reviewsCount})</span>
                         </div>
                         <p className="text-xl font-bold text-primary mt-2">
-                          €{developer.hourlyRate}<span className="text-xs text-muted-foreground font-normal">/h</span>
+                          ${developer.hourlyRate}<span className="text-xs text-muted-foreground font-normal">/h</span>
                         </p>
                       </div>
                     </div>

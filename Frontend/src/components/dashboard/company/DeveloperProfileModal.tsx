@@ -19,7 +19,7 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-6xl w-full sm:max-w-[90vw] lg:max-w-7xl h-[90vh] bg-[#111] border-[#333333] p-0 overflow-hidden text-white sm:rounded-xl flex flex-col">
+            <DialogContent className="max-w-7xl w-full h-[95vh] bg-[#111] border-[#333333] p-0 overflow-hidden text-white rounded-xl flex flex-col">
                 <DialogHeader className="sr-only">
                     <DialogTitle>Perfil de Desarrollador: {developer?.name ?? 'Cargando...'}</DialogTitle>
                     <DialogDescription>
@@ -51,12 +51,12 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col max-h-[90vh] bg-[#111]">
+                    <div className="flex flex-col max-h-[95vh] bg-[#111]">
                         {/* Hero Section / Banner */}
-                        <div className="relative h-40 bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] overflow-hidden">
+                        <div className="relative h-32 sm:h-40 bg-gradient-to-r from-[#2a2a2a] to-[#1a1a1a] overflow-hidden">
                             <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:20px_20px]" />
-                            <div className="absolute top-0 right-0 p-8 opacity-10">
-                                <Code className="h-64 w-64 text-white transform rotate-12" />
+                            <div className="absolute top-0 right-0 p-4 sm:p-8 opacity-10">
+                                <Code className="h-32 sm:h-64 w-32 sm:w-64 text-white transform rotate-12" />
                             </div>
                             <Button
                                 variant="ghost"
@@ -68,20 +68,23 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                             </Button>
                         </div>
 
-                        <div className="px-8 pb-8 flex-1 overflow-hidden flex flex-col">
+                        <div className="px-4 sm:px-8 pb-4 sm:pb-8 flex-1 overflow-hidden flex flex-col">
                             {/* Profile Header (Overlapping Banner) */}
-                            <div className="flex flex-col md:flex-row gap-6 -mt-16 relative z-10 mb-8">
-                                <Avatar className="h-32 w-32 border-4 border-[#111] shadow-2xl ring-4 ring-primary/10">
-                                    <AvatarImage src={developer.avatar} />
-                                    <AvatarFallback className="bg-gradient-to-br from-primary to-purple-700 text-3xl font-bold text-white">
-                                        {developer.name.charAt(0)}
+                            <div className="flex flex-col md:flex-row gap-4 sm:gap-6 -mt-16 relative z-10 mb-6 sm:mb-8">
+                                <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-[#111] shadow-2xl ring-4 ring-primary/10">
+                                    <AvatarImage
+                                        src={developer.profilePicture ? developer.profilePicture : `https://ui-avatars.com/api/?name=${encodeURIComponent(developer.name)}&background=random`}
+                                        alt={developer.name}
+                                    />
+                                    <AvatarFallback className="bg-gradient-to-br from-primary to-purple-700 text-2xl sm:text-3xl font-bold text-white">
+                                        {developer.name.split(' ').map(n => n[0]).join('')}
                                     </AvatarFallback>
                                 </Avatar>
 
-                                <div className="flex-1 pt-16 md:pt-20 space-y-2">
-                                    <div className="flex items-center justify-between">
+                                <div className="flex-1 pt-12 sm:pt-16 md:pt-20 space-y-2">
+                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                         <div>
-                                            <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+                                            <h2 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
                                                 {developer.name}
                                                 {developer.isVerified && (
                                                     <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 p-1 rounded-full">
@@ -89,14 +92,14 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                                                     </span>
                                                 )}
                                             </h2>
-                                            <p className="text-xl text-primary font-medium">{developer.title}</p>
+                                            <p className="text-lg sm:text-xl text-primary font-medium">{developer.title}</p>
                                         </div>
-                                        <div className="text-right hidden md:block">
-                                            <p className="text-3xl font-bold text-white">€{developer.hourlyRate}<span className="text-sm text-gray-500 font-normal">/h</span></p>
+                                        <div className="text-right">
+                                            <p className="text-2xl sm:text-3xl font-bold text-white">${developer.hourlyRate}<span className="text-sm text-gray-500 font-normal">/h</span></p>
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-400">
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 sm:gap-x-6 sm:gap-y-2 text-sm text-gray-400">
                                         <span className="flex items-center gap-1.5 hover:text-white transition-colors">
                                             <MapPin className="h-4 w-4" /> {developer.location}
                                         </span>
@@ -114,34 +117,34 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                                 </div>
                             </div>
 
-                            <ScrollArea className="flex-1 pr-6 -mr-6">
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8">
+                            <ScrollArea className="flex-1 pr-4 sm:pr-6 -mr-4 sm:-mr-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 pb-8">
                                     {/* Left Content (Bio/Skills/Portfolio) - Takes 8 columns */}
-                                    <div className="lg:col-span-8 space-y-8">
+                                    <div className="lg:col-span-8 space-y-6 sm:space-y-8">
                                         {/* Bio */}
-                                        <section className="bg-[#1A1A1A] p-8 rounded-xl border border-[#333]">
-                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                                                <div className="bg-primary/20 p-2.5 rounded-lg text-primary">
-                                                    <Briefcase className="h-6 w-6" />
+                                        <section className="bg-[#1A1A1A] p-4 sm:p-8 rounded-xl border border-[#333]">
+                                            <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                                                <div className="bg-primary/20 p-2 rounded-lg sm:bg-primary/20 sm:p-2.5 sm:rounded-lg text-primary">
+                                                    <Briefcase className="h-5 w-5 sm:h-6 sm:w-6" />
                                                 </div>
                                                 Sobre mí
                                             </h3>
-                                            <p className="text-gray-300 leading-8 text-lg">
+                                            <p className="text-gray-300 leading-7 sm:leading-8 text-sm sm:text-lg">
                                                 {developer.bio}
                                             </p>
                                         </section>
 
                                         {/* Skills */}
-                                        <section className="bg-[#1A1A1A] p-8 rounded-xl border border-[#333]">
-                                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                                                <div className="bg-primary/20 p-2.5 rounded-lg text-primary">
-                                                    <Code className="h-6 w-6" />
+                                        <section className="bg-[#1A1A1A] p-4 sm:p-8 rounded-xl border border-[#333]">
+                                            <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
+                                                <div className="bg-primary/20 p-2 rounded-lg sm:bg-primary/20 sm:p-2.5 sm:rounded-lg text-primary">
+                                                    <Code className="h-5 w-5 sm:h-6 sm:w-6" />
                                                 </div>
                                                 Tecnologías & Herramientas
                                             </h3>
-                                            <div className="flex flex-wrap gap-3">
+                                            <div className="flex flex-wrap gap-2 sm:gap-3">
                                                 {developer.skills.map(skill => (
-                                                    <Badge key={skill} variant="secondary" className="px-4 py-2 bg-[#111] text-gray-200 border border-[#333] hover:border-primary/50 transition-colors text-sm">
+                                                    <Badge key={skill} variant="secondary" className="px-3 py-1.5 sm:px-4 sm:py-2 bg-[#111] text-gray-200 border border-[#333] hover:border-primary/50 transition-colors text-xs sm:text-sm">
                                                         {skill}
                                                     </Badge>
                                                 ))}
@@ -150,17 +153,17 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
 
                                         {/* Portfolio */}
                                         <section>
-                                            <h3 className="text-xl font-bold text-white mb-6">Portafolio Destacado</h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6">Portafolio Destacado</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                                 {[1, 2].map((i) => (
                                                     <div key={i} className="group bg-[#1A1A1A] rounded-xl overflow-hidden border border-[#333] hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5 cursor-pointer">
-                                                        <div className="h-48 bg-[#151515] flex items-center justify-center relative overflow-hidden">
+                                                        <div className="h-36 sm:h-48 bg-[#151515] flex items-center justify-center relative overflow-hidden">
                                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
                                                             <span className="text-gray-600 font-medium z-10 group-hover:text-primary transition-colors">Proyecto Demo {i}</span>
                                                         </div>
-                                                        <div className="p-6">
-                                                            <h4 className="font-bold text-white text-xl group-hover:text-primary transition-colors">E-commerce Platform</h4>
-                                                            <p className="text-sm text-gray-400 mt-2 mb-4 leading-relaxed">Plataforma completa de ventas con panel administrativo, gestión de inventario y pagos en tiempo real.</p>
+                                                        <div className="p-4 sm:p-6">
+                                                            <h4 className="font-bold text-white text-lg sm:text-xl group-hover:text-primary transition-colors">E-commerce Platform</h4>
+                                                            <p className="text-sm text-gray-400 mt-2 mb-3 sm:mt-2 sm:mb-4 leading-relaxed">Plataforma completa de ventas con panel administrativo, gestión de inventario y pagos en tiempo real.</p>
                                                             <div className="flex gap-2">
                                                                 <Badge variant="outline" className="text-xs border-[#333] text-gray-400">React</Badge>
                                                                 <Badge variant="outline" className="text-xs border-[#333] text-gray-400">Node.js</Badge>
@@ -174,56 +177,56 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                                     </div>
 
                                     {/* Right Sidebar (Stats/Contact) - Takes 4 columns */}
-                                    <div className="lg:col-span-4 space-y-6">
-                                        <div className="bg-[#1A1A1A] rounded-xl p-8 border border-[#333] space-y-8 shadow-xl sticky top-0">
-                                            <div className="space-y-4">
-                                                <Button className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]">
+                                    <div className="lg:col-span-4 space-y-4 sm:space-y-6">
+                                        <div className="bg-[#1A1A1A] rounded-xl p-4 sm:p-8 border border-[#333] space-y-6 sm:space-y-8 shadow-xl sticky top-0">
+                                            <div className="space-y-3 sm:space-y-4">
+                                                <Button className="w-full h-12 sm:h-14 text-base sm:text-lg font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]">
                                                     Contactar Ahora
                                                 </Button>
-                                                <Button variant="outline" className="w-full h-12 border-[#333] text-gray-300 hover:text-white hover:bg-[#222]">
+                                                <Button variant="outline" className="w-full h-10 sm:h-12 border-[#333] text-gray-300 hover:text-white hover:bg-[#222]">
                                                     Descargar CV
                                                 </Button>
                                             </div>
 
-                                            <div className="pt-8 border-t border-[#333] space-y-6">
+                                            <div className="pt-6 sm:pt-8 border-t border-[#333] space-y-4 sm:space-y-6">
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-gray-400">Tarifa Hora</span>
-                                                    <span className="text-white font-bold text-xl">€{developer.hourlyRate}</span>
+                                                    <span className="text-white font-bold text-lg sm:text-xl">${developer.hourlyRate}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-gray-400">Experiencia</span>
-                                                    <span className="text-white font-bold text-xl">{developer.experience} años</span>
+                                                    <span className="text-white font-bold text-lg sm:text-xl">{developer.experience} años</span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-gray-400">Proyectos</span>
-                                                    <span className="text-white font-bold text-xl">{developer.completedProjects}</span>
+                                                    <span className="text-white font-bold text-lg sm:text-xl">{developer.completedProjects}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-gray-400">Respuesta</span>
-                                                    <span className="text-green-400 font-bold text-lg">Inmediata</span>
+                                                    <span className="text-green-400 font-bold text-sm sm:text-lg">Inmediata</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="bg-[#1A1A1A] rounded-xl p-8 border border-[#333]">
-                                            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">Certificaciones</h4>
-                                            <div className="space-y-5">
-                                                <div className="flex gap-4">
-                                                    <div className="bg-yellow-500/10 p-2.5 rounded-lg h-fit">
-                                                        <Award className="h-6 w-6 text-yellow-500" />
+                                        <div className="bg-[#1A1A1A] rounded-xl p-4 sm:p-8 border border-[#333]">
+                                            <h4 className="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 sm:mb-6">Certificaciones</h4>
+                                            <div className="space-y-4 sm:space-y-5">
+                                                <div className="flex gap-3 sm:gap-4">
+                                                    <div className="bg-yellow-500/10 p-2 rounded-lg sm:bg-yellow-500/10 sm:p-2.5 sm:rounded-lg h-fit">
+                                                        <Award className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-white font-bold">AWS Certified Solutions Architect</p>
-                                                        <p className="text-sm text-gray-500 mt-1">Amazon Web Services • 2025</p>
+                                                        <p className="text-white font-bold text-sm sm:text-base">AWS Certified Solutions Architect</p>
+                                                        <p className="text-xs sm:text-sm text-gray-500 mt-1">Amazon Web Services • 2025</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-4">
-                                                    <div className="bg-blue-500/10 p-2.5 rounded-lg h-fit">
-                                                        <Award className="h-6 w-6 text-blue-500" />
+                                                <div className="flex gap-3 sm:gap-4">
+                                                    <div className="bg-blue-500/10 p-2 rounded-lg sm:bg-blue-500/10 sm:p-2.5 sm:rounded-lg h-fit">
+                                                        <Award className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-white font-bold">Meta Frontend Developer</p>
-                                                        <p className="text-sm text-gray-500 mt-1">Coursera Professional • 2024</p>
+                                                        <p className="text-white font-bold text-sm sm:text-base">Meta Frontend Developer</p>
+                                                        <p className="text-xs sm:text-sm text-gray-500 mt-1">Coursera Professional • 2024</p>
                                                     </div>
                                                 </div>
                                             </div>

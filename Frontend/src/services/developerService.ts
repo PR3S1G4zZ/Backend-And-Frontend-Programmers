@@ -29,7 +29,7 @@ export type DeveloperProfile = {
   bio: string;
   lastActive: string | undefined;
   isVerified: boolean;
-  avatar?: string;
+  profilePicture?: string | null;
 };
 
 export async function fetchDevelopers(search?: string) {

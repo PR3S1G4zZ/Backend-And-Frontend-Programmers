@@ -2,11 +2,11 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Clock, 
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
   Send,
   MessageSquare,
   Building2,
@@ -35,7 +35,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
             <span className="text-[#00FF85] glow-text"> Próximo Proyecto</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            ¿Tienes una idea innovadora? ¿Necesitas escalar tu equipo de desarrollo? 
+            ¿Tienes una idea innovadora? ¿Necesitas escalar tu equipo de desarrollo?
             Estamos aquí para ayudarte a hacer realidad tus proyectos tech.
           </p>
         </div>
@@ -54,7 +54,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                     Envíanos un Mensaje
                   </CardTitle>
                   <p className="text-gray-300">
-                    Completa el formulario y nuestro equipo se pondrá en contacto contigo 
+                    Completa el formulario y nuestro equipo se pondrá en contacto contigo
                     en menos de 24 horas.
                   </p>
                 </CardHeader>
@@ -63,7 +63,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-white mb-2">Nombre Completo *</label>
-                        <Input 
+                        <Input
                           type="text"
                           placeholder="Tu nombre"
                           required
@@ -72,7 +72,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                       </div>
                       <div>
                         <label className="block text-white mb-2">Email *</label>
-                        <Input 
+                        <Input
                           type="email"
                           placeholder="tu@email.com"
                           required
@@ -80,11 +80,11 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-white mb-2">Empresa</label>
-                        <Input 
+                        <Input
                           type="text"
                           placeholder="Nombre de tu empresa"
                           className="bg-[#0D0D0D] border-[#333333] text-white placeholder-gray-400 focus:border-[#00FF85]"
@@ -92,7 +92,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                       </div>
                       <div>
                         <label className="block text-white mb-2">Teléfono</label>
-                        <Input 
+                        <Input
                           type="tel"
                           placeholder="+34 600 123 456"
                           className="bg-[#0D0D0D] border-[#333333] text-white placeholder-gray-400 focus:border-[#00FF85]"
@@ -119,17 +119,17 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                       <label className="block text-white mb-2">Presupuesto Estimado</label>
                       <select className="w-full p-3 bg-[#0D0D0D] border border-[#333333] rounded-lg text-white focus:border-[#00FF85] focus:outline-none">
                         <option value="">Selecciona tu rango de presupuesto</option>
-                        <option value="5k-15k">€5,000 - €15,000</option>
-                        <option value="15k-50k">€15,000 - €50,000</option>
-                        <option value="50k-100k">€50,000 - €100,000</option>
-                        <option value="100k+">€100,000+</option>
+                        <option value="5k-15k">$5,000 - $15,000</option>
+                        <option value="15k-50k">$15,000 - $50,000</option>
+                        <option value="50k-100k">$50,000 - $100,000</option>
+                        <option value="100k+">$100,000+</option>
                         <option value="discuss">Prefiero discutirlo</option>
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-white mb-2">Mensaje *</label>
-                      <Textarea 
+                      <Textarea
                         placeholder="Cuéntanos sobre tu proyecto, objetivos, tecnologías requeridas y cualquier detalle relevante..."
                         required
                         rows={6}
@@ -137,7 +137,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                       />
                     </div>
 
-                    <Button 
+                    <Button
                       type="submit"
                       size="lg"
                       className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A] hover-neon"
@@ -243,10 +243,10 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-300 mb-4">
-                    ¿Proyecto enterprise? ¿Necesitas un equipo completo? 
+                    ¿Proyecto enterprise? ¿Necesitas un equipo completo?
                     Habla directamente con nuestro equipo de ventas.
                   </p>
-                  <Button 
+                  <Button
                     className="w-full bg-[#00FF85] text-[#0D0D0D] hover:bg-[#00C46A]"
                   >
                     Contactar Ventas
@@ -271,7 +271,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
               {/* Illustrated Map */}
               <div className="relative h-96 bg-gradient-to-br from-[#1A1A1A] to-[#0D0D0D] flex items-center justify-center">
                 <div className="absolute inset-0 binary-pattern opacity-5"></div>
-                
+
                 {/* Map Illustration */}
                 <div className="relative z-10 text-center">
                   <div className="bg-[#00FF85] w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
@@ -279,17 +279,17 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Programmers HQ</h3>
                   <p className="text-[#00FF85] mb-4">Calle de la Innovación 42, Madrid</p>
-                  
+
                   {/* Simplified map grid */}
                   <div className="grid grid-cols-3 gap-2 mx-auto w-40 h-40 opacity-30">
                     {[...Array(9)].map((_, i) => (
-                      <div 
-                        key={i} 
+                      <div
+                        key={i}
                         className={`border border-[#333333] ${i === 4 ? 'bg-[#00FF85]' : 'bg-[#1A1A1A]'}`}
                       ></div>
                     ))}
                   </div>
-                  
+
                   <p className="text-gray-400 text-sm mt-4">
                     Metro: Sol (Líneas 1, 2, 3) • Parking disponible
                   </p>
@@ -298,7 +298,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
                 {/* Decorative elements */}
                 <div className="absolute top-4 left-4 w-2 h-2 bg-[#00FF85] rounded-full animate-ping"></div>
                 <div className="absolute bottom-8 right-8 w-3 h-3 bg-[#00C46A] rounded-full animate-pulse"></div>
-                <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-[#00FF85] rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
+                <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-[#00FF85] rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
               </div>
             </CardContent>
           </Card>
@@ -318,7 +318,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
               <CardContent className="p-6">
                 <h3 className="text-lg font-bold text-white mb-3">¿Cuánto tiempo toma encontrar desarrolladores?</h3>
                 <p className="text-gray-300">
-                  Típicamente recibes las primeras propuestas en 24-48 horas. Para proyectos más específicos 
+                  Típicamente recibes las primeras propuestas en 24-48 horas. Para proyectos más específicos
                   o equipos grandes, puede tomar hasta una semana.
                 </p>
               </CardContent>
@@ -328,7 +328,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
               <CardContent className="p-6">
                 <h3 className="text-lg font-bold text-white mb-3">¿Cómo garantizan la calidad de los programadores?</h3>
                 <p className="text-gray-300">
-                  Todos los desarrolladores pasan por un proceso de verificación técnica, revisión de portafolio 
+                  Todos los desarrolladores pasan por un proceso de verificación técnica, revisión de portafolio
                   y validación de referencias. Solo el 3% de los aplicantes son aceptados.
                 </p>
               </CardContent>
@@ -338,7 +338,7 @@ export function ContactPage({ onNavigate: _onNavigate }: ContactPageProps) {
               <CardContent className="p-6">
                 <h3 className="text-lg font-bold text-white mb-3">¿Qué pasa si el proyecto no sale como esperaba?</h3>
                 <p className="text-gray-300">
-                  Nuestro sistema de pagos por hitos protege tu inversión. Además, ofrecemos mediación gratuita 
+                  Nuestro sistema de pagos por hitos protege tu inversión. Además, ofrecemos mediación gratuita
                   y garantía de satisfacción en todos los proyectos.
                 </p>
               </CardContent>

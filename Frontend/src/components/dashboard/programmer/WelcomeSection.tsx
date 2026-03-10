@@ -93,7 +93,7 @@ export function WelcomeSection({ onSectionChange }: WelcomeSectionProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-xs">Ganado este mes</p>
-                <p className="text-xl font-bold text-foreground">€{stats.earnings_month.toLocaleString()}</p>
+                <p className="text-xl font-bold text-foreground">${stats.earnings_month.toLocaleString()}</p>
                 <p className={`text-xs flex items-center mt-1 ${stats.earnings_growth >= 0 ? 'text-primary' : 'text-red-500'}`}>
                   <TrendingUp className={`h-3 w-3 mr-1 ${stats.earnings_growth < 0 ? 'rotate-180' : ''}`} />
                   {stats.earnings_growth >= 0 ? '+' : ''}{stats.earnings_growth}%

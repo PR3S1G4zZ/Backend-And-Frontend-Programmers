@@ -202,7 +202,7 @@ export function ProjectCandidatesSection({ project, onBack }: ProjectCandidatesS
                                     {/* Developer Info */}
                                     <div className="flex-shrink-0 cursor-pointer" onClick={() => handleViewProfile(candidate.developer.id)}>
                                         <Avatar className="h-16 w-16 border-2 border-[#333333] hover:border-primary transition-colors">
-                                            <AvatarImage src={candidate.developer.avatar} />
+                                            <AvatarImage src={candidate.developer.profilePicture || ''} />
                                             <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                                                 {candidate.developer.name.substring(0, 2).toUpperCase()}
                                             </AvatarFallback>

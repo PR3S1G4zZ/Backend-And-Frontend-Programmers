@@ -809,7 +809,7 @@ export function PublishProjectSection({ onSectionChange, initialData, isEditing 
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-gray-400">Presupuesto:</span>
-                    <p className="text-white">€{formData.budget || '0'}</p>
+                    <p className="text-white">${formData.budget || '0'}</p>
                   </div>
                   <div>
                     <span className="text-gray-400">Duración:</span>

@@ -221,9 +221,9 @@ export function ProjectsSection() {
 
   const getBudgetText = (budget: Project['budget']) => {
     if (budget.type === 'fixed') {
-      return `€${budget.min.toLocaleString()}-€${budget.max.toLocaleString()}`;
+      return `$${budget.min.toLocaleString()}-$${budget.max.toLocaleString()}`;
     }
-    return `€${budget.min}-€${budget.max}/h`;
+    return `$${budget.min}-$${budget.max}/h`;
   };
 
   const getDurationText = (duration: Project['duration']) => {

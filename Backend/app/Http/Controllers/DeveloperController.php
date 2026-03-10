@@ -34,6 +34,8 @@ class DeveloperController extends Controller
             
             $completedProjects = $developer->completed_projects_count ?? 0;
 
+            $profilePicture = $developer->profile_picture ? asset('storage/' . $developer->profile_picture) : null;
+
             return [
                 'id' => (string) $developer->id,
                 'name' => $developer->name . ' ' . $developer->lastname,
@@ -50,6 +52,7 @@ class DeveloperController extends Controller
                 'bio' => $profile?->bio ?? '',
                 'lastActive' => $developer->updated_at?->diffForHumans(),
                 'isVerified' => $developer->email_verified_at !== null,
+                'profilePicture' => $profilePicture,
             ];
         });
 
@@ -119,6 +122,7 @@ class DeveloperController extends Controller
             'lastActive' => $developer->updated_at?->diffForHumans(),
             'isVerified' => $developer->email_verified_at !== null,
             'joinedAt' => $developer->created_at->format('M Y'),
+            'profilePicture' => $developer->profile_picture ? asset('storage/' . $developer->profile_picture) : null,
         ];
 
         return response()->json([
