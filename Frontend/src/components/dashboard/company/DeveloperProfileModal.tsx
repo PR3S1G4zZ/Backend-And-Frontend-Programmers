@@ -4,7 +4,7 @@ import { Badge } from '../../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { ScrollArea } from '../../ui/scroll-area';
 import { MapPin, Clock, Star, Briefcase, Code, Award, X } from 'lucide-react';
-import type { DeveloperProfile } from '../../../services/developerService'; // Reuse type
+import type { DeveloperProfile } from '../../../services/developerService';
 import { Skeleton } from '../../ui/skeleton';
 
 interface DeveloperProfileModalProps {
@@ -19,7 +19,7 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-7xl w-full h-[95vh] bg-[#111] border-[#333333] p-0 overflow-hidden text-white rounded-xl flex flex-col">
+            <DialogContent className="max-w-6xl w-full h-[95vh] bg-[#111] border-[#333333] p-0 overflow-hidden text-white rounded-xl flex flex-col">
                 <DialogHeader className="sr-only">
                     <DialogTitle>Perfil de Desarrollador: {developer?.name ?? 'Cargando...'}</DialogTitle>
                     <DialogDescription>
@@ -72,12 +72,15 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                             {/* Profile Header (Overlapping Banner) */}
                             <div className="flex flex-col md:flex-row gap-4 sm:gap-6 -mt-16 relative z-10 mb-6 sm:mb-8">
                                 <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-[#111] shadow-2xl ring-4 ring-primary/10">
-                                    <AvatarImage
-                                        src={developer.profilePicture ? developer.profilePicture : `https://ui-avatars.com/api/?name=${encodeURIComponent(developer.name)}&background=random`}
-                                        alt={developer.name}
-                                    />
-                                    <AvatarFallback className="bg-gradient-to-br from-primary to-purple-700 text-2xl sm:text-3xl font-bold text-white">
-                                        {developer.name.split(' ').map(n => n[0]).join('')}
+                                    {developer.profilePicture ? (
+                                        <AvatarImage
+                                            src={developer.profilePicture}
+                                            alt={developer.name}
+                                            className="object-cover"
+                                        />
+                                    ) : null}
+                                    <AvatarFallback className="bg-gradient-to-br from-primary to-purple-700 text-2xl sm:text-3xl font-bold text-white uppercase">
+                                        {developer.name.split(' ').slice(0, 2).map(n => n[0]).join('')}
                                     </AvatarFallback>
                                 </Avatar>
 
@@ -99,17 +102,17 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-wrap gap-x-4 gap-y-1 sm:gap-x-6 sm:gap-y-2 text-sm text-gray-400">
-                                        <span className="flex items-center gap-1.5 hover:text-white transition-colors">
-                                            <MapPin className="h-4 w-4" /> {developer.location}
+                                    <div className="flex flex-wrap gap-x-6 gap-y-3 sm:gap-x-8 sm:gap-y-4 text-sm sm:text-base text-gray-400">
+                                        <span className="flex items-center gap-2 hover:text-white transition-colors">
+                                            <MapPin className="h-4 w-4 sm:h-5 sm:w-5" /> {developer.location}
                                         </span>
-                                        <span className={`flex items-center gap-1.5 font-medium ${developer.availability === 'available' ? 'text-green-400' : 'text-gray-400'
+                                        <span className={`flex items-center gap-2 font-medium ${developer.availability === 'available' ? 'text-green-400' : 'text-gray-400'
                                             }`}>
-                                            <Clock className="h-4 w-4" />
+                                            <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
                                             {developer.availability === 'available' ? 'Disponible ahora' : 'Consultar disponibilidad'}
                                         </span>
-                                        <span className="flex items-center gap-1.5 text-yellow-400">
-                                            <Star className="h-4 w-4 fill-current" />
+                                        <span className="flex items-center gap-2 text-yellow-400">
+                                            <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
                                             <span className="text-white font-bold">{developer.rating}</span>
                                             <span className="text-gray-500">({developer.reviewsCount} reseñas)</span>
                                         </span>
@@ -117,27 +120,27 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                                 </div>
                             </div>
 
-                            <ScrollArea className="flex-1 pr-4 sm:pr-6 -mr-4 sm:-mr-6">
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 pb-8">
-                                    {/* Left Content (Bio/Skills/Portfolio) - Takes 8 columns */}
+                            <ScrollArea className="flex-1 pr-2 sm:pr-4 -mr-2 sm:-mr-4">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-8">
+                                    {/* Left Content (Bio/Skills/Portfolio) - Takes 8 columns on lg */}
                                     <div className="lg:col-span-8 space-y-6 sm:space-y-8">
                                         {/* Bio */}
-                                        <section className="bg-[#1A1A1A] p-4 sm:p-8 rounded-xl border border-[#333]">
-                                            <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-                                                <div className="bg-primary/20 p-2 rounded-lg sm:bg-primary/20 sm:p-2.5 sm:rounded-lg text-primary">
+                                        <section className="bg-[#151515] p-6 sm:p-8 rounded-2xl border border-[#222] shadow-sm">
+                                            <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-3">
+                                                <div className="bg-primary/10 p-2.5 rounded-xl text-primary border border-primary/20">
                                                     <Briefcase className="h-5 w-5 sm:h-6 sm:w-6" />
                                                 </div>
                                                 Sobre mí
                                             </h3>
-                                            <p className="text-gray-300 leading-7 sm:leading-8 text-sm sm:text-lg">
+                                            <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
                                                 {developer.bio}
                                             </p>
                                         </section>
 
                                         {/* Skills */}
-                                        <section className="bg-[#1A1A1A] p-4 sm:p-8 rounded-xl border border-[#333]">
-                                            <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-                                                <div className="bg-primary/20 p-2 rounded-lg sm:bg-primary/20 sm:p-2.5 sm:rounded-lg text-primary">
+                                        <section className="bg-[#151515] p-6 sm:p-8 rounded-2xl border border-[#222] shadow-sm">
+                                            <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-3">
+                                                <div className="bg-primary/10 p-2.5 rounded-xl text-primary border border-primary/20">
                                                     <Code className="h-5 w-5 sm:h-6 sm:w-6" />
                                                 </div>
                                                 Tecnologías & Herramientas
@@ -152,19 +155,19 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                                         </section>
 
                                         {/* Portfolio */}
-                                        <section>
+                                        <section className="bg-[#151515] p-6 sm:p-8 rounded-2xl border border-[#222] shadow-sm">
                                             <h3 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6">Portafolio Destacado</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                                 {[1, 2].map((i) => (
-                                                    <div key={i} className="group bg-[#1A1A1A] rounded-xl overflow-hidden border border-[#333] hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5 cursor-pointer">
-                                                        <div className="h-36 sm:h-48 bg-[#151515] flex items-center justify-center relative overflow-hidden">
-                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60" />
-                                                            <span className="text-gray-600 font-medium z-10 group-hover:text-primary transition-colors">Proyecto Demo {i}</span>
+                                                    <div key={i} className="group bg-[#111] rounded-xl overflow-hidden border border-[#333] hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/10 cursor-pointer">
+                                                        <div className="h-40 sm:h-48 bg-[#1a1a1a] flex items-center justify-center relative overflow-hidden">
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-80" />
+                                                            <span className="text-gray-500 font-medium z-10 group-hover:text-primary transition-colors">Proyecto Demo {i}</span>
                                                         </div>
-                                                        <div className="p-4 sm:p-6">
-                                                            <h4 className="font-bold text-white text-lg sm:text-xl group-hover:text-primary transition-colors">E-commerce Platform</h4>
-                                                            <p className="text-sm text-gray-400 mt-2 mb-3 sm:mt-2 sm:mb-4 leading-relaxed">Plataforma completa de ventas con panel administrativo, gestión de inventario y pagos en tiempo real.</p>
-                                                            <div className="flex gap-2">
+                                                        <div className="p-5 sm:p-6">
+                                                            <h4 className="font-bold text-white text-lg group-hover:text-primary transition-colors">E-commerce Platform</h4>
+                                                            <p className="text-sm text-gray-400 mt-2 mb-4 leading-relaxed line-clamp-2">Plataforma completa de ventas con panel administrativo, gestión de inventario y pagos en tiempo real.</p>
+                                                            <div className="flex flex-wrap gap-2">
                                                                 <Badge variant="outline" className="text-xs border-[#333] text-gray-400">React</Badge>
                                                                 <Badge variant="outline" className="text-xs border-[#333] text-gray-400">Node.js</Badge>
                                                                 <Badge variant="outline" className="text-xs border-[#333] text-gray-400">Stripe</Badge>
@@ -176,9 +179,9 @@ export function DeveloperProfileModal({ isOpen, onClose, developer, isLoading }:
                                         </section>
                                     </div>
 
-                                    {/* Right Sidebar (Stats/Contact) - Takes 4 columns */}
+                                    {/* Right Sidebar (Stats/Contact) - Takes 4 columns on lg */}
                                     <div className="lg:col-span-4 space-y-4 sm:space-y-6">
-                                        <div className="bg-[#1A1A1A] rounded-xl p-4 sm:p-8 border border-[#333] space-y-6 sm:space-y-8 shadow-xl sticky top-0">
+                                        <div className="bg-[#1A1A1A] rounded-xl p-5 sm:p-8 border border-[#333] space-y-6 sm:space-y-8 shadow-xl lg:sticky lg:top-0">
                                             <div className="space-y-3 sm:space-y-4">
                                                 <Button className="w-full h-12 sm:h-14 text-base sm:text-lg font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]">
                                                     Contactar Ahora

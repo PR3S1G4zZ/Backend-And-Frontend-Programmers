@@ -67,7 +67,11 @@ export function WalletPaymentMethods({ userType }: WalletPaymentMethodsProps) {
                 await updatePaymentMethod(editingId, { type, details: detailsJson });
                 showAlert({ title: 'Actualizado', text: 'Método actualizado correctamente.', type: 'success' });
             } else {
-                await addPaymentMethod({ type, details: detailsJson, is_default: methods.length === 0 });
+                await addPaymentMethod({ 
+                type, 
+                details: detailsJson, 
+                is_default: !!methods.length === 0 
+            });
                 showAlert({ title: 'Éxito', text: 'Método agregado correctamente.', type: 'success' });
             }
 

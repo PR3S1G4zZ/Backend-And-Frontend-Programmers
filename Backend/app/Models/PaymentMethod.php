@@ -16,10 +16,23 @@ class PaymentMethod extends Model
         'is_default',
     ];
 
-    protected $casts = [
-        'is_default' => 'boolean',
-        // 'details' => 'array', // Removing this to keep it as string for frontend to parse
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_default' => 'boolean',
+        ];
+    }
+
+    /**
+     * Mutator para is_default para asegurar que se envíe como string 'true'/'false'
+     * Esto evita que PDO (con emulación) lo convierta a 0/1, lo cual falla en PostgreSQL.
+     */
+    protected function isDefault(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            set: fn ($value) => $value ? 'true' : 'false',
+        );
+    }
 
     public function user()
     {

@@ -20,7 +20,11 @@ class PaymentMethodController extends Controller
             'is_default' => 'boolean'
         ]);
 
-        if ($data['is_default'] ?? false) {
+        // Convertir a booleano explícitamente para evitar errores de tipo
+        // Ensure is_default is a strict boolean for PostgreSQL
+        $data['is_default'] = (bool) ($data['is_default'] ?? false);
+
+        if ($data['is_default']) {
             $r->user()->paymentMethods()->update(['is_default' => false]);
         }
 
@@ -48,6 +52,12 @@ class PaymentMethodController extends Controller
             'details' => 'string',
             'is_default' => 'boolean'
         ]);
+
+        // Convertir a booleano explícitamente para evitar errores de tipo
+        // Ensure is_default is a strict boolean for PostgreSQL
+        if (array_key_exists('is_default', $data)) {
+            $data['is_default'] = (bool) $data['is_default'];
+        }
 
         if (($data['is_default'] ?? false)) {
             $r->user()->paymentMethods()->where('id', '!=', $paymentMethod->id)->update(['is_default' => false]);
